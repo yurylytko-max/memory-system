@@ -13,6 +13,20 @@ export default function NewCardPage() {
   const [source, setSource] = useState("");
   const [tags, setTags] = useState("");
   const [type, setType] = useState("thought");
+  const [image, setImage] = useState<string | null>(null);
+
+  function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      setImage(reader.result as string);
+    };
+
+    reader.readAsDataURL(file);
+  }
 
   function handleSave() {
     const id = crypto.randomUUID();
@@ -23,6 +37,7 @@ export default function NewCardPage() {
       content,
       source,
       type,
+      image,
       tags: tags
         .split(" ")
         .map((t) => t.trim())
@@ -86,12 +101,32 @@ export default function NewCardPage() {
           className="border p-3 rounded w-full"
         />
 
+        <div className="space-y-2">
+          <label className="text-sm text-gray-600">
+            Прикрепить скриншот
+          </label>
+
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleImageUpload}
+          />
+
+          {image && (
+            <img
+              src={image}
+              className="rounded border max-h-60"
+            />
+          )}
+        </div>
+
         <button
           onClick={handleSave}
           className="bg-black text-white px-6 py-2 rounded hover:bg-gray-800"
         >
           Сохранить
         </button>
+
       </div>
     </main>
   );

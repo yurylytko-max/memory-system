@@ -1,143 +1,107 @@
 "use client"
 
-import { useEditor, EditorContent } from "@tiptap/react"
-import StarterKit from "@tiptap/starter-kit"
-import Underline from "@tiptap/extension-underline"
-import Link from "@tiptap/extension-link"
+import { useEffect, useState } from "react"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
 
-import {
-  Bold,
-  Italic,
-  Underline as UnderlineIcon,
-  Heading1,
-  Heading2,
-  List,
-  ListOrdered,
-  Quote,
-  Code,
-  Undo,
-  Redo,
-  Link as LinkIcon,
-} from "lucide-react"
+type Document = {
+  id: string
+  title: string
+  content: string
+  tag: string
+}
 
-export default function EditorPage() {
+export default function EditorHome() {
 
-  const editor = useEditor({
-    immediatelyRender: false,
-    extensions: [
-      StarterKit,
-      Underline,
-      Link
-    ],
-    content: ""
-  })
+  const router = useRouter()
 
-  if (!editor) return null
+  const [docs,setDocs] = useState<Document[]>([])
 
-  const btn = (active:boolean)=>({
-    padding:"6px 8px",
-    border:"1px solid #ddd",
-    borderRadius:6,
-    background:active?"#eee":"white",
-    cursor:"pointer",
-    display:"flex",
-    alignItems:"center",
-    justifyContent:"center"
-  })
+  useEffect(()=>{
+
+    const stored = localStorage.getItem("documents")
+
+    if(stored){
+      setDocs(JSON.parse(stored))
+    }
+
+  },[])
+
+  function deleteDoc(id:string){
+
+    const updated = docs.filter(d => d.id !== id)
+
+    localStorage.setItem("documents",JSON.stringify(updated))
+
+    setDocs(updated)
+
+  }
 
   return (
-    <main style={{maxWidth:900,margin:"40px auto"}}>
+    <main className="min-h-screen bg-gray-100 p-10">
 
-      <h1 style={{fontSize:32,marginBottom:20}}>Редактор</h1>
+      <button
+        onClick={()=>router.back()}
+        className="mb-6 text-sm text-gray-600 hover:text-black"
+      >
+        ← Назад
+      </button>
 
-      <div style={{border:"1px solid #ddd",borderRadius:10,overflow:"hidden"}}>
+      <h1 className="text-3xl font-bold mb-8">
+        Писательское пространство
+      </h1>
 
-        <div style={{
-          display:"flex",
-          gap:6,
-          padding:10,
-          borderBottom:"1px solid #ddd",
-          flexWrap:"wrap",
-          background:"#fafafa"
-        }}>
+      <div className="mb-8">
 
-          <button style={btn(editor.isActive("bold"))}
-            onClick={()=>editor.chain().focus().toggleBold().run()}>
-            <Bold size={16}/>
-          </button>
+        <Link
+          href="/editor/new"
+          className="bg-black text-white px-4 py-2 rounded"
+        >
+          Новый документ
+        </Link>
 
-          <button style={btn(editor.isActive("italic"))}
-            onClick={()=>editor.chain().focus().toggleItalic().run()}>
-            <Italic size={16}/>
-          </button>
+      </div>
 
-          <button style={btn(editor.isActive("underline"))}
-            onClick={()=>editor.chain().focus().toggleUnderline().run()}>
-            <UnderlineIcon size={16}/>
-          </button>
+      <div className="grid grid-cols-2 gap-6">
 
-          <button style={btn(editor.isActive("heading",{level:1}))}
-            onClick={()=>editor.chain().focus().toggleHeading({level:1}).run()}>
-            <Heading1 size={16}/>
-          </button>
+        {docs.map(doc => (
 
-          <button style={btn(editor.isActive("heading",{level:2}))}
-            onClick={()=>editor.chain().focus().toggleHeading({level:2}).run()}>
-            <Heading2 size={16}/>
-          </button>
+          <div
+            key={doc.id}
+            className="bg-white p-6 rounded-xl shadow relative"
+          >
 
-          <button style={btn(editor.isActive("bulletList"))}
-            onClick={()=>editor.chain().focus().toggleBulletList().run()}>
-            <List size={16}/>
-          </button>
+            <div className="font-semibold text-lg mb-2">
+              {doc.title}
+            </div>
 
-          <button style={btn(editor.isActive("orderedList"))}
-            onClick={()=>editor.chain().focus().toggleOrderedList().run()}>
-            <ListOrdered size={16}/>
-          </button>
+            {doc.tag && (
+              <div className="text-sm text-gray-500 mb-4">
+                тег: {doc.tag}
+              </div>
+            )}
 
-          <button style={btn(editor.isActive("blockquote"))}
-            onClick={()=>editor.chain().focus().toggleBlockquote().run()}>
-            <Quote size={16}/>
-          </button>
+            <div className="flex gap-3">
 
-          <button style={btn(editor.isActive("codeBlock"))}
-            onClick={()=>editor.chain().focus().toggleCodeBlock().run()}>
-            <Code size={16}/>
-          </button>
+              <Link
+                href={`/editor/${doc.id}`}
+                className="text-sm text-blue-600"
+              >
+                открыть
+              </Link>
 
-          <button style={btn(false)}
-            onClick={()=>{
-              const url=prompt("URL")
-              if(url){
-                editor.chain().focus().setLink({href:url}).run()
-              }
-            }}>
-            <LinkIcon size={16}/>
-          </button>
+              <button
+                onClick={()=>deleteDoc(doc.id)}
+                className="text-sm text-red-500"
+              >
+                удалить
+              </button>
 
-          <button style={btn(false)}
-            onClick={()=>editor.chain().focus().undo().run()}>
-            <Undo size={16}/>
-          </button>
+            </div>
 
-          <button style={btn(false)}
-            onClick={()=>editor.chain().focus().redo().run()}>
-            <Redo size={16}/>
-          </button>
+          </div>
 
-        </div>
-
-        <EditorContent
-          editor={editor}
-          style={{
-            minHeight:500,
-            padding:20,
-            fontSize:18,
-            lineHeight:1.6,
-            outline:"none"
-          }}
-        />
+        ))}
 
       </div>
 

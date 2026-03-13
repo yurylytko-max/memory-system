@@ -1,9 +1,10 @@
 "use client";
 
-import { getAllCards, deleteCard } from "@/lib/cards";
+import { getAllCards, deleteCard, updateCard } from "@/lib/cards";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Tesseract from "tesseract.js";
 
 export default function CardPage() {
   const params = useParams();
@@ -15,12 +16,12 @@ export default function CardPage() {
 
   const [card, setCard] = useState<any>(null);
   const [loaded, setLoaded] = useState(false);
+  const [ocrLoading, setOcrLoading] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
 
     const cards = getAllCards();
-
     const found = cards.find((c: any) => String(c.id) === String(cardId));
 
     if (found) {
@@ -33,6 +34,38 @@ export default function CardPage() {
   function handleDelete() {
     deleteCard(cardId);
     router.push("/cards");
+  }
+
+  async function handleOCR() {
+    if (!card?.image) return;
+
+    try {
+      setOcrLoading(true);
+
+      const result = await Tesseract.recognize(card.image, "eng+rus");
+
+      const text = result?.data?.text?.trim() || "";
+
+      if (!text) {
+        alert("Не удалось распознать текст");
+        setOcrLoading(false);
+        return;
+      }
+
+      const updatedCard = {
+        ...card,
+        content: text,
+      };
+
+      updateCard(updatedCard);
+      setCard(updatedCard);
+
+    } catch (error) {
+      console.error(error);
+      alert("Ошибка OCR");
+    }
+
+    setOcrLoading(false);
   }
 
   if (!loaded) {
@@ -76,6 +109,24 @@ export default function CardPage() {
         <h1 className="text-2xl font-bold mb-4">
           {card.title}
         </h1>
+
+        {card.image && (
+          <div className="mb-6 space-y-3">
+
+            <img
+              src={card.image}
+              className="rounded-lg border max-h-[500px] w-full object-contain"
+            />
+
+            <button
+              onClick={handleOCR}
+              className="px-4 py-2 bg-blue-600 text-white rounded"
+            >
+              {ocrLoading ? "Распознаю текст..." : "Извлечь текст из скриншота"}
+            </button>
+
+          </div>
+        )}
 
         <div className="text-gray-700 whitespace-pre-wrap mb-4">
           {card.content}

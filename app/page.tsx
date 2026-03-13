@@ -28,10 +28,12 @@ export default function Home() {
           </div>
         </Link>
 
-        <div className="bg-white p-6 rounded-xl shadow">
-          <h2 className="text-xl font-semibold">Писательское пространство</h2>
-          <p className="text-gray-500">Писать и соединять идеи</p>
-        </div>
+        <Link href="/editor" className="block">
+          <div className="bg-white p-6 rounded-xl shadow hover:shadow-xl hover:scale-[1.02] transition cursor-pointer">
+            <h2 className="text-xl font-semibold">Писательское пространство</h2>
+            <p className="text-gray-500">Писать и соединять идеи</p>
+          </div>
+        </Link>
 
       </div>
     </main>

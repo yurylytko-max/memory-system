@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 type Task = {
   text: string;
@@ -17,6 +18,8 @@ type Plan = {
 };
 
 export default function Planner() {
+
+  const router = useRouter();
 
   const [plans, setPlans] = useState<Plan[]>([]);
   const [planName, setPlanName] = useState("");
@@ -66,6 +69,13 @@ export default function Planner() {
 
   return (
     <main className="min-h-screen bg-gray-100 p-10">
+
+      <button
+        onClick={() => router.back()}
+        className="mb-6 text-sm text-gray-600 hover:text-black"
+      >
+        ← Назад
+      </button>
 
       <h1 className="text-3xl font-bold mb-8">
         Планировщик
