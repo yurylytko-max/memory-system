@@ -19,14 +19,19 @@ export default function CardPage() {
   const [ocrLoading, setOcrLoading] = useState(false);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const cards = await getAllCards();
-    const found = cards.find((c: any) => String(c.id) === String(cardId));
-
-    if (found) {
-      setCard(found);
+    async function load() {
+      if (typeof window === "undefined") return;
+  
+      const cards = await getAllCards();
+      const found = cards.find((c: any) => String(c.id) === String(cardId));
+  
+      if (found) {
+        setCard(found);
+      }
     }
+  
+    load();
+  }, []);
 
     setLoaded(true);
   }, [cardId]);
