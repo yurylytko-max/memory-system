@@ -7,6 +7,8 @@ export type TextDocument = {
   updatedAt?: string;
 };
 
+const LEGACY_TEXTS_STORAGE_KEY = "texts_db";
+
 export async function getAllTexts(): Promise<TextDocument[]> {
   const response = await fetch("/api/texts", { cache: "no-store" });
 
@@ -68,4 +70,48 @@ export async function deleteText(id: string) {
   if (!response.ok) {
     throw new Error("Failed to delete text");
   }
+}
+
+export async function saveTexts(texts: TextDocument[]) {
+  const response = await fetch("/api/texts", {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(texts),
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to save texts");
+  }
+}
+
+export function getLegacyTexts(): TextDocument[] {
+  if (typeof window === "undefined") {
+    return [];
+  }
+
+  const raw = window.localStorage.getItem(LEGACY_TEXTS_STORAGE_KEY);
+
+  if (!raw) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function migrateLegacyTextsToServer() {
+  const legacyTexts = getLegacyTexts();
+
+  if (legacyTexts.length === 0) {
+    return [];
+  }
+
+  await saveTexts(legacyTexts);
+  return legacyTexts;
 }

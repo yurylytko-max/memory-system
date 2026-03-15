@@ -13,7 +13,13 @@ import PlateTextEditor, {
   TEXTS_PLATE_PLUGINS,
   type PendingTextCardLink,
 } from "@/components/texts/plate-text-editor";
-import { getText, updateText, type TextDocument } from "@/lib/texts";
+import {
+  getLegacyTexts,
+  getText,
+  migrateLegacyTextsToServer,
+  updateText,
+  type TextDocument,
+} from "@/lib/texts";
 
 type Params = {
   id: string;
@@ -34,7 +40,17 @@ export default function TextPage() {
 
   useEffect(() => {
     async function loadText() {
-      const text = await getText(id);
+      let text = await getText(id);
+
+      if (!text) {
+        const legacyTexts = getLegacyTexts();
+        const legacyMatch = legacyTexts.find((item) => item.id === id);
+
+        if (legacyMatch) {
+          await migrateLegacyTextsToServer();
+          text = legacyMatch;
+        }
+      }
 
       if (!text) {
         setStoredText(null);

@@ -13,6 +13,27 @@ export type Plan = {
   tasks: PlanTask[];
 };
 
+const LEGACY_PLANS_STORAGE_KEY = "plans";
+
+function normalizeTask(task: Partial<PlanTask>): PlanTask {
+  return {
+    id: task.id || crypto.randomUUID(),
+    text: task.text || "",
+    done: Boolean(task.done),
+    deadline: task.deadline,
+    versions: Array.isArray(task.versions) ? task.versions : [],
+  };
+}
+
+function normalizePlan(plan: Partial<Plan>): Plan {
+  return {
+    id: plan.id || crypto.randomUUID(),
+    name: plan.name || "Без названия",
+    folder: plan.folder || "Без папки",
+    tasks: Array.isArray(plan.tasks) ? plan.tasks.map(normalizeTask) : [],
+  };
+}
+
 export async function getAllPlans(): Promise<Plan[]> {
   const response = await fetch("/api/plans", { cache: "no-store" });
 
@@ -50,6 +71,36 @@ export async function savePlans(plans: Plan[]) {
   if (!response.ok) {
     throw new Error("Failed to save plans");
   }
+}
+
+export function getLegacyPlans(): Plan[] {
+  if (typeof window === "undefined") {
+    return [];
+  }
+
+  const raw = window.localStorage.getItem(LEGACY_PLANS_STORAGE_KEY);
+
+  if (!raw) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.map(normalizePlan) : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function migrateLegacyPlansToServer() {
+  const legacyPlans = getLegacyPlans();
+
+  if (legacyPlans.length === 0) {
+    return [];
+  }
+
+  await savePlans(legacyPlans);
+  return legacyPlans;
 }
 
 export async function createPlan(plan: Plan) {

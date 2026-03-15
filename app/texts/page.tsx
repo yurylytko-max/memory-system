@@ -3,7 +3,12 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-import { deleteText, getAllTexts, type TextDocument } from "@/lib/texts";
+import {
+  deleteText,
+  getAllTexts,
+  migrateLegacyTextsToServer,
+  type TextDocument,
+} from "@/lib/texts";
 
 export default function TextsPage() {
   const [texts, setTexts] = useState<TextDocument[]>([]);
@@ -11,7 +16,12 @@ export default function TextsPage() {
 
   useEffect(() => {
     async function loadTexts() {
-      const data = await getAllTexts();
+      let data = await getAllTexts();
+
+      if (data.length === 0) {
+        data = await migrateLegacyTextsToServer();
+      }
+
       setTexts(data);
       setLoaded(true);
     }

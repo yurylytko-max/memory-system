@@ -18,7 +18,13 @@ import {
 } from "@dnd-kit/sortable";
 
 import { CSS } from "@dnd-kit/utilities";
-import { getAllPlans, savePlans, type Plan, type PlanTask } from "@/lib/plans";
+import {
+  getAllPlans,
+  migrateLegacyPlansToServer,
+  savePlans,
+  type Plan,
+  type PlanTask,
+} from "@/lib/plans";
 
 export default function PlanPage() {
   const params = useParams();
@@ -35,7 +41,12 @@ export default function PlanPage() {
 
   useEffect(() => {
     async function loadPlans() {
-      const parsed = await getAllPlans();
+      let parsed = await getAllPlans();
+
+      if (parsed.length === 0) {
+        parsed = await migrateLegacyPlansToServer();
+      }
+
       setPlans(parsed);
       setPlan(parsed.find((p) => p.id === planId) || null);
       setLoaded(true);
