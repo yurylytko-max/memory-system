@@ -44,6 +44,12 @@ export default function Home() {
         />
 
         <Card
+          title="Тексты"
+          description="Отдельная среда с PlateJS"
+          href="/texts"
+        />
+
+        <Card
           title="Языковая среда"
           description="Учебник → уроки → упражнения → карточки"
           href="/import"

@@ -1,10 +1,13 @@
 import "server-only"
 
+import { mkdir, readFile, writeFile } from "node:fs/promises"
+import { dirname, join } from "node:path"
 import { createClient } from "redis"
 
 import type { Card } from "@/lib/cards"
 
 const KEY = "cards_db"
+const FALLBACK_CARDS_PATH = join(process.cwd(), ".data", "cards-db.json")
 
 declare global {
   var __cardsRedisClient:
@@ -13,19 +16,34 @@ declare global {
 }
 
 function getRedisUrl() {
-  const url = process.env.REDIS_URL
+  return process.env.REDIS_URL
+}
 
-  if (!url) {
-    throw new Error("Missing required environment variable REDIS_URL")
+async function readFallbackCards(): Promise<Card[]> {
+  try {
+    const raw = await readFile(FALLBACK_CARDS_PATH, "utf8")
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
   }
+}
 
-  return url
+async function writeFallbackCards(cards: Card[]) {
+  await mkdir(dirname(FALLBACK_CARDS_PATH), { recursive: true })
+  await writeFile(FALLBACK_CARDS_PATH, JSON.stringify(cards), "utf8")
 }
 
 async function getClient() {
+  const url = getRedisUrl()
+
+  if (!url) {
+    return null
+  }
+
   if (!global.__cardsRedisClient) {
     global.__cardsRedisClient = createClient({
-      url: getRedisUrl(),
+      url,
     })
 
     global.__cardsRedisClient.on("error", error => {
@@ -41,22 +59,37 @@ async function getClient() {
 }
 
 export async function readCards(): Promise<Card[]> {
-  const client = await getClient()
-  const raw = await client.get(KEY)
-
-  if (!raw) {
-    return []
-  }
-
   try {
+    const client = await getClient()
+
+    if (!client) {
+      return await readFallbackCards()
+    }
+
+    const raw = await client.get(KEY)
+
+    if (!raw) {
+      return []
+    }
+
     const parsed = JSON.parse(raw)
     return Array.isArray(parsed) ? parsed : []
   } catch {
-    return []
+    return await readFallbackCards()
   }
 }
 
 export async function writeCards(cards: Card[]) {
-  const client = await getClient()
-  await client.set(KEY, JSON.stringify(cards))
+  try {
+    const client = await getClient()
+
+    if (!client) {
+      await writeFallbackCards(cards)
+      return
+    }
+
+    await client.set(KEY, JSON.stringify(cards))
+  } catch {
+    await writeFallbackCards(cards)
+  }
 }

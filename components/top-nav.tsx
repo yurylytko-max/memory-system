@@ -64,6 +64,13 @@ export default function TopNav() {
             Writing
           </Link>
 
+          <Link
+            href="/texts"
+            className="text-sm text-muted-foreground hover:text-black"
+          >
+            Тексты
+          </Link>
+
         </div>
 
         <div className="flex items-center gap-3">

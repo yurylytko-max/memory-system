@@ -17,6 +17,7 @@ export default function NewCardPage() {
   const initialTag = params.get("tag") || "";
   const initialSource = params.get("doc") || "";
   const editorId = params.get("editorId");
+  const textId = params.get("textId");
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -66,7 +67,9 @@ export default function NewCardPage() {
   }
 
   function goToSavedCard(id: string) {
-    if (editorId) {
+    if (textId) {
+      router.push(`/texts/${textId}?insertCard=${id}`);
+    } else if (editorId) {
       router.push(`/editor/${editorId}?insertCard=${id}`);
     } else {
       router.push(`/cards/${id}`);
