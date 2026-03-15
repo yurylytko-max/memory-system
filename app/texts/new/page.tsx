@@ -29,6 +29,8 @@ export default function NewTextPage() {
 
   if (!editor) return null;
 
+  const activeEditor = editor;
+
   async function saveText() {
     if (!title.trim()) {
       alert("Введите название текста");
@@ -40,7 +42,7 @@ export default function NewTextPage() {
     const text: TextDocument = {
       id: Date.now().toString(),
       title,
-      content: await serializeTextEditorHtml(editor),
+      content: await serializeTextEditorHtml(activeEditor),
       tag,
       createdAt: now,
       updatedAt: now,
@@ -51,14 +53,13 @@ export default function NewTextPage() {
   }
 
   async function handleCreateCard() {
-    if (!editor) return;
-    if (editor.api.isCollapsed()) {
+    if (activeEditor.api.isCollapsed()) {
       alert("Сначала выдели текст");
       return;
     }
 
-    const selection = editor.selection;
-    const selectedText = editor.api.string(selection).trim();
+    const selection = activeEditor.selection;
+    const selectedText = activeEditor.api.string(selection).trim();
 
     if (!selection || !selectedText) {
       alert("Сначала выдели текст");
@@ -76,7 +77,7 @@ export default function NewTextPage() {
     const text: TextDocument = {
       id,
       title,
-      content: await serializeTextEditorHtml(editor),
+      content: await serializeTextEditorHtml(activeEditor),
       tag,
       createdAt: now,
       updatedAt: now,
@@ -152,7 +153,7 @@ export default function NewTextPage() {
           </button>
         </div>
 
-        <PlateTextEditor editor={editor} createCard={() => void handleCreateCard()} />
+        <PlateTextEditor editor={activeEditor} createCard={() => void handleCreateCard()} />
       </div>
     </main>
   );

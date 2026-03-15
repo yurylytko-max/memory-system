@@ -41,9 +41,11 @@ export default function TextPage() {
     [id, initialContent, isBrowser]
   );
 
-  const save = useCallback(async () => {
-    if (!editor) return;
+  if (!storedText || !editor) return null;
 
+  const activeEditor = editor;
+
+  const save = useCallback(async () => {
     const existing = getText(id);
     const now = new Date().toISOString();
 
@@ -51,23 +53,22 @@ export default function TextPage() {
       id,
       title,
       tag,
-      content: await serializeTextEditorHtml(editor),
+      content: await serializeTextEditorHtml(activeEditor),
       createdAt: existing?.createdAt,
       updatedAt: now,
     };
 
     updateText(updatedText);
-  }, [editor, id, tag, title]);
+  }, [activeEditor, id, tag, title]);
 
   async function handleCreateCard() {
-    if (!editor) return;
-    if (editor.api.isCollapsed()) {
+    if (activeEditor.api.isCollapsed()) {
       alert("Сначала выдели текст");
       return;
     }
 
-    const selection = editor.selection;
-    const selectedText = editor.api.string(selection).trim();
+    const selection = activeEditor.selection;
+    const selectedText = activeEditor.api.string(selection).trim();
 
     if (!selection || !selectedText) {
       alert("Сначала выдели текст");
@@ -98,7 +99,7 @@ export default function TextPage() {
   }
 
   useEffect(() => {
-    if (!editor || !insertCard) return;
+    if (!insertCard) return;
 
     let cancelled = false;
 
@@ -119,7 +120,7 @@ export default function TextPage() {
           return;
         }
 
-        insertTextCardLink(editor, insertCard, pending.text, pending.selection);
+        insertTextCardLink(activeEditor, insertCard, pending.text, pending.selection);
         await save();
 
         if (cancelled) return;
@@ -137,9 +138,7 @@ export default function TextPage() {
     return () => {
       cancelled = true;
     };
-  }, [editor, id, insertCard, router, save]);
-
-  if (!storedText || !editor) return null;
+  }, [activeEditor, id, insertCard, router, save]);
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#eef2ff_0%,#f8fafc_30%,#ffffff_100%)] px-4 py-6 md:px-8 md:py-10">
@@ -186,7 +185,7 @@ export default function TextPage() {
           </button>
         </div>
 
-        <PlateTextEditor editor={editor} createCard={() => void handleCreateCard()} />
+        <PlateTextEditor editor={activeEditor} createCard={() => void handleCreateCard()} />
       </div>
     </main>
   );
