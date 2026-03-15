@@ -188,6 +188,8 @@ export default function PlanPage() {
 
   if (!plan) return null;
 
+  const availableMoveTargets = plans.filter((p) => p.id !== planId);
+
   const indexedTasks = plan.tasks
     .map((task, originalIndex) => ({ task, originalIndex }))
     .filter(({ task }) =>
@@ -229,31 +231,16 @@ export default function PlanPage() {
                   edit={() => editTask(originalIndex)}
                   history={() => showHistory(originalIndex)}
                   move={() => setMoveTaskIndex(originalIndex)}
+                  moveOpen={moveTaskIndex === originalIndex}
+                  moveTargets={availableMoveTargets}
+                  moveTo={(targetId) => moveTo(targetId)}
+                  cancelMove={() => setMoveTaskIndex(null)}
                   deleteTask={() => deleteTask(originalIndex)}
                 />
               ))}
             </div>
           </SortableContext>
         </DndContext>
-
-        {moveTaskIndex !== null && (
-          <div className="mb-6">
-            <div className="text-sm mb-2">Move to:</div>
-            <div className="flex gap-2 flex-wrap">
-              {plans
-                .filter((p) => p.id !== planId)
-                .map((p) => (
-                  <button
-                    key={p.id}
-                    onClick={() => moveTo(p.id)}
-                    className="px-3 py-1 bg-gray-200 rounded text-sm"
-                  >
-                    {p.name}
-                  </button>
-                ))}
-            </div>
-          </div>
-        )}
 
         <textarea
           value={input}
@@ -283,6 +270,10 @@ function SortableTask({
   history,
   deleteTask,
   move,
+  moveOpen,
+  moveTargets,
+  moveTo,
+  cancelMove,
 }: {
   id: number;
   task: Task;
@@ -293,6 +284,10 @@ function SortableTask({
   history: () => void;
   deleteTask: () => void;
   move: () => void;
+  moveOpen: boolean;
+  moveTargets: Array<{ id: string; name: string }>;
+  moveTo: (targetId: string) => void;
+  cancelMove: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({ id });
@@ -335,22 +330,66 @@ function SortableTask({
       </div>
 
       {active && (
-        <div className="ml-8 mt-2 flex gap-4 text-sm">
-          <button type="button" onClick={edit}>
-            Edit
-          </button>
+        <div className="ml-8 mt-2">
+          <div className="flex gap-4 text-sm">
+            <button type="button" onClick={edit}>
+              Edit
+            </button>
 
-          <button type="button" onClick={history}>
-            History
-          </button>
+            <button type="button" onClick={history}>
+              History
+            </button>
 
-          <button type="button" onClick={move}>
-            Move
-          </button>
+            <button type="button" onClick={move}>
+              Move
+            </button>
 
-          <button type="button" onClick={deleteTask} className="text-red-500">
-            Delete
-          </button>
+            <button type="button" onClick={deleteTask} className="text-red-500">
+              Delete
+            </button>
+          </div>
+
+          {moveOpen && (
+            <div className="mt-3 rounded-lg border bg-gray-50 p-3">
+              <div className="mb-2 text-sm font-medium text-gray-700">Move to:</div>
+
+              {moveTargets.length === 0 ? (
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm text-gray-500">
+                    Нет других планов, куда можно перенести задачу.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={cancelMove}
+                    className="text-sm text-gray-600"
+                  >
+                    Close
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {moveTargets.map((plan) => (
+                    <button
+                      key={plan.id}
+                      type="button"
+                      onClick={() => moveTo(plan.id)}
+                      className="rounded bg-gray-200 px-3 py-1 text-sm transition hover:bg-gray-300"
+                    >
+                      {plan.name}
+                    </button>
+                  ))}
+
+                  <button
+                    type="button"
+                    onClick={cancelMove}
+                    className="rounded border px-3 py-1 text-sm text-gray-600 transition hover:bg-white"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>
