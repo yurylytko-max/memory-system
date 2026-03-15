@@ -10,7 +10,6 @@ import { Input } from "@/components/ui/input";
 import {
   createPlan,
   deletePlan,
-  getAllPlans,
   migrateLegacyPlansToServer,
   type Plan,
 } from "@/lib/plans";
@@ -26,11 +25,7 @@ export default function Planner() {
 
   useEffect(() => {
     async function loadPlans() {
-      let data = await getAllPlans();
-
-      if (data.length === 0) {
-        data = await migrateLegacyPlansToServer();
-      }
+      const data = await migrateLegacyPlansToServer();
 
       setPlans(data);
       setLoaded(true);

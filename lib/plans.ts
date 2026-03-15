@@ -45,6 +45,26 @@ export async function getAllPlans(): Promise<Plan[]> {
   return Array.isArray(plans) ? plans : [];
 }
 
+function mergePlans(serverPlans: Plan[], legacyPlans: Plan[]) {
+  if (legacyPlans.length === 0) {
+    return serverPlans;
+  }
+
+  const merged = new Map<string, Plan>();
+
+  for (const plan of serverPlans) {
+    merged.set(plan.id, normalizePlan(plan));
+  }
+
+  for (const plan of legacyPlans) {
+    if (!merged.has(plan.id)) {
+      merged.set(plan.id, normalizePlan(plan));
+    }
+  }
+
+  return Array.from(merged.values());
+}
+
 export async function getPlan(id: string): Promise<Plan | undefined> {
   const response = await fetch(`/api/plans/${id}`, { cache: "no-store" });
 
@@ -94,13 +114,19 @@ export function getLegacyPlans(): Plan[] {
 
 export async function migrateLegacyPlansToServer() {
   const legacyPlans = getLegacyPlans();
+  const serverPlans = await getAllPlans();
 
   if (legacyPlans.length === 0) {
-    return [];
+    return serverPlans;
   }
 
-  await savePlans(legacyPlans);
-  return legacyPlans;
+  const mergedPlans = mergePlans(serverPlans, legacyPlans);
+
+  if (mergedPlans.length !== serverPlans.length) {
+    await savePlans(mergedPlans);
+  }
+
+  return mergedPlans;
 }
 
 export async function createPlan(plan: Plan) {

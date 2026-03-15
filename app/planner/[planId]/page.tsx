@@ -19,7 +19,6 @@ import {
 
 import { CSS } from "@dnd-kit/utilities";
 import {
-  getAllPlans,
   migrateLegacyPlansToServer,
   savePlans,
   type Plan,
@@ -41,11 +40,7 @@ export default function PlanPage() {
 
   useEffect(() => {
     async function loadPlans() {
-      let parsed = await getAllPlans();
-
-      if (parsed.length === 0) {
-        parsed = await migrateLegacyPlansToServer();
-      }
+      const parsed = await migrateLegacyPlansToServer();
 
       setPlans(parsed);
       setPlan(parsed.find((p) => p.id === planId) || null);

@@ -20,6 +20,38 @@ export async function getAllTexts(): Promise<TextDocument[]> {
   return Array.isArray(texts) ? texts : [];
 }
 
+function getTimestamp(value?: string) {
+  const parsed = value ? Date.parse(value) : NaN;
+  return Number.isNaN(parsed) ? 0 : parsed;
+}
+
+function mergeTexts(serverTexts: TextDocument[], legacyTexts: TextDocument[]) {
+  if (legacyTexts.length === 0) {
+    return serverTexts;
+  }
+
+  const merged = new Map<string, TextDocument>();
+
+  for (const text of serverTexts) {
+    merged.set(text.id, text);
+  }
+
+  for (const text of legacyTexts) {
+    const existing = merged.get(text.id);
+
+    if (!existing) {
+      merged.set(text.id, text);
+      continue;
+    }
+
+    if (getTimestamp(text.updatedAt) > getTimestamp(existing.updatedAt)) {
+      merged.set(text.id, text);
+    }
+  }
+
+  return Array.from(merged.values());
+}
+
 export async function getText(id: string): Promise<TextDocument | undefined> {
   const response = await fetch(`/api/texts/${id}`, { cache: "no-store" });
 
@@ -107,11 +139,17 @@ export function getLegacyTexts(): TextDocument[] {
 
 export async function migrateLegacyTextsToServer() {
   const legacyTexts = getLegacyTexts();
+  const serverTexts = await getAllTexts();
 
   if (legacyTexts.length === 0) {
-    return [];
+    return serverTexts;
   }
 
-  await saveTexts(legacyTexts);
-  return legacyTexts;
+  const mergedTexts = mergeTexts(serverTexts, legacyTexts);
+
+  if (JSON.stringify(mergedTexts) !== JSON.stringify(serverTexts)) {
+    await saveTexts(mergedTexts);
+  }
+
+  return mergedTexts;
 }

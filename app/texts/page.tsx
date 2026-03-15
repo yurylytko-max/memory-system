@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 
 import {
   deleteText,
-  getAllTexts,
   migrateLegacyTextsToServer,
   type TextDocument,
 } from "@/lib/texts";
@@ -16,11 +15,7 @@ export default function TextsPage() {
 
   useEffect(() => {
     async function loadTexts() {
-      let data = await getAllTexts();
-
-      if (data.length === 0) {
-        data = await migrateLegacyTextsToServer();
-      }
+      const data = await migrateLegacyTextsToServer();
 
       setTexts(data);
       setLoaded(true);
