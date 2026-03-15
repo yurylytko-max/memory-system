@@ -333,7 +333,7 @@ function TextAlignToolbarButton({ value }: { value: "left" | "center" | "right" 
 function TextLineHeightToolbarButton(props: DropdownMenuProps) {
   const editor = useEditorRef();
   const value = useSelectionFragmentProp({
-    defaultValue: DEFAULT_LINE_HEIGHT,
+    defaultValue: String(DEFAULT_LINE_HEIGHT),
     getProp: (node) => node.lineHeight,
   });
 
