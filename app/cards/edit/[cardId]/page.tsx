@@ -1,8 +1,10 @@
 "use client";
 
-import { getAllCards, updateCard } from "@/lib/cards";
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+
+import { getCard, updateCard, type Card } from "@/lib/cards";
 
 export default function EditCardPage() {
   const params = useParams();
@@ -12,20 +14,28 @@ export default function EditCardPage() {
     ? params.cardId[0]
     : params.cardId;
 
-  const [card, setCard] = useState<any>(null);
+  const [card, setCard] = useState<Card | null>(null);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const [source, setSource] = useState("");
+  const [tags, setTags] = useState("");
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     async function load() {
-      const cards = await getAllCards();
-      const found = cards.find((c: any) => String(c.id) === String(cardId));
+      if (!cardId) {
+        setLoaded(true);
+        return;
+      }
+
+      const found = await getCard(cardId);
 
       if (found) {
         setCard(found);
         setTitle(found.title || "");
         setContent(found.content || "");
+        setSource(found.source || "");
+        setTags((found.tags || []).join(" "));
       }
 
       setLoaded(true);
@@ -34,51 +44,94 @@ export default function EditCardPage() {
     load();
   }, [cardId]);
 
-  async function handleSave() {
+  async function handleSave(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+
     if (!card) return;
 
-    await updateCard({
+    const updatedCard: Card = {
       ...card,
       title,
       content,
-    });
+      source,
+      tags: tags
+        .split(" ")
+        .map(tag => tag.trim())
+        .filter(Boolean),
+    };
 
-    router.push("/cards");
+    await updateCard(updatedCard);
+    router.push(`/cards/${card.id}`);
   }
 
   if (!loaded) {
-    return <div style={{ padding: 40 }}>Loading...</div>;
+    return (
+      <main className="p-10 text-gray-500">
+        Загрузка карточки...
+      </main>
+    );
   }
 
   if (!card) {
-    return <div style={{ padding: 40 }}>Card not found</div>;
+    return (
+      <main className="p-10">
+        <Link href="/cards" className="text-sm text-gray-500">
+          ← Назад
+        </Link>
+
+        <div className="mt-6 text-gray-500">Карточка не найдена</div>
+      </main>
+    );
   }
 
   return (
-    <div style={{ padding: 40 }}>
-      <h1>Edit Card</h1>
+    <main className="min-h-screen bg-gray-100 p-10">
+      <div className="max-w-xl mx-auto">
+        <Link
+          href={`/cards/${card.id}`}
+          className="inline-block text-sm text-gray-500 hover:text-black mb-6"
+        >
+          ← Назад к карточке
+        </Link>
 
-      <div style={{ marginTop: 20 }}>
-        <input
-          style={{ width: "100%", padding: 10, fontSize: 16 }}
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Title"
-        />
-      </div>
+        <div className="bg-white p-6 rounded-xl shadow">
+          <h1 className="text-2xl font-bold mb-6">Редактировать карточку</h1>
 
-      <div style={{ marginTop: 20 }}>
-        <textarea
-          style={{ width: "100%", height: 200, padding: 10, fontSize: 16 }}
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          placeholder="Content"
-        />
-      </div>
+          <form onSubmit={handleSave} className="space-y-4">
+            <input
+              className="w-full border p-3 rounded"
+              value={title}
+              onChange={e => setTitle(e.target.value)}
+              placeholder="Заголовок"
+            />
 
-      <div style={{ marginTop: 30 }}>
-        <button onClick={handleSave}>Save</button>
+            <textarea
+              className="w-full border p-3 rounded min-h-40"
+              value={content}
+              onChange={e => setContent(e.target.value)}
+              placeholder="Содержание"
+            />
+
+            <input
+              className="w-full border p-3 rounded"
+              value={source}
+              onChange={e => setSource(e.target.value)}
+              placeholder="Источник"
+            />
+
+            <input
+              className="w-full border p-3 rounded"
+              value={tags}
+              onChange={e => setTags(e.target.value)}
+              placeholder="Теги через пробел"
+            />
+
+            <button className="bg-black text-white px-6 py-3 rounded">
+              Сохранить
+            </button>
+          </form>
+        </div>
       </div>
-    </div>
+    </main>
   );
 }

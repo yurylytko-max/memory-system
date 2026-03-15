@@ -73,14 +73,14 @@ export default function NewCardPage() {
     }
   }
 
-  function handleSave() {
+  async function handleSave() {
     if (isSaving) return;
 
     setIsSaving(true);
 
     try {
       const card = buildCard(true);
-      createCard(card);
+      await createCard(card);
       goToSavedCard(card.id);
       return;
     } catch (error) {
@@ -89,7 +89,7 @@ export default function NewCardPage() {
 
     try {
       const cardWithoutImage = buildCard(false);
-      createCard(cardWithoutImage);
+      await createCard(cardWithoutImage);
 
       alert(
         "Карточка сохранена без изображения. На телефоне не хватило памяти localStorage для фото."

@@ -1,5 +1,3 @@
-import { kv } from "@vercel/kv"
-
 export type Card = {
   id: string
   title: string
@@ -10,70 +8,107 @@ export type Card = {
   image?: string | null
 }
 
-const KEY = "cards_db"
-
-function getLocal(): Card[] {
-  if (typeof window === "undefined") return []
-
-  const raw = localStorage.getItem(KEY)
-
-  if (!raw) return []
-
-  try {
-    return JSON.parse(raw)
-  } catch {
-    return []
-  }
-}
-
-function saveLocal(cards: Card[]) {
-  if (typeof window === "undefined") return
-  localStorage.setItem(KEY, JSON.stringify(cards))
-}
-
 export async function getAllCards(): Promise<Card[]> {
-  if (typeof window !== "undefined") {
-    return getLocal()
+  if (typeof window === "undefined") {
+    throw new Error("getAllCards can only be called in the browser")
   }
 
-  const cards = await kv.get<Card[]>(KEY)
-  return cards ?? []
+  const response = await fetch("/api/cards", {
+    cache: "no-store",
+  })
+
+  if (!response.ok) {
+    throw new Error("Failed to load cards")
+  }
+
+  const cards = await response.json()
+  return Array.isArray(cards) ? cards : []
 }
 
 export async function saveCards(cards: Card[]) {
-  if (typeof window !== "undefined") {
-    saveLocal(cards)
-    return
+  if (typeof window === "undefined") {
+    throw new Error("saveCards can only be called in the browser")
   }
 
-  await kv.set(KEY, cards)
+  const response = await fetch("/api/cards", {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(cards),
+  })
+
+  if (!response.ok) {
+    throw new Error("Failed to save cards")
+  }
 }
 
 export async function createCard(card: Card) {
-  const cards = await getAllCards()
-  const updated = [...cards, card]
-  await saveCards(updated)
+  if (typeof window === "undefined") {
+    throw new Error("createCard can only be called in the browser")
+  }
+
+  const response = await fetch("/api/cards", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(card),
+  })
+
+  if (!response.ok) {
+    throw new Error("Failed to create card")
+  }
 }
 
 export async function updateCard(card: Card) {
-  const cards = await getAllCards()
+  if (typeof window === "undefined") {
+    throw new Error("updateCard can only be called in the browser")
+  }
 
-  const updated = cards.map(c =>
-    c.id === card.id ? card : c
-  )
+  const response = await fetch(`/api/cards/${card.id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(card),
+  })
 
-  await saveCards(updated)
+  if (!response.ok) {
+    throw new Error("Failed to update card")
+  }
 }
 
 export async function deleteCard(id: string) {
-  const cards = await getAllCards()
+  if (typeof window === "undefined") {
+    throw new Error("deleteCard can only be called in the browser")
+  }
 
-  const updated = cards.filter(c => c.id !== id)
+  const response = await fetch(`/api/cards/${id}`, {
+    method: "DELETE",
+  })
 
-  await saveCards(updated)
+  if (!response.ok) {
+    throw new Error("Failed to delete card")
+  }
 }
 
 export async function getCard(id: string) {
-  const cards = await getAllCards()
-  return cards.find(c => c.id === id)
+  if (typeof window === "undefined") {
+    throw new Error("getCard can only be called in the browser")
+  }
+
+  const response = await fetch(`/api/cards/${id}`, {
+    cache: "no-store",
+  })
+
+  if (response.status === 404) {
+    return undefined
+  }
+
+  if (!response.ok) {
+    throw new Error("Failed to load card")
+  }
+
+  return await response.json()
 }
