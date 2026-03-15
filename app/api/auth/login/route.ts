@@ -27,7 +27,9 @@ export async function POST(request: Request) {
   const requestUrl = new URL(request.url)
 
   if (!isSitePasswordProtectionEnabled()) {
-    return NextResponse.redirect(new URL(nextPath, requestUrl))
+    return NextResponse.redirect(new URL(nextPath, requestUrl), {
+      status: 303,
+    })
   }
 
   const isValid = await isValidSitePassword(password)
@@ -40,10 +42,12 @@ export async function POST(request: Request) {
       loginUrl.searchParams.set("next", nextPath)
     }
 
-    return NextResponse.redirect(loginUrl)
+    return NextResponse.redirect(loginUrl, { status: 303 })
   }
 
-  const response = NextResponse.redirect(new URL(nextPath, requestUrl))
+  const response = NextResponse.redirect(new URL(nextPath, requestUrl), {
+    status: 303,
+  })
 
   response.cookies.set({
     name: SITE_AUTH_COOKIE,

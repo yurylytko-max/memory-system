@@ -3,7 +3,9 @@ import { NextResponse } from "next/server"
 import { LOGIN_PATH, SITE_AUTH_COOKIE } from "@/lib/auth"
 
 export async function POST(request: Request) {
-  const response = NextResponse.redirect(new URL(LOGIN_PATH, request.url))
+  const response = NextResponse.redirect(new URL(LOGIN_PATH, request.url), {
+    status: 303,
+  })
 
   response.cookies.set({
     name: SITE_AUTH_COOKIE,
