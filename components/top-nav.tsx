@@ -1,13 +1,32 @@
 "use client"
 
+import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 
 export default function TopNav() {
   const pathname = usePathname()
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
 
   if (pathname === "/login") {
     return null
+  }
+
+  async function handleLogout() {
+    if (isLoggingOut) {
+      return
+    }
+
+    setIsLoggingOut(true)
+
+    try {
+      await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "same-origin",
+      })
+    } finally {
+      window.location.assign("/login")
+    }
   }
 
   return (
@@ -54,14 +73,14 @@ export default function TopNav() {
           >
             New Card
           </Link>
-          <form action="/api/auth/logout" method="post">
-            <button
-              type="submit"
-              className="text-sm rounded border border-border px-3 py-1.5 text-muted-foreground transition hover:text-black"
-            >
-              Выйти
-            </button>
-          </form>
+          <button
+            type="button"
+            onClick={handleLogout}
+            disabled={isLoggingOut}
+            className="text-sm rounded border border-border px-3 py-1.5 text-muted-foreground transition hover:text-black disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isLoggingOut ? "Выходим..." : "Выйти"}
+          </button>
         </div>
 
       </div>
