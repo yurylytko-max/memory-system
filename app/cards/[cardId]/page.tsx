@@ -21,7 +21,7 @@ export default function CardPage() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const cards = getAllCards();
+    const cards = await getAllCards();
     const found = cards.find((c: any) => String(c.id) === String(cardId));
 
     if (found) {
