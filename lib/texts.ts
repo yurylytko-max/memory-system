@@ -9,6 +9,14 @@ export type TextDocument = {
 
 const LEGACY_TEXTS_STORAGE_KEY = "texts_db";
 
+function clearLegacyTexts() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.removeItem(LEGACY_TEXTS_STORAGE_KEY);
+}
+
 export async function getAllTexts(): Promise<TextDocument[]> {
   const response = await fetch("/api/texts", { cache: "no-store" });
 
@@ -150,6 +158,8 @@ export async function migrateLegacyTextsToServer() {
   if (JSON.stringify(mergedTexts) !== JSON.stringify(serverTexts)) {
     await saveTexts(mergedTexts);
   }
+
+  clearLegacyTexts();
 
   return mergedTexts;
 }

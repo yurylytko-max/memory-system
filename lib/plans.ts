@@ -15,6 +15,14 @@ export type Plan = {
 
 const LEGACY_PLANS_STORAGE_KEY = "plans";
 
+function clearLegacyPlans() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.removeItem(LEGACY_PLANS_STORAGE_KEY);
+}
+
 function normalizeTask(task: Partial<PlanTask>): PlanTask {
   return {
     id: task.id || crypto.randomUUID(),
@@ -125,6 +133,8 @@ export async function migrateLegacyPlansToServer() {
   if (mergedPlans.length !== serverPlans.length) {
     await savePlans(mergedPlans);
   }
+
+  clearLegacyPlans();
 
   return mergedPlans;
 }
