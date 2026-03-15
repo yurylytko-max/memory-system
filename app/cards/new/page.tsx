@@ -69,8 +69,6 @@ export default function NewCardPage() {
   function goToSavedCard(id: string) {
     if (textId) {
       router.push(`/texts/${textId}?insertCard=${id}`);
-    } else if (editorId) {
-      router.push(`/editor/${editorId}?insertCard=${id}`);
     } else {
       router.push(`/cards/${id}`);
     }

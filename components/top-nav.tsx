@@ -58,13 +58,6 @@ export default function TopNav() {
           </Link>
 
           <Link
-            href="/editor"
-            className="text-sm text-muted-foreground hover:text-black"
-          >
-            Writing
-          </Link>
-
-          <Link
             href="/texts"
             className="text-sm text-muted-foreground hover:text-black"
           >

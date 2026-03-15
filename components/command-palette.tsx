@@ -7,6 +7,7 @@ type Doc = {
   id: string;
   title: string;
   content?: string;
+  tag?: string;
 };
 
 type Card = {
@@ -47,7 +48,7 @@ export default function CommandPalette() {
 
   useEffect(()=>{
 
-    const rawDocs = localStorage.getItem("documents_db");
+    const rawDocs = localStorage.getItem("texts_db");
     const rawCards = localStorage.getItem("cards_db");
 
     setDocs(rawDocs ? JSON.parse(rawDocs) : []);
@@ -56,21 +57,7 @@ export default function CommandPalette() {
   },[open]);
 
   function newDocument(){
-
-    const id = Date.now().toString();
-
-    const raw = localStorage.getItem("documents_db");
-    const docs = raw ? JSON.parse(raw) : [];
-
-    docs.push({
-      id,
-      title:"Новый документ",
-      content:""
-    });
-
-    localStorage.setItem("documents_db",JSON.stringify(docs));
-
-    router.push(`/editor/${id}`);
+    router.push("/texts/new");
     setOpen(false);
 
   }
@@ -150,7 +137,7 @@ export default function CommandPalette() {
             className="w-full rounded px-3 py-2 text-left hover:bg-gray-100"
             onClick={newDocument}
           >
-            Создать документ
+            Создать текст
           </button>
 
           <button
@@ -170,7 +157,7 @@ export default function CommandPalette() {
           {foundDocs.length>0 && (
             <>
               <div className="px-2 pt-3 text-xs text-gray-500">
-                Документы
+                Тексты
               </div>
 
               {foundDocs.map(doc=>(
@@ -178,7 +165,7 @@ export default function CommandPalette() {
                   key={doc.id}
                   className="w-full rounded px-3 py-2 text-left hover:bg-gray-100"
                   onClick={()=>{
-                    router.push(`/editor/${doc.id}`);
+                    router.push(`/texts/${doc.id}`);
                     setOpen(false);
                   }}
                 >

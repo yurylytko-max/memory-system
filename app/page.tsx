@@ -38,12 +38,6 @@ export default function Home() {
         />
 
         <Card
-          title="Писательское пространство"
-          description="Писать и соединять идеи"
-          href="/editor"
-        />
-
-        <Card
           title="Тексты"
           description="Отдельная среда с PlateJS"
           href="/texts"
