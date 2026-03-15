@@ -12,12 +12,40 @@ export type Card = {
 
 const KEY = "cards_db"
 
+function getLocal(): Card[] {
+  if (typeof window === "undefined") return []
+
+  const raw = localStorage.getItem(KEY)
+
+  if (!raw) return []
+
+  try {
+    return JSON.parse(raw)
+  } catch {
+    return []
+  }
+}
+
+function saveLocal(cards: Card[]) {
+  if (typeof window === "undefined") return
+  localStorage.setItem(KEY, JSON.stringify(cards))
+}
+
 export async function getAllCards(): Promise<Card[]> {
+  if (typeof window !== "undefined") {
+    return getLocal()
+  }
+
   const cards = await kv.get<Card[]>(KEY)
   return cards ?? []
 }
 
 export async function saveCards(cards: Card[]) {
+  if (typeof window !== "undefined") {
+    saveLocal(cards)
+    return
+  }
+
   await kv.set(KEY, cards)
 }
 
@@ -47,6 +75,5 @@ export async function deleteCard(id: string) {
 
 export async function getCard(id: string) {
   const cards = await getAllCards()
-
   return cards.find(c => c.id === id)
 }
