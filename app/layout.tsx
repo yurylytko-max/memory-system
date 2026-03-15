@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import { cn } from "@/lib/utils";
 
 import CommandPalette from "@/components/command-palette";
+import TopNav from "@/components/top-nav";
 
 const inter = Inter({
 subsets:["latin"],
@@ -22,6 +23,7 @@ return (
 <body suppressHydrationWarning>
 
 <CommandPalette/>
+<TopNav/>
 
 {children}
 

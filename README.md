@@ -20,6 +20,22 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Site Password
+
+To restrict the whole site with a single password, set an environment variable before starting the app:
+
+```bash
+SITE_PASSWORD=your-password
+```
+
+Optional:
+
+```bash
+SITE_AUTH_SECRET=any-extra-secret
+```
+
+After restart, all pages and API routes will require login at `/login`.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

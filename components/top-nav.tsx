@@ -1,8 +1,15 @@
 "use client"
 
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 
 export default function TopNav() {
+  const pathname = usePathname()
+
+  if (pathname === "/login") {
+    return null
+  }
+
   return (
     <div className="border-b bg-background">
 
@@ -41,14 +48,20 @@ export default function TopNav() {
         </div>
 
         <div className="flex items-center gap-3">
-
           <Link
             href="/cards/new"
             className="text-sm bg-black text-white px-3 py-1.5 rounded"
           >
             New Card
           </Link>
-
+          <form action="/api/auth/logout" method="post">
+            <button
+              type="submit"
+              className="text-sm rounded border border-border px-3 py-1.5 text-muted-foreground transition hover:text-black"
+            >
+              Выйти
+            </button>
+          </form>
         </div>
 
       </div>
