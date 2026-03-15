@@ -7,6 +7,7 @@ import { createCard, Card } from "@/lib/cards";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { compressImage } from "@/lib/utils"
 
 export default function NewCardPage() {
   const router = useRouter();
@@ -40,17 +41,13 @@ export default function NewCardPage() {
     }
   }, [initialText, initialTag, initialSource]);
 
-  function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-
-    reader.onload = () => {
-      setImage(reader.result as string);
-    };
-
-    reader.readAsDataURL(file);
+  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+  
+    const compressed = await compressImage(file)
+  
+    setImage(compressed)
   }
 
   function buildCard(withImage: boolean): Card {
