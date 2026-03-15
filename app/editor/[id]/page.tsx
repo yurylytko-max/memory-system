@@ -1,263 +1,316 @@
-"use client"
+"use client";
 
-import { useParams, useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 
-import { useEditor, EditorContent } from "@tiptap/react"
-import StarterKit from "@tiptap/starter-kit"
-import Underline from "@tiptap/extension-underline"
-import Link from "@tiptap/extension-link"
+import { useEditor, EditorContent } from "@tiptap/react";
+import { TextSelection } from "@tiptap/pm/state";
+import StarterKit from "@tiptap/starter-kit";
+import Underline from "@tiptap/extension-underline";
+import TiptapLink from "@tiptap/extension-link";
 
 import {
-  Bold,
-  Italic,
-  Underline as UnderlineIcon,
-  Heading1,
-  Heading2,
-  List,
-  ListOrdered,
-  Quote,
-  Code,
-  Undo,
-  Redo,
-  Link as LinkIcon,
-} from "lucide-react"
+  getDocument,
+  updateDocument,
+  Document,
+} from "@/lib/documents";
 
-type Document = {
-  id: string
-  title: string
-  content: string
-  tag: string
-}
+type Params = {
+  id: string;
+};
+
+const PENDING_CARD_LINK_KEY = "pending_card_link";
 
 export default function DocumentPage() {
+  const params = useParams() as Params;
+  const router = useRouter();
+  const search = useSearchParams();
 
-  const router = useRouter()
-  const params = useParams()
+  const id = params.id;
+  const insertCard = search.get("insertCard");
 
-  const id = params.id as string
-
-  const [title,setTitle] = useState("")
-  const [tag,setTag] = useState("")
-  const [loadedContent,setLoadedContent] = useState("")
+  const [title, setTitle] = useState("");
+  const [tag, setTag] = useState("");
+  const [loaded, setLoaded] = useState(false);
 
   const editor = useEditor({
-    immediatelyRender:false,
-    extensions:[
+    immediatelyRender: false,
+    extensions: [
       StarterKit,
       Underline,
-      Link
+      TiptapLink.configure({
+        openOnClick: false,
+      }),
     ],
-    content:loadedContent
-  })
+    content: "",
+    editorProps: {
+      attributes: {
+        class: "min-h-[520px] outline-none text-[18px] leading-8",
+      },
+    },
+  });
 
-  useEffect(()=>{
+  useEffect(() => {
+    if (!editor) return;
 
-    const stored = localStorage.getItem("documents")
+    const doc = getDocument(id);
 
-    if(!stored) return
-
-    const docs:Document[] = JSON.parse(stored)
-
-    const doc = docs.find(d => d.id === id)
-
-    if(!doc) return
-
-    setTitle(doc.title)
-    setTag(doc.tag)
-    setLoadedContent(doc.content)
-
-    if(editor){
-      editor.commands.setContent(doc.content)
+    if (!doc) {
+      setLoaded(true);
+      return;
     }
 
-  },[editor,id])
+    setTitle(doc.title ?? "");
+    setTag(doc.tag ?? "");
+    editor.commands.setContent(doc.content ?? "");
+    setLoaded(true);
+  }, [editor, id]);
 
-  function saveDocument(){
+  function save() {
+    if (!editor) return;
 
-    if(!editor) return
+    const existing = getDocument(id);
+    const now = new Date().toISOString();
 
-    const stored = localStorage.getItem("documents")
+    const updatedDoc: Document = {
+      id,
+      title,
+      tag,
+      content: editor.getHTML(),
+      createdAt: existing?.createdAt,
+      updatedAt: now,
+    };
 
-    if(!stored) return
-
-    const docs:Document[] = JSON.parse(stored)
-
-    const updated = docs.map(doc=>{
-      if(doc.id === id){
-        return {
-          ...doc,
-          title,
-          tag,
-          content:editor.getHTML()
-        }
-      }
-      return doc
-    })
-
-    localStorage.setItem("documents",JSON.stringify(updated))
-
-    alert("Документ обновлён")
+    updateDocument(updatedDoc);
   }
 
-  if(!editor) return null
+  function handleCreateCard() {
+    if (!editor) return;
 
-  const btn = (active:boolean)=>({
-    padding:"6px 8px",
-    border:"1px solid #ddd",
-    borderRadius:6,
-    background:active?"#eee":"white",
-    cursor:"pointer",
-    display:"flex",
-    alignItems:"center",
-    justifyContent:"center"
-  })
+    const { from, to } = editor.state.selection;
+
+    if (from === to) {
+      alert("Сначала выдели текст");
+      return;
+    }
+
+    const selectedText = editor.state.doc.textBetween(from, to, " ").trim();
+
+    if (!selectedText) {
+      alert("Сначала выдели текст");
+      return;
+    }
+
+    save();
+
+    sessionStorage.setItem(
+      PENDING_CARD_LINK_KEY,
+      JSON.stringify({
+        editorId: id,
+        from,
+        to,
+        text: selectedText,
+      })
+    );
+
+    const query = new URLSearchParams({
+      text: selectedText,
+      tag,
+      doc: `editor:${id}`,
+      editorId: id,
+    });
+
+    router.push(`/cards/new?${query.toString()}`);
+  }
+
+  useEffect(() => {
+    if (!editor) return;
+    if (!loaded) return;
+    if (!insertCard) return;
+
+    const raw = sessionStorage.getItem(PENDING_CARD_LINK_KEY);
+
+    if (!raw) {
+      router.replace(`/editor/${id}`);
+      return;
+    }
+
+    try {
+      const pending = JSON.parse(raw);
+
+      if (pending.editorId !== id) {
+        sessionStorage.removeItem(PENDING_CARD_LINK_KEY);
+        router.replace(`/editor/${id}`);
+        return;
+      }
+
+      const docSize = editor.state.doc.content.size;
+      const safeFrom = Math.max(1, Math.min(pending.from, docSize));
+      const safeTo = Math.max(safeFrom, Math.min(pending.to, docSize));
+
+      const transaction = editor.state.tr.setSelection(
+        TextSelection.create(editor.state.doc, safeFrom, safeTo)
+      );
+
+      editor.view.dispatch(transaction);
+
+      editor
+        .chain()
+        .focus()
+        .setLink({ href: `/cards/${insertCard}` })
+        .run();
+
+      const existing = getDocument(id);
+      const now = new Date().toISOString();
+
+      const updatedDoc: Document = {
+        id,
+        title,
+        tag,
+        content: editor.getHTML(),
+        createdAt: existing?.createdAt,
+        updatedAt: now,
+      };
+
+      updateDocument(updatedDoc);
+      sessionStorage.removeItem(PENDING_CARD_LINK_KEY);
+      router.replace(`/editor/${id}`);
+    } catch {
+      sessionStorage.removeItem(PENDING_CARD_LINK_KEY);
+      router.replace(`/editor/${id}`);
+    }
+  }, [editor, loaded, insertCard, id, router, title, tag]);
+
+  if (!editor || !loaded) return null;
+
+  const btn = (active: boolean) =>
+    `px-3 py-1 border rounded text-sm ${
+      active ? "bg-gray-200" : "bg-white"
+    }`;
 
   return (
-    <main style={{maxWidth:900,margin:"40px auto"}}>
-
-      <button
-        onClick={()=>router.push("/editor")}
-        style={{marginBottom:20}}
-      >
-        ← Назад
-      </button>
-
-      <h1 style={{fontSize:32,marginBottom:20}}>
-        Документ
-      </h1>
-
-      <div style={{display:"flex",gap:10,marginBottom:20}}>
-
-        <input
-          value={title}
-          onChange={(e)=>setTitle(e.target.value)}
-          placeholder="Название документа"
-          style={{
-            flex:1,
-            padding:10,
-            border:"1px solid #ddd",
-            borderRadius:6
-          }}
-        />
-
-        <input
-          value={tag}
-          onChange={(e)=>setTag(e.target.value)}
-          placeholder="Тег"
-          style={{
-            width:200,
-            padding:10,
-            border:"1px solid #ddd",
-            borderRadius:6
-          }}
-        />
-
-        <button
-          onClick={saveDocument}
-          style={{
-            padding:"10px 16px",
-            background:"black",
-            color:"white",
-            borderRadius:6
-          }}
+    <main className="min-h-screen bg-gray-100 p-10">
+      <div className="max-w-5xl mx-auto">
+        <Link
+          href="/editor"
+          className="inline-block text-sm text-gray-500 mb-6"
         >
-          Сохранить
-        </button>
+          ← Назад
+        </Link>
 
-      </div>
+        <h1 className="text-3xl font-bold mb-6">Документ</h1>
 
-      <div style={{border:"1px solid #ddd",borderRadius:10,overflow:"hidden"}}>
+        <div className="flex gap-4 mb-6">
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Название документа"
+            className="border p-3 rounded w-full"
+          />
 
-        <div style={{
-          display:"flex",
-          gap:6,
-          padding:10,
-          borderBottom:"1px solid #ddd",
-          flexWrap:"wrap",
-          background:"#fafafa"
-        }}>
+          <input
+            value={tag}
+            onChange={(e) => setTag(e.target.value)}
+            placeholder="Тег"
+            className="border p-3 rounded w-40"
+          />
 
-          <button style={btn(editor.isActive("bold"))}
-            onClick={()=>editor.chain().focus().toggleBold().run()}>
-            <Bold size={16}/>
+          <button
+            onClick={save}
+            className="bg-black text-white px-4 py-2 rounded"
+          >
+            Сохранить
           </button>
-
-          <button style={btn(editor.isActive("italic"))}
-            onClick={()=>editor.chain().focus().toggleItalic().run()}>
-            <Italic size={16}/>
-          </button>
-
-          <button style={btn(editor.isActive("underline"))}
-            onClick={()=>editor.chain().focus().toggleUnderline().run()}>
-            <UnderlineIcon size={16}/>
-          </button>
-
-          <button style={btn(editor.isActive("heading",{level:1}))}
-            onClick={()=>editor.chain().focus().toggleHeading({level:1}).run()}>
-            <Heading1 size={16}/>
-          </button>
-
-          <button style={btn(editor.isActive("heading",{level:2}))}
-            onClick={()=>editor.chain().focus().toggleHeading({level:2}).run()}>
-            <Heading2 size={16}/>
-          </button>
-
-          <button style={btn(editor.isActive("bulletList"))}
-            onClick={()=>editor.chain().focus().toggleBulletList().run()}>
-            <List size={16}/>
-          </button>
-
-          <button style={btn(editor.isActive("orderedList"))}
-            onClick={()=>editor.chain().focus().toggleOrderedList().run()}>
-            <ListOrdered size={16}/>
-          </button>
-
-          <button style={btn(editor.isActive("blockquote"))}
-            onClick={()=>editor.chain().focus().toggleBlockquote().run()}>
-            <Quote size={16}/>
-          </button>
-
-          <button style={btn(editor.isActive("codeBlock"))}
-            onClick={()=>editor.chain().focus().toggleCodeBlock().run()}>
-            <Code size={16}/>
-          </button>
-
-          <button style={btn(false)}
-            onClick={()=>{
-              const url=prompt("URL")
-              if(url){
-                editor.chain().focus().setLink({href:url}).run()
-              }
-            }}>
-            <LinkIcon size={16}/>
-          </button>
-
-          <button style={btn(false)}
-            onClick={()=>editor.chain().focus().undo().run()}>
-            <Undo size={16}/>
-          </button>
-
-          <button style={btn(false)}
-            onClick={()=>editor.chain().focus().redo().run()}>
-            <Redo size={16}/>
-          </button>
-
         </div>
 
-        <EditorContent
-          editor={editor}
-          style={{
-            minHeight:500,
-            padding:20,
-            fontSize:18,
-            lineHeight:1.6,
-            outline:"none"
-          }}
-        />
+        <div className="flex gap-2 mb-4 flex-wrap">
+          <button
+            onClick={() => editor.chain().focus().toggleBold().run()}
+            className={btn(editor.isActive("bold"))}
+          >
+            B
+          </button>
 
+          <button
+            onClick={() => editor.chain().focus().toggleItalic().run()}
+            className={btn(editor.isActive("italic"))}
+          >
+            I
+          </button>
+
+          <button
+            onClick={() => editor.chain().focus().toggleUnderline().run()}
+            className={btn(editor.isActive("underline"))}
+          >
+            U
+          </button>
+
+          <button
+            onClick={() =>
+              editor.chain().focus().toggleHeading({ level: 1 }).run()
+            }
+            className={btn(editor.isActive("heading", { level: 1 }))}
+          >
+            H1
+          </button>
+
+          <button
+            onClick={() =>
+              editor.chain().focus().toggleHeading({ level: 2 }).run()
+            }
+            className={btn(editor.isActive("heading", { level: 2 }))}
+          >
+            H2
+          </button>
+
+          <button
+            onClick={() => editor.chain().focus().toggleBulletList().run()}
+            className={btn(editor.isActive("bulletList"))}
+          >
+            •
+          </button>
+
+          <button
+            onClick={() => editor.chain().focus().toggleOrderedList().run()}
+            className={btn(editor.isActive("orderedList"))}
+          >
+            1.
+          </button>
+
+          <button
+            onClick={() => editor.chain().focus().toggleBlockquote().run()}
+            className={btn(editor.isActive("blockquote"))}
+          >
+            "
+          </button>
+
+          <button
+            onClick={() => editor.chain().focus().undo().run()}
+            className={btn(false)}
+          >
+            Undo
+          </button>
+
+          <button
+            onClick={() => editor.chain().focus().redo().run()}
+            className={btn(false)}
+          >
+            Redo
+          </button>
+
+          <button
+            onClick={handleCreateCard}
+            className="px-3 py-1 border rounded text-sm bg-yellow-200"
+          >
+            Card
+          </button>
+        </div>
+
+        <div className="bg-white rounded-xl shadow p-6 [&_.ProseMirror_a]:text-blue-600 [&_.ProseMirror_a]:underline [&_.ProseMirror_a]:underline-offset-2">
+          <EditorContent editor={editor} />
+        </div>
       </div>
-
     </main>
-  )
+  );
 }

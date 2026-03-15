@@ -4,6 +4,10 @@ import { getAllCards } from "@/lib/cards";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+
 function getTypeLabel(type: string) {
   switch (type) {
     case "thought":
@@ -43,6 +47,7 @@ function normalizeCard(card: any, index: number) {
 }
 
 export default function CardsPage() {
+
   const [cards, setCards] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
@@ -72,92 +77,136 @@ export default function CardsPage() {
   }, [normalizedCards, search, typeFilter]);
 
   return (
-    <main className="min-h-screen bg-gray-100 p-10 max-w-5xl mx-auto">
-      <Link
-        href="/"
-        className="inline-block text-sm text-gray-500 hover:text-black mb-6"
-      >
-        ← Назад
-      </Link>
+    <main className="min-h-screen bg-muted/40 p-10">
 
-      <h1 className="text-3xl font-bold mb-8">База знаний</h1>
+      <div className="max-w-5xl mx-auto">
 
-      <div className="bg-white p-6 rounded-xl shadow mb-8">
-        <input
-          placeholder="Поиск..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full border p-3 rounded mb-4"
-        />
-
-        <select
-          value={typeFilter}
-          onChange={(e) => setTypeFilter(e.target.value)}
-          className="border p-2 rounded"
+        <Link
+          href="/"
+          className="inline-block text-sm text-muted-foreground hover:text-black mb-6"
         >
-          <option value="all">Все типы</option>
-          <option value="thought">Мысли</option>
-          <option value="quote">Цитаты</option>
-          <option value="book">Книги</option>
-          <option value="music">Музыка</option>
-          <option value="idea">Идеи</option>
-          <option value="recipe">Рецепты</option>
-          <option value="screenshot">Скриншоты</option>
-        </select>
-      </div>
+          ← Назад
+        </Link>
 
-      <div className="mb-10">
-        <h2 className="text-xl font-semibold mb-4">Теги</h2>
+        <h1 className="text-3xl font-bold mb-8">
+          База знаний
+        </h1>
 
-        <div className="flex flex-wrap gap-3">
-          {allTags.map((tag: string, index: number) => (
-            <Link
-              key={`${tag}-${index}`}
-              href={`/tags/${tag}`}
-              className="bg-gray-200 px-3 py-1 rounded hover:bg-gray-300"
+        <Card className="mb-8">
+          <CardContent className="pt-6">
+
+            <Input
+              placeholder="Поиск..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="mb-4"
+            />
+
+            <select
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+              className="border rounded p-2"
             >
-              #{tag}
-            </Link>
-          ))}
+              <option value="all">Все типы</option>
+              <option value="thought">Мысли</option>
+              <option value="quote">Цитаты</option>
+              <option value="book">Книги</option>
+              <option value="music">Музыка</option>
+              <option value="idea">Идеи</option>
+              <option value="recipe">Рецепты</option>
+              <option value="screenshot">Скриншоты</option>
+            </select>
+
+          </CardContent>
+        </Card>
+
+        <div className="mb-10">
+
+          <h2 className="text-xl font-semibold mb-4">
+            Теги
+          </h2>
+
+          <div className="flex flex-wrap gap-3">
+
+            {allTags.map((tag: string, index: number) => (
+
+              <Link key={`${tag}-${index}`} href={`/tags/${tag}`}>
+                <Badge variant="secondary">
+                  #{tag}
+                </Badge>
+              </Link>
+
+            ))}
+
+          </div>
+
         </div>
+
+        <div className="space-y-4">
+
+          {filtered.map((card: any, index: number) => (
+
+            <Link
+              key={`${card.id}-${index}`}
+              href={`/cards/${card.id}`}
+              className="block"
+            >
+
+              <Card className="hover:shadow-md transition cursor-pointer">
+
+                <CardHeader>
+
+                  <div className="text-sm text-muted-foreground">
+                    {getTypeLabel(card.type)}
+                  </div>
+
+                  {card.title && (
+                    <CardTitle>
+                      {card.title}
+                    </CardTitle>
+                  )}
+
+                </CardHeader>
+
+                <CardContent>
+
+                  {card.content && (
+                    <div className="text-muted-foreground mb-3">
+                      {card.content}
+                    </div>
+                  )}
+
+                  {card.tags && card.tags.length > 0 && (
+
+                    <div className="flex flex-wrap gap-2">
+
+                      {card.tags.map((t: string, tagIndex: number) => (
+
+                        <Badge
+                          key={`${card.id}-${t}-${tagIndex}`}
+                          variant="secondary"
+                        >
+                          #{t}
+                        </Badge>
+
+                      ))}
+
+                    </div>
+
+                  )}
+
+                </CardContent>
+
+              </Card>
+
+            </Link>
+
+          ))}
+
+        </div>
+
       </div>
 
-      <div className="space-y-4">
-        {filtered.map((card: any, index: number) => (
-          <Link
-            key={`${card.id}-${index}`}
-            href={`/cards/${card.id}`}
-            className="block"
-          >
-            <div className="bg-white p-6 rounded-xl shadow hover:shadow-xl hover:scale-[1.01] transition cursor-pointer">
-              <div className="text-sm text-gray-500 mb-1">
-                {getTypeLabel(card.type)}
-              </div>
-
-              {card.title && (
-                <div className="text-xl font-semibold">{card.title}</div>
-              )}
-
-              {card.content && (
-                <div className="text-gray-700 mt-2 mb-3">{card.content}</div>
-              )}
-
-              {card.tags && card.tags.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {card.tags.map((t: string, tagIndex: number) => (
-                    <span
-                      key={`${card.id}-${t}-${tagIndex}`}
-                      className="text-xs bg-gray-200 px-2 py-1 rounded"
-                    >
-                      #{t}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-          </Link>
-        ))}
-      </div>
     </main>
   );
 }

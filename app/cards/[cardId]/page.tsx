@@ -32,6 +32,8 @@ export default function CardPage() {
   }, [cardId]);
 
   function handleDelete() {
+    if (!cardId) return;
+  
     deleteCard(cardId);
     router.push("/cards");
   }

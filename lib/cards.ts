@@ -5,6 +5,7 @@ export type Card = {
     source?: string
     type: string
     tags: string[]
+    image?: string | null
   }
   
   const KEY = "cards_db"

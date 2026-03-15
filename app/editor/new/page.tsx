@@ -23,12 +23,7 @@ import {
   Link as LinkIcon,
 } from "lucide-react"
 
-type Document = {
-  id: string
-  title: string
-  content: string
-  tag: string
-}
+import { createDocument, Document } from "@/lib/documents"
 
 export default function NewDocumentPage() {
 
@@ -51,6 +46,8 @@ export default function NewDocumentPage() {
 
   function saveDocument(){
 
+    if (!editor) return
+
     const content = editor.getHTML()
 
     if(!title.trim()){
@@ -58,26 +55,21 @@ export default function NewDocumentPage() {
       return
     }
 
+    const now = new Date().toISOString()
+
     const doc:Document = {
       id:Date.now().toString(),
       title,
       content,
-      tag
+      tag,
+      createdAt:now,
+      updatedAt:now
     }
 
-    const stored = localStorage.getItem("documents")
+    createDocument(doc)
 
-    let docs:Document[] = []
+    router.push("/editor/"+doc.id)
 
-    if(stored){
-      docs = JSON.parse(stored)
-    }
-
-    const updated = [...docs,doc]
-
-    localStorage.setItem("documents",JSON.stringify(updated))
-
-    router.push("/editor")
   }
 
   const btn = (active:boolean)=>({

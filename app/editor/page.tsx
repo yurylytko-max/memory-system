@@ -1,77 +1,64 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
+import Link from "next/link";
+import { useEffect, useState } from "react";
 
-type Document = {
-  id: string
-  title: string
-  content: string
-  tag: string
-}
+import {
+  Document,
+  getAllDocuments,
+  deleteDocument,
+} from "@/lib/documents";
 
 export default function EditorHome() {
+  const [docs, setDocs] = useState<Document[]>([]);
 
-  const router = useRouter()
+  useEffect(() => {
+    const loaded = getAllDocuments();
+    setDocs(loaded);
+  }, []);
 
-  const [docs,setDocs] = useState<Document[]>([])
+  function handleDelete(id: string) {
+    deleteDocument(id);
 
-  useEffect(()=>{
-
-    const stored = localStorage.getItem("documents")
-
-    if(stored){
-      setDocs(JSON.parse(stored))
-    }
-
-  },[])
-
-  function deleteDoc(id:string){
-
-    const updated = docs.filter(d => d.id !== id)
-
-    localStorage.setItem("documents",JSON.stringify(updated))
-
-    setDocs(updated)
-
+    const updated = getAllDocuments();
+    setDocs(updated);
   }
 
   return (
-    <main className="min-h-screen bg-gray-100 p-10">
+    <main className="min-h-screen bg-gray-100 p-10 max-w-5xl mx-auto">
 
-      <button
-        onClick={()=>router.back()}
-        className="mb-6 text-sm text-gray-600 hover:text-black"
+      <Link
+        href="/"
+        className="inline-block text-sm text-gray-500 hover:text-black mb-6"
       >
         ← Назад
-      </button>
+      </Link>
 
-      <h1 className="text-3xl font-bold mb-8">
+      <h1 className="text-3xl font-bold mb-6">
         Писательское пространство
       </h1>
 
-      <div className="mb-8">
-
-        <Link
-          href="/editor/new"
-          className="bg-black text-white px-4 py-2 rounded"
-        >
-          Новый документ
-        </Link>
-
-      </div>
+      <Link
+        href="/editor/new"
+        className="inline-block bg-black text-white px-4 py-2 rounded mb-8"
+      >
+        Новый документ
+      </Link>
 
       <div className="grid grid-cols-2 gap-6">
 
-        {docs.map(doc => (
+        {docs.length === 0 && (
+          <div className="text-gray-500">
+            Документов пока нет
+          </div>
+        )}
 
+        {docs.map((doc) => (
           <div
             key={doc.id}
-            className="bg-white p-6 rounded-xl shadow relative"
+            className="bg-white p-6 rounded-xl shadow"
           >
-
-            <div className="font-semibold text-lg mb-2">
+            <div className="text-xl font-semibold mb-2">
               {doc.title}
             </div>
 
@@ -81,30 +68,28 @@ export default function EditorHome() {
               </div>
             )}
 
-            <div className="flex gap-3">
+            <div className="flex gap-4 text-sm">
 
               <Link
                 href={`/editor/${doc.id}`}
-                className="text-sm text-blue-600"
+                className="text-blue-600 hover:underline"
               >
                 открыть
               </Link>
 
               <button
-                onClick={()=>deleteDoc(doc.id)}
-                className="text-sm text-red-500"
+                onClick={() => handleDelete(doc.id)}
+                className="text-red-600 hover:underline"
               >
                 удалить
               </button>
 
             </div>
-
           </div>
-
         ))}
 
       </div>
 
     </main>
-  )
+  );
 }

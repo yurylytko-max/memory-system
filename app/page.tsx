@@ -2,40 +2,81 @@ import Link from "next/link";
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-gray-100 p-10">
-      <h1 className="text-3xl font-bold mb-8">Система памяти</h1>
+    <main
+      style={{
+        maxWidth: 1100,
+        margin: "0 auto",
+        padding: 40,
+        fontFamily: "system-ui",
+      }}
+    >
+      <h1 style={{ fontSize: 36, marginBottom: 40 }}>Система памяти</h1>
 
-      <div className="grid grid-cols-2 gap-6">
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: 20,
+        }}
+      >
+        <Card
+          title="Планировщик"
+          description="Задачи и дедлайны"
+          href="/planner"
+        />
 
-        <Link href="/planner" className="block">
-          <div className="bg-white p-6 rounded-xl shadow hover:shadow-xl hover:scale-[1.02] transition cursor-pointer">
-            <h2 className="text-xl font-semibold">Планировщик</h2>
-            <p className="text-gray-500">Задачи и дедлайны</p>
-          </div>
-        </Link>
+        <Card
+          title="База знаний"
+          description="Карточки и теги"
+          href="/cards"
+        />
 
-        <Link href="/cards" className="block">
-          <div className="bg-white p-6 rounded-xl shadow hover:shadow-xl hover:scale-[1.02] transition cursor-pointer">
-            <h2 className="text-xl font-semibold">База знаний</h2>
-            <p className="text-gray-500">Карточки и теги</p>
-          </div>
-        </Link>
+        <Card
+          title="Новая карточка"
+          description="Создать элемент знания"
+          href="/cards/new"
+        />
 
-        <Link href="/cards/new" className="block">
-          <div className="bg-white p-6 rounded-xl shadow hover:shadow-xl hover:scale-[1.02] transition cursor-pointer">
-            <h2 className="text-xl font-semibold">Новая карточка</h2>
-            <p className="text-gray-500">Создать элемент знания</p>
-          </div>
-        </Link>
+        <Card
+          title="Писательское пространство"
+          description="Писать и соединять идеи"
+          href="/editor"
+        />
 
-        <Link href="/editor" className="block">
-          <div className="bg-white p-6 rounded-xl shadow hover:shadow-xl hover:scale-[1.02] transition cursor-pointer">
-            <h2 className="text-xl font-semibold">Писательское пространство</h2>
-            <p className="text-gray-500">Писать и соединять идеи</p>
-          </div>
-        </Link>
-
+        <Card
+          title="Языковая среда"
+          description="Учебник → уроки → упражнения → карточки"
+          href="/import"
+        />
       </div>
     </main>
+  );
+}
+
+function Card({
+  title,
+  description,
+  href,
+}: {
+  title: string;
+  description: string;
+  href: string;
+}) {
+  return (
+    <Link
+      href={href}
+      style={{
+        border: "1px solid #ddd",
+        borderRadius: 10,
+        padding: 20,
+        textDecoration: "none",
+        color: "black",
+        background: "#f7f7f7",
+        display: "block",
+      }}
+    >
+      <div style={{ fontSize: 18, fontWeight: 600 }}>{title}</div>
+      <div style={{ marginTop: 6, opacity: 0.7 }}>{description}</div>
+    </Link>
   );
 }

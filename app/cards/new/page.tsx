@@ -1,12 +1,20 @@
 "use client";
+export const dynamic = "force-dynamic";
+export const runtime = "edge";
 
-import { createCard } from "@/lib/cards";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { createCard, Card } from "@/lib/cards";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 
 export default function NewCardPage() {
   const router = useRouter();
+  const params = useSearchParams();
+
+  const initialText = params.get("text") || "";
+  const initialTag = params.get("tag") || "";
+  const initialSource = params.get("doc") || "";
+  const editorId = params.get("editorId");
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -14,6 +22,21 @@ export default function NewCardPage() {
   const [tags, setTags] = useState("");
   const [type, setType] = useState("thought");
   const [image, setImage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (initialText) {
+      setTitle(initialText);
+      setContent(initialText);
+    }
+
+    if (initialTag) {
+      setTags(initialTag);
+    }
+
+    if (initialSource) {
+      setSource(initialSource);
+    }
+  }, [initialText, initialTag, initialSource]);
 
   function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -31,7 +54,7 @@ export default function NewCardPage() {
   function handleSave() {
     const id = crypto.randomUUID();
 
-    const card = {
+    const card: Card = {
       id,
       title,
       content,
@@ -46,7 +69,11 @@ export default function NewCardPage() {
 
     createCard(card);
 
-    router.push(`/cards/${id}`);
+    if (editorId) {
+      router.push(`/editor/${editorId}?insertCard=${id}`);
+    } else {
+      router.push(`/cards/${id}`);
+    }
   }
 
   return (
