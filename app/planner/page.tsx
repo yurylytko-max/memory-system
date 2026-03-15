@@ -7,19 +7,7 @@ import { useRouter } from "next/navigation";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-
-type Task = {
-  text: string;
-  done: boolean;
-  deadline?: string;
-};
-
-type Plan = {
-  id: string;
-  name: string;
-  folder: string;
-  tasks: Task[];
-};
+import { createPlan, deletePlan, getAllPlans, type Plan } from "@/lib/plans";
 
 export default function Planner() {
 
@@ -28,23 +16,18 @@ export default function Planner() {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [planName, setPlanName] = useState("");
   const [folderName, setFolderName] = useState("");
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-
-    const stored = localStorage.getItem("plans");
-
-    if (stored) {
-      setPlans(JSON.parse(stored));
+    async function loadPlans() {
+      const data = await getAllPlans();
+      setPlans(data);
+      setLoaded(true);
     }
 
+    void loadPlans();
   }, []);
-
-  function savePlans(updated: Plan[]) {
-    localStorage.setItem("plans", JSON.stringify(updated));
-    setPlans(updated);
-  }
-
-  function createPlan() {
+  async function handleCreatePlan() {
 
     if (!planName.trim()) return;
 
@@ -55,18 +38,15 @@ export default function Planner() {
       tasks: []
     };
 
-    const updated = [...plans, newPlan];
-
-    savePlans(updated);
+    await createPlan(newPlan);
+    setPlans((current) => [...current, newPlan]);
 
     setPlanName("");
   }
 
-  function deletePlan(id: string) {
-
-    const updated = plans.filter(p => p.id !== id);
-
-    savePlans(updated);
+  async function handleDeletePlan(id: string) {
+    await deletePlan(id);
+    setPlans((current) => current.filter((plan) => plan.id !== id));
   }
 
   const folders = [...new Set(plans.map(p => p.folder))];
@@ -101,13 +81,15 @@ export default function Planner() {
             placeholder="Папка"
           />
 
-          <Button onClick={createPlan}>
+          <Button onClick={handleCreatePlan}>
             Создать
           </Button>
 
         </div>
 
-        {folders.map(folder => (
+        {!loaded ? (
+          <div className="text-sm text-muted-foreground">Загрузка планов...</div>
+        ) : folders.map(folder => (
 
           <div key={folder} className="mb-10">
 
@@ -132,7 +114,9 @@ export default function Planner() {
                       </Link>
 
                       <button
-                        onClick={() => deletePlan(plan.id)}
+                        onClick={() => {
+                          void handleDeletePlan(plan.id);
+                        }}
                         className="absolute top-3 right-4 text-muted-foreground hover:text-red-500"
                       >
                         ×

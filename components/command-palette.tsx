@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { getAllCards } from "@/lib/cards";
+import { getAllTexts } from "@/lib/texts";
 
 type Doc = {
   id: string;
@@ -47,12 +49,19 @@ export default function CommandPalette() {
   },[]);
 
   useEffect(()=>{
+    async function loadData() {
+      const [texts, cards] = await Promise.all([
+        getAllTexts(),
+        getAllCards(),
+      ]);
 
-    const rawDocs = localStorage.getItem("texts_db");
-    const rawCards = localStorage.getItem("cards_db");
+      setDocs(texts);
+      setCards(cards);
+    }
 
-    setDocs(rawDocs ? JSON.parse(rawDocs) : []);
-    setCards(rawCards ? JSON.parse(rawCards) : []);
+    if (open) {
+      void loadData();
+    }
 
   },[open]);
 
@@ -63,28 +72,17 @@ export default function CommandPalette() {
   }
 
   function newCard(){
-
-    const id = Date.now().toString();
-
-    const raw = localStorage.getItem("cards_db");
-    const cards = raw ? JSON.parse(raw) : [];
-
-    cards.push({
-      id,
-      title:"Новая карточка",
-      content:""
-    });
-
-    localStorage.setItem("cards_db",JSON.stringify(cards));
-
-    router.push(`/cards/${id}`);
+    router.push("/cards/new");
     setOpen(false);
 
   }
 
   function newCardFromSelection(){
-
-    const fn = (window as any).createCardFromEditorSelection;
+    const fn = (
+      window as Window & {
+        createCardFromEditorSelection?: () => void;
+      }
+    ).createCardFromEditorSelection;
 
     if(fn){
       fn();

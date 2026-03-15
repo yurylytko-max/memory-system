@@ -25,12 +25,32 @@ export default function TextPage() {
   const search = useSearchParams();
   const id = params.id;
   const insertCard = search.get("insertCard");
-  const storedText = getText(id);
   const isBrowser = typeof window !== "undefined";
+  const [storedText, setStoredText] = useState<TextDocument | null>(null);
+  const [loaded, setLoaded] = useState(false);
+  const [title, setTitle] = useState("");
+  const [tag, setTag] = useState("");
+  const [initialContent, setInitialContent] = useState("<p></p>");
 
-  const [title, setTitle] = useState(storedText?.title ?? "");
-  const [tag, setTag] = useState(storedText?.tag ?? "");
-  const [initialContent] = useState(storedText?.content ?? "<p></p>");
+  useEffect(() => {
+    async function loadText() {
+      const text = await getText(id);
+
+      if (!text) {
+        setStoredText(null);
+        setLoaded(true);
+        return;
+      }
+
+      setStoredText(text);
+      setTitle(text.title ?? "");
+      setTag(text.tag ?? "");
+      setInitialContent(text.content ?? "<p></p>");
+      setLoaded(true);
+    }
+
+    void loadText();
+  }, [id]);
 
   const editor = usePlateEditor(
     {
@@ -38,15 +58,13 @@ export default function TextPage() {
       plugins: TEXTS_PLATE_PLUGINS,
       value: (plateEditor) => parseHtmlToTextValue(plateEditor, initialContent),
     },
-    [id, initialContent, isBrowser]
+    [id, initialContent, isBrowser, storedText?.updatedAt]
   );
-
-  if (!storedText || !editor) return null;
-
   const activeEditor = editor;
 
   const save = useCallback(async () => {
-    const existing = getText(id);
+    if (!activeEditor || !storedText) return;
+
     const now = new Date().toISOString();
 
     const updatedText: TextDocument = {
@@ -54,14 +72,17 @@ export default function TextPage() {
       title,
       tag,
       content: await serializeTextEditorHtml(activeEditor),
-      createdAt: existing?.createdAt,
+      createdAt: storedText.createdAt,
       updatedAt: now,
     };
 
-    updateText(updatedText);
-  }, [activeEditor, id, tag, title]);
+    await updateText(updatedText);
+    setStoredText(updatedText);
+  }, [activeEditor, id, storedText, tag, title]);
 
   async function handleCreateCard() {
+    if (!activeEditor) return;
+
     if (activeEditor.api.isCollapsed()) {
       alert("Сначала выдели текст");
       return;
@@ -99,7 +120,7 @@ export default function TextPage() {
   }
 
   useEffect(() => {
-    if (!insertCard) return;
+    if (!activeEditor || !insertCard) return;
 
     let cancelled = false;
 
@@ -139,6 +160,8 @@ export default function TextPage() {
       cancelled = true;
     };
   }, [activeEditor, id, insertCard, router, save]);
+
+  if (!loaded || !storedText || !editor) return null;
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#eef2ff_0%,#f8fafc_30%,#ffffff_100%)] px-4 py-6 md:px-8 md:py-10">

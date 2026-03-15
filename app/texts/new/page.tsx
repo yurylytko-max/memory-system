@@ -48,7 +48,7 @@ export default function NewTextPage() {
       updatedAt: now,
     };
 
-    createText(text);
+    await createText(text);
     router.push(`/texts/${text.id}`);
   }
 
@@ -83,7 +83,7 @@ export default function NewTextPage() {
       updatedAt: now,
     };
 
-    createText(text);
+    await createText(text);
 
     const pendingCardLink: PendingTextCardLink = {
       selection,

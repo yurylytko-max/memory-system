@@ -1,16 +1,27 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { deleteText, getAllTexts, type TextDocument } from "@/lib/texts";
 
 export default function TextsPage() {
-  const [texts, setTexts] = useState<TextDocument[]>(() => getAllTexts());
+  const [texts, setTexts] = useState<TextDocument[]>([]);
+  const [loaded, setLoaded] = useState(false);
 
-  function handleDelete(id: string) {
-    deleteText(id);
-    setTexts(getAllTexts());
+  useEffect(() => {
+    async function loadTexts() {
+      const data = await getAllTexts();
+      setTexts(data);
+      setLoaded(true);
+    }
+
+    void loadTexts();
+  }, []);
+
+  async function handleDelete(id: string) {
+    await deleteText(id);
+    setTexts((current) => current.filter((text) => text.id !== id));
   }
 
   return (
@@ -41,7 +52,11 @@ export default function TextsPage() {
           </Link>
         </div>
 
-        {texts.length === 0 ? (
+        {!loaded ? (
+          <div className="rounded-[28px] border border-dashed border-slate-300 bg-white/80 px-6 py-16 text-center text-slate-500 shadow-sm">
+            Загрузка текстов...
+          </div>
+        ) : texts.length === 0 ? (
           <div className="rounded-[28px] border border-dashed border-slate-300 bg-white/80 px-6 py-16 text-center text-slate-500 shadow-sm">
             Текстов пока нет
           </div>
@@ -74,7 +89,9 @@ export default function TextsPage() {
 
                   <button
                     type="button"
-                    onClick={() => handleDelete(text.id)}
+                    onClick={() => {
+                      void handleDelete(text.id);
+                    }}
                     className="text-red-600 transition hover:text-red-500"
                   >
                     удалить

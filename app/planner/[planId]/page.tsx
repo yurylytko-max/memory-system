@@ -18,18 +18,7 @@ import {
 } from "@dnd-kit/sortable";
 
 import { CSS } from "@dnd-kit/utilities";
-
-type Task = {
-  text: string;
-  done: boolean;
-  versions: string[];
-};
-
-type Plan = {
-  id: string;
-  name: string;
-  tasks: Task[];
-};
+import { getAllPlans, savePlans, type Plan, type PlanTask } from "@/lib/plans";
 
 export default function PlanPage() {
   const params = useParams();
@@ -42,20 +31,21 @@ export default function PlanPage() {
   const [search, setSearch] = useState("");
   const [activeTask, setActiveTask] = useState<number | null>(null);
   const [moveTaskIndex, setMoveTaskIndex] = useState<number | null>(null);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    const stored = localStorage.getItem("plans");
-    if (!stored) return;
+    async function loadPlans() {
+      const parsed = await getAllPlans();
+      setPlans(parsed);
+      setPlan(parsed.find((p) => p.id === planId) || null);
+      setLoaded(true);
+    }
 
-    const parsed = JSON.parse(stored) as Plan[];
-    setPlans(parsed);
-
-    const found = parsed.find((p) => p.id === planId) || null;
-    setPlan(found);
+    void loadPlans();
   }, [planId]);
 
-  function save(updated: Plan[]) {
-    localStorage.setItem("plans", JSON.stringify(updated));
+  async function save(updated: Plan[]) {
+    await savePlans(updated);
     setPlans(updated);
 
     const found = updated.find((p) => p.id === planId) || null;
@@ -70,7 +60,8 @@ export default function PlanPage() {
       .map((l) => l.trim())
       .filter(Boolean);
 
-    const newTasks: Task[] = lines.map((text) => ({
+    const newTasks: PlanTask[] = lines.map((text) => ({
+      id: crypto.randomUUID(),
       text,
       done: false,
       versions: [],
@@ -80,7 +71,7 @@ export default function PlanPage() {
       p.id === planId ? { ...p, tasks: [...p.tasks, ...newTasks] } : p
     );
 
-    save(updated);
+    void save(updated);
     setInput("");
   }
 
@@ -96,7 +87,7 @@ export default function PlanPage() {
       return { ...p, tasks };
     });
 
-    save(updated);
+    void save(updated);
   }
 
   function deleteTask(i: number) {
@@ -109,7 +100,7 @@ export default function PlanPage() {
 
     setActiveTask(null);
     setMoveTaskIndex(null);
-    save(updated);
+    void save(updated);
   }
 
   function editTask(i: number) {
@@ -131,7 +122,7 @@ export default function PlanPage() {
       return { ...p, tasks };
     });
 
-    save(updated);
+    void save(updated);
   }
 
   function showHistory(i: number) {
@@ -164,7 +155,7 @@ export default function PlanPage() {
 
     setMoveTaskIndex(null);
     setActiveTask(null);
-    save(updated);
+    void save(updated);
   }
 
   function handleDragEnd(event: DragEndEvent) {
@@ -183,9 +174,10 @@ export default function PlanPage() {
       p.id === planId ? { ...p, tasks: reordered } : p
     );
 
-    save(updated);
+    void save(updated);
   }
 
+  if (!loaded) return null;
   if (!plan) return null;
 
   const availableMoveTargets = plans.filter((p) => p.id !== planId);
@@ -276,7 +268,7 @@ function SortableTask({
   cancelMove,
 }: {
   id: number;
-  task: Task;
+  task: PlanTask;
   toggle: () => void;
   active: boolean;
   open: () => void;

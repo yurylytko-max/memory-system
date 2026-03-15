@@ -7,56 +7,65 @@ export type TextDocument = {
   updatedAt?: string;
 };
 
-const STORAGE_KEY = "texts_db";
+export async function getAllTexts(): Promise<TextDocument[]> {
+  const response = await fetch("/api/texts", { cache: "no-store" });
 
-function readRaw(): TextDocument[] {
-  if (typeof window === "undefined") return [];
+  if (!response.ok) {
+    throw new Error("Failed to load texts");
+  }
 
-  const raw = localStorage.getItem(STORAGE_KEY);
+  const texts = await response.json();
+  return Array.isArray(texts) ? texts : [];
+}
 
-  if (!raw) return [];
+export async function getText(id: string): Promise<TextDocument | undefined> {
+  const response = await fetch(`/api/texts/${id}`, { cache: "no-store" });
 
-  try {
-    const parsed = JSON.parse(raw);
+  if (response.status === 404) {
+    return undefined;
+  }
 
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
+  if (!response.ok) {
+    throw new Error("Failed to load text");
+  }
+
+  return await response.json();
+}
+
+export async function createText(text: TextDocument) {
+  const response = await fetch("/api/texts", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(text),
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to create text");
   }
 }
 
-function writeRaw(texts: TextDocument[]) {
-  if (typeof window === "undefined") return;
+export async function updateText(text: TextDocument) {
+  const response = await fetch(`/api/texts/${text.id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(text),
+  });
 
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(texts));
-}
-
-export function getAllTexts(): TextDocument[] {
-  return readRaw();
-}
-
-export function getText(id: string): TextDocument | undefined {
-  return readRaw().find((text) => text.id === id);
-}
-
-export function createText(text: TextDocument) {
-  writeRaw([...readRaw(), text]);
-}
-
-export function updateText(text: TextDocument) {
-  const texts = readRaw();
-  const index = texts.findIndex((item) => item.id === text.id);
-
-  if (index === -1) {
-    writeRaw([...texts, text]);
-    return;
+  if (!response.ok) {
+    throw new Error("Failed to update text");
   }
-
-  const updated = [...texts];
-  updated[index] = text;
-  writeRaw(updated);
 }
 
-export function deleteText(id: string) {
-  writeRaw(readRaw().filter((text) => text.id !== id));
+export async function deleteText(id: string) {
+  const response = await fetch(`/api/texts/${id}`, {
+    method: "DELETE",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to delete text");
+  }
 }
