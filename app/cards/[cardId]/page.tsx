@@ -28,11 +28,12 @@ export default function CardPage() {
       if (found) {
         setCard(found);
       }
+  
+      setLoaded(true);
     }
   
     load();
-  }, []);
-
+  }, [cardId]);
     setLoaded(true);
   }, [cardId]);
 
