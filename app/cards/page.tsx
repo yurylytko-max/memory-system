@@ -53,8 +53,12 @@ export default function CardsPage() {
   const [typeFilter, setTypeFilter] = useState("all");
 
   useEffect(() => {
-    const loaded = getAllCards();
-    setCards(Array.isArray(loaded) ? loaded : []);
+    async function load() {
+      const loaded = await getAllCards();
+      setCards(Array.isArray(loaded) ? loaded : []);
+    }
+  
+    load();
   }, []);
 
   const normalizedCards = useMemo(() => {
