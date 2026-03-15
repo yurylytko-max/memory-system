@@ -31,6 +31,7 @@ export default function DocumentPage() {
   const id = params.id;
   const insertCard = search.get("insertCard");
   const storedDocument = getDocument(id);
+  const isBrowser = typeof window !== "undefined";
 
   const [title, setTitle] = useState(storedDocument?.title ?? "");
   const [tag, setTag] = useState(storedDocument?.tag ?? "");
@@ -38,10 +39,11 @@ export default function DocumentPage() {
 
   const editor = usePlateEditor(
     {
+      enabled: isBrowser,
       plugins: DOCUMENT_PLATE_PLUGINS,
       value: (plateEditor) => parseHtmlToPlateValue(plateEditor, initialContent),
     },
-    [id]
+    [id, initialContent, isBrowser]
   );
 
   const save = useCallback(async () => {

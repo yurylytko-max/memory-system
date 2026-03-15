@@ -16,8 +16,10 @@ export default function NewDocumentPage() {
 
   const [title, setTitle] = useState("");
   const [tag, setTag] = useState("");
+  const isBrowser = typeof window !== "undefined";
 
   const editor = usePlateEditor({
+    enabled: isBrowser,
     plugins: DOCUMENT_PLATE_PLUGINS,
     value: (plateEditor) => parseHtmlToPlateValue(plateEditor, "<p></p>"),
   });
@@ -25,6 +27,8 @@ export default function NewDocumentPage() {
   if (!editor) return null;
 
   async function saveDocument() {
+    if (!editor) return;
+
     if (!title.trim()) {
       alert("Введите название документа");
       return;
