@@ -208,7 +208,7 @@ export default function TextPage() {
           </button>
         </div>
 
-        <PlateTextEditor editor={activeEditor} createCard={() => void handleCreateCard()} />
+        <PlateTextEditor editor={editor} createCard={() => void handleCreateCard()} />
       </div>
     </main>
   );
