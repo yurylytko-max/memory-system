@@ -54,8 +54,10 @@ export default function CardsPage() {
 
   useEffect(() => {
     async function load() {
-      const loaded = await getAllCards();
-      setCards(Array.isArray(loaded) ? loaded : []);
+      const res = await fetch("/api/cards");
+      const data = await res.json();
+    
+      setCards(Array.isArray(data) ? data : []);
     }
   
     load();
