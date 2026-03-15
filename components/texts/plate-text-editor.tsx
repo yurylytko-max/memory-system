@@ -97,9 +97,9 @@ const TextAlignIcons: Record<Exclude<Alignment, "justify">, React.ComponentType<
 
 const baseFontInject = {
   inject: {
-    targetPlugins: [KEYS.p],
+    targetPlugins: [KEYS.p] as string[],
   },
-} as const;
+};
 
 export const TEXTS_PLATE_PLUGINS = [
   ParagraphPlugin.withComponent(ParagraphElement),
