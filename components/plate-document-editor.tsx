@@ -2,35 +2,32 @@
 
 import type { ReactNode } from "react";
 
-import { H1Plugin, H2Plugin, BasicMarksPlugin, BlockquotePlugin } from "@platejs/basic-nodes/react";
+import { BlockquotePlugin, H1Plugin, H2Plugin } from "@platejs/basic-nodes/react";
 import { upsertLink } from "@platejs/link";
 import { LinkPlugin } from "@platejs/link/react";
 import { ListStyleType, someList, toggleList } from "@platejs/list";
 import { ListPlugin } from "@platejs/list/react";
-import {
-  deserializeHtml,
-  type Value,
-  type TSelection,
-} from "platejs";
-import {
-  ParagraphPlugin,
-  Plate,
-  PlateContent,
-  type PlateEditor,
-  useEditorRef,
-  useEditorSelector,
-} from "platejs/react";
+import { Bold, Heading1, Heading2, Italic, List, ListOrdered, Quote, RotateCcw, RotateCw, Sparkles, Underline } from "lucide-react";
+import { deserializeHtml, type TSelection, type Value } from "platejs";
+import { Plate, type PlateEditor, useEditorRef, useEditorSelector } from "platejs/react";
 import { serializeHtml } from "platejs/static";
+
+import { BasicNodesKit } from "@/components/editor/plugins/basic-nodes-kit";
+import { Editor, EditorContainer } from "@/components/ui/editor";
+import { FixedToolbar } from "@/components/ui/fixed-toolbar";
+import { MarkToolbarButton } from "@/components/ui/mark-toolbar-button";
+import { ToolbarButton, ToolbarSeparator } from "@/components/ui/toolbar";
 
 type PlateDocumentEditorProps = {
   editor: PlateEditor;
   createCard: () => void;
 };
 
-type ToolbarButtonProps = {
+type ToolbarActionButtonProps = {
   active?: boolean;
   children: ReactNode;
   onClick: () => void;
+  tooltip: string;
 };
 
 export type PendingCardLink = {
@@ -42,11 +39,7 @@ export type PendingCardLink = {
 export const PENDING_CARD_LINK_KEY = "pending_card_link";
 
 export const DOCUMENT_PLATE_PLUGINS = [
-  ParagraphPlugin,
-  H1Plugin,
-  H2Plugin,
-  BlockquotePlugin,
-  BasicMarksPlugin,
+  ...BasicNodesKit,
   ListPlugin,
   LinkPlugin,
 ];
@@ -79,40 +72,20 @@ export function insertCardLink(
   });
 }
 
-function ToolbarButton({ active = false, children, onClick }: ToolbarButtonProps) {
-  return (
-    <button
-      type="button"
-      onMouseDown={(event) => event.preventDefault()}
-      onClick={onClick}
-      className={`px-3 py-1 border rounded text-sm ${
-        active ? "bg-gray-200" : "bg-white"
-      }`}
-    >
-      {children}
-    </button>
-  );
-}
-
-function MarkButton({
+function ToolbarActionButton({
+  active = false,
   children,
-  format,
-}: {
-  children: ReactNode;
-  format: "bold" | "italic" | "underline";
-}) {
-  const editor = useEditorRef();
-  const active = useEditorSelector((currentEditor) => {
-    return currentEditor.api.hasMark(format);
-  }, [format]);
-
+  onClick,
+  tooltip,
+}: ToolbarActionButtonProps) {
   return (
     <ToolbarButton
-      active={active}
-      onClick={() => {
-        editor.tf.focus();
-        editor.tf.toggleMark(format);
-      }}
+      pressed={active}
+      tooltip={tooltip}
+      type="button"
+      variant="outline"
+      onMouseDown={(event) => event.preventDefault()}
+      onClick={onClick}
     >
       {children}
     </ToolbarButton>
@@ -122,9 +95,11 @@ function MarkButton({
 function BlockButton({
   children,
   type,
+  tooltip,
 }: {
   children: ReactNode;
   type: string;
+  tooltip: string;
 }) {
   const editor = useEditorRef();
   const active = useEditorSelector((currentEditor) => {
@@ -136,24 +111,27 @@ function BlockButton({
   }, [type]);
 
   return (
-    <ToolbarButton
+    <ToolbarActionButton
       active={active}
+      tooltip={tooltip}
       onClick={() => {
         editor.tf.focus();
         editor.tf.toggleBlock(type);
       }}
     >
       {children}
-    </ToolbarButton>
+    </ToolbarActionButton>
   );
 }
 
 function ListButton({
   children,
   type,
+  tooltip,
 }: {
   children: ReactNode;
   type: ListStyleType;
+  tooltip: string;
 }) {
   const editor = useEditorRef();
   const active = useEditorSelector((currentEditor) => {
@@ -161,8 +139,9 @@ function ListButton({
   }, [type]);
 
   return (
-    <ToolbarButton
+    <ToolbarActionButton
       active={active}
+      tooltip={tooltip}
       onClick={() => {
         editor.tf.focus();
         toggleList(editor, {
@@ -171,7 +150,7 @@ function ListButton({
       }}
     >
       {children}
-    </ToolbarButton>
+    </ToolbarActionButton>
   );
 }
 
@@ -181,34 +160,85 @@ export default function PlateDocumentEditor({
 }: PlateDocumentEditorProps) {
   return (
     <Plate editor={editor}>
-      <div className="border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm">
-        <div className="flex gap-2 mb-0 flex-wrap border-b border-gray-200 bg-gray-50 p-3">
-          <MarkButton format="bold">B</MarkButton>
-          <MarkButton format="italic">I</MarkButton>
-          <MarkButton format="underline">U</MarkButton>
-          <BlockButton type={H1Plugin.key}>H1</BlockButton>
-          <BlockButton type={H2Plugin.key}>H2</BlockButton>
-          <ListButton type={ListStyleType.Disc}>• List</ListButton>
-          <ListButton type={ListStyleType.Decimal}>1. List</ListButton>
-          <BlockButton type={BlockquotePlugin.key}>Quote</BlockButton>
-          <ToolbarButton
-            onClick={() => {
-              editor.tf.undo();
-            }}
-          >
-            Undo
-          </ToolbarButton>
-          <ToolbarButton
-            onClick={() => {
-              editor.tf.redo();
-            }}
-          >
-            Redo
-          </ToolbarButton>
-          <ToolbarButton onClick={createCard}>Card</ToolbarButton>
-        </div>
+      <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+        <FixedToolbar className="gap-1 px-2 py-2">
+          <div className="flex items-center gap-1">
+            <MarkToolbarButton nodeType="bold" tooltip="Bold" variant="outline">
+              <Bold />
+            </MarkToolbarButton>
+            <MarkToolbarButton nodeType="italic" tooltip="Italic" variant="outline">
+              <Italic />
+            </MarkToolbarButton>
+            <MarkToolbarButton
+              nodeType="underline"
+              tooltip="Underline"
+              variant="outline"
+            >
+              <Underline />
+            </MarkToolbarButton>
+          </div>
 
-        <PlateContent className="min-h-[520px] p-5 text-[18px] leading-8 outline-none" />
+          <ToolbarSeparator />
+
+          <div className="flex items-center gap-1">
+            <BlockButton type={H1Plugin.key} tooltip="Heading 1">
+              <Heading1 />
+            </BlockButton>
+            <BlockButton type={H2Plugin.key} tooltip="Heading 2">
+              <Heading2 />
+            </BlockButton>
+            <BlockButton type={BlockquotePlugin.key} tooltip="Quote">
+              <Quote />
+            </BlockButton>
+          </div>
+
+          <ToolbarSeparator />
+
+          <div className="flex items-center gap-1">
+            <ListButton type={ListStyleType.Disc} tooltip="Bulleted list">
+              <List />
+            </ListButton>
+            <ListButton type={ListStyleType.Decimal} tooltip="Numbered list">
+              <ListOrdered />
+            </ListButton>
+          </div>
+
+          <ToolbarSeparator />
+
+          <div className="flex items-center gap-1">
+            <ToolbarActionButton
+              tooltip="Undo"
+              onClick={() => {
+                editor.tf.undo();
+              }}
+            >
+              <RotateCcw />
+            </ToolbarActionButton>
+            <ToolbarActionButton
+              tooltip="Redo"
+              onClick={() => {
+                editor.tf.redo();
+              }}
+            >
+              <RotateCw />
+            </ToolbarActionButton>
+          </div>
+
+          <div className="ml-auto flex items-center gap-1">
+            <ToolbarActionButton tooltip="Create card" onClick={createCard}>
+              <Sparkles />
+              <span>Card</span>
+            </ToolbarActionButton>
+          </div>
+        </FixedToolbar>
+
+        <EditorContainer className="min-h-[560px] bg-background">
+          <Editor
+            autoFocus
+            className="min-h-[560px] px-12 py-8 text-[18px] leading-8"
+            variant="fullWidth"
+          />
+        </EditorContainer>
       </div>
     </Plate>
   );
