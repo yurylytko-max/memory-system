@@ -196,7 +196,7 @@ export default function PlanPage() {
 
   return (
     <main className="min-h-screen bg-gray-100 p-10">
-      <Link href="/" className="text-sm text-gray-600">
+      <Link href="/planner" className="text-sm text-gray-600">
         ← Назад
       </Link>
 
