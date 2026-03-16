@@ -21,31 +21,26 @@ export default function Home() {
       >
         <Card
           title="Планировщик"
-          description="Задачи и дедлайны"
           href="/planner"
         />
 
         <Card
           title="База знаний"
-          description="Карточки и теги"
           href="/cards"
         />
 
         <Card
           title="Новая карточка"
-          description="Создать элемент знания"
           href="/cards/new"
         />
 
         <Card
           title="Тексты"
-          description="Отдельная среда с PlateJS"
           href="/texts"
         />
 
         <Card
           title="Языковая среда"
-          description="Учебник → уроки → упражнения → карточки"
           href="/import"
         />
       </div>
@@ -55,11 +50,9 @@ export default function Home() {
 
 function Card({
   title,
-  description,
   href,
 }: {
   title: string;
-  description: string;
   href: string;
 }) {
   return (
@@ -76,7 +69,6 @@ function Card({
       }}
     >
       <div style={{ fontSize: 18, fontWeight: 600 }}>{title}</div>
-      <div style={{ marginTop: 6, opacity: 0.7 }}>{description}</div>
     </Link>
   );
 }
