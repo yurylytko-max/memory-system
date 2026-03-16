@@ -92,6 +92,13 @@ export default function TextsPage() {
                     открыть
                   </Link>
 
+                  <Link
+                    href={`/texts/${text.id}/edit`}
+                    className="text-slate-500 transition hover:text-slate-950"
+                  >
+                    редактировать
+                  </Link>
+
                   <button
                     type="button"
                     onClick={() => {

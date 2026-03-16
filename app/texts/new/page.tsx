@@ -102,6 +102,7 @@ export default function NewTextPage() {
       tag: selectedText,
       doc: "texts",
       textId: id,
+      returnTo: "edit",
     });
 
     router.push(`/cards/new?${query.toString()}`);

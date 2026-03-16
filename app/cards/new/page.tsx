@@ -5,7 +5,7 @@ export const runtime = "edge";
 
 import { createCard, Card } from "@/lib/cards";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { compressImage } from "@/lib/utils"
 import { BackButton } from "@/components/back-button";
 
@@ -16,31 +16,16 @@ export default function NewCardPage() {
   const initialText = params.get("text") || "";
   const initialTag = params.get("tag") || "";
   const initialSource = params.get("doc") || "";
-  const editorId = params.get("editorId");
   const textId = params.get("textId");
+  const returnTo = params.get("returnTo");
 
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
-  const [source, setSource] = useState("");
-  const [tags, setTags] = useState("");
+  const [title, setTitle] = useState(initialText);
+  const [content, setContent] = useState(initialText);
+  const [source, setSource] = useState(initialSource);
+  const [tags, setTags] = useState(initialTag);
   const [type, setType] = useState("thought");
   const [image, setImage] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-
-  useEffect(() => {
-    if (initialText) {
-      setTitle(initialText);
-      setContent(initialText);
-    }
-
-    if (initialTag) {
-      setTags(initialTag);
-    }
-
-    if (initialSource) {
-      setSource(initialSource);
-    }
-  }, [initialText, initialTag, initialSource]);
 
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -68,6 +53,11 @@ export default function NewCardPage() {
 
   function goToSavedCard(id: string) {
     if (textId) {
+      if (returnTo === "edit") {
+        router.push(`/texts/${textId}/edit?insertCard=${id}`);
+        return;
+      }
+
       router.push(`/texts/${textId}?insertCard=${id}`);
     } else {
       router.push(`/cards/${id}`);
