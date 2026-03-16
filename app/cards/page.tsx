@@ -136,7 +136,10 @@ export default function CardsPage() {
 
             {allTags.map((tag: string, index: number) => (
 
-              <Link key={`${tag}-${index}`} href={`/tags/${tag}`}>
+              <Link
+                key={`${tag}-${index}`}
+                href={`/tags/${encodeURIComponent(tag)}`}
+              >
                 <Badge variant="secondary">
                   #{tag}
                 </Badge>

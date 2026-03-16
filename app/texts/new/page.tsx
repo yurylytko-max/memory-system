@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { usePlateEditor } from "platejs/react";
 
+import { BackButton } from "@/components/back-button";
 import PlateTextEditor, {
   DEFAULT_TEXT_HTML,
   PENDING_TEXT_CARD_LINK_KEY,
@@ -110,13 +111,12 @@ export default function NewTextPage() {
     <main className="min-h-screen bg-[linear-gradient(180deg,#eef2ff_0%,#f8fafc_30%,#ffffff_100%)] px-4 py-6 md:px-8 md:py-10">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
         <div className="flex flex-wrap items-center gap-3">
-          <button
-            type="button"
-            onClick={() => router.push("/texts")}
+          <BackButton
+            fallbackHref="/texts"
             className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"
           >
             ← Назад
-          </button>
+          </BackButton>
           <div>
             <h1 className="text-3xl font-semibold tracking-tight text-slate-950">
               Новый текст

@@ -6,8 +6,8 @@ export const runtime = "edge";
 import { createCard, Card } from "@/lib/cards";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import { compressImage } from "@/lib/utils"
+import { BackButton } from "@/components/back-button";
 
 export default function NewCardPage() {
   const router = useRouter();
@@ -106,9 +106,9 @@ export default function NewCardPage() {
 
   return (
     <main className="min-h-screen bg-gray-100 p-10 max-w-xl mx-auto">
-      <Link href="/cards" className="text-sm text-gray-500">
+      <BackButton fallbackHref="/cards" className="text-sm text-gray-500">
         ← Назад
-      </Link>
+      </BackButton>
 
       <h1 className="text-2xl font-bold mb-6 mt-4">Новая карточка</h1>
 

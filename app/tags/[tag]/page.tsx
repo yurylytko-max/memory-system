@@ -1,47 +1,138 @@
-"use client";
+import Link from "next/link";
 
-import { getAllCards } from "@/lib/cards";
-import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import type { Card as MemoryCard } from "@/lib/cards";
+import { readCards } from "@/lib/server/cards-store";
 
-export default function TagPage() {
-  const params = useParams();
-  const tag = Array.isArray(params.tag) ? params.tag[0] : params.tag;
+type TagPageProps = {
+  params: Promise<{
+    tag: string;
+  }>;
+};
 
-  const [cards, setCards] = useState<any[]>([]);
-  const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
-    async function load() {
-      const allCards = await getAllCards();
-
-      const filtered = allCards.filter(
-        (card: any) => card.tags && card.tags.includes(tag)
-      );
-
-      setCards(filtered);
-      setLoaded(true);
-    }
-
-    load();
-  }, [tag]);
-
-  if (!loaded) {
-    return <div style={{ padding: 40 }}>Loading...</div>;
+function getTypeLabel(type: string) {
+  switch (type) {
+    case "thought":
+      return "Мысль";
+    case "quote":
+      return "Цитата";
+    case "book":
+      return "Книга";
+    case "music":
+      return "Музыка";
+    case "idea":
+      return "Идея";
+    case "recipe":
+      return "Рецепт";
+    case "screenshot":
+      return "Скриншот";
+    default:
+      return "Карточка";
   }
+}
+
+function normalizeCard(card: Partial<MemoryCard>, index: number): MemoryCard {
+  const safeId =
+    card?.id && String(card.id).trim() !== ""
+      ? String(card.id)
+      : `legacy-${index}-${card?.title ?? "card"}`;
+
+  return {
+    ...card,
+    id: safeId,
+    title: card?.title ?? "",
+    content: card?.content ?? "",
+    source: card?.source ?? "",
+    type: card?.type ?? "thought",
+    tags: Array.isArray(card?.tags) ? card.tags : [],
+  };
+}
+
+function decodeTagParam(value: string) {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
+export default async function TagPage({ params }: TagPageProps) {
+  const { tag: rawTag } = await params;
+  const tag = decodeTagParam(rawTag);
+  const cards = await readCards();
+
+  const taggedCards = cards
+    .map((card, index) => normalizeCard(card, index))
+    .filter((card) => card.tags.includes(tag));
 
   return (
-    <div style={{ padding: 40 }}>
-      <h1>Tag: {tag}</h1>
+    <main className="min-h-screen bg-muted/40 p-10">
+      <div className="max-w-5xl mx-auto">
+        <Link
+          href="/cards"
+          className="inline-block text-sm text-muted-foreground hover:text-black mb-6"
+        >
+          ← Назад к карточкам
+        </Link>
 
-      <div style={{ marginTop: 20 }}>
-        {cards.map((card) => (
-          <div key={card.id} style={{ marginBottom: 20 }}>
-            <h3>{card.title}</h3>
-            <p>{card.content}</p>
+        <div className="mb-8">
+          <div className="text-sm text-muted-foreground mb-2">Тег</div>
+          <h1 className="text-3xl font-bold">#{tag}</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Найдено карточек: {taggedCards.length}
+          </p>
+        </div>
+
+        {taggedCards.length === 0 ? (
+          <Card>
+            <CardContent className="pt-6 text-muted-foreground">
+              Для этого тега карточек пока нет.
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-4">
+            {taggedCards.map((card, index) => (
+              <Link
+                key={`${card.id}-${index}`}
+                href={`/cards/${card.id}`}
+                className="block"
+              >
+                <Card className="hover:shadow-md transition cursor-pointer">
+                  <CardHeader>
+                    <div className="text-sm text-muted-foreground">
+                      {getTypeLabel(card.type)}
+                    </div>
+
+                    {card.title && <CardTitle>{card.title}</CardTitle>}
+                  </CardHeader>
+
+                  <CardContent>
+                    {card.content && (
+                      <div className="text-muted-foreground mb-3">
+                        {card.content}
+                      </div>
+                    )}
+
+                    {card.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {card.tags.map((itemTag, tagIndex) => (
+                          <Badge
+                            key={`${card.id}-${itemTag}-${tagIndex}`}
+                            variant={itemTag === tag ? "default" : "secondary"}
+                          >
+                            #{itemTag}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
           </div>
-        ))}
+        )}
       </div>
-    </div>
+    </main>
   );
 }

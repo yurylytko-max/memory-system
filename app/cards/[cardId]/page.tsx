@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Tesseract from "tesseract.js";
 
+import { BackButton } from "@/components/back-button";
 import { deleteCard, getCard, updateCard, type Card } from "@/lib/cards";
 
 function getTypeLabel(type: string) {
@@ -102,9 +103,9 @@ export default function CardPage() {
   if (!card) {
     return (
       <main className="p-10">
-        <Link href="/cards" className="text-sm text-gray-500">
+        <BackButton fallbackHref="/cards" className="text-sm text-gray-500">
           ← Назад
-        </Link>
+        </BackButton>
 
         <div className="mt-6 text-gray-500">Карточка не найдена</div>
       </main>
@@ -114,12 +115,12 @@ export default function CardPage() {
   return (
     <main className="min-h-screen bg-gray-100 p-10">
       <div className="max-w-3xl mx-auto">
-        <Link
-          href="/cards"
+        <BackButton
+          fallbackHref="/cards"
           className="inline-block text-sm text-gray-500 hover:text-black mb-6"
         >
           ← Назад к базе знаний
-        </Link>
+        </BackButton>
 
         <div className="bg-white p-6 rounded-xl shadow">
           <div className="text-sm text-gray-500 mb-1">
@@ -160,7 +161,7 @@ export default function CardPage() {
               {card.tags.map(tag => (
                 <Link
                   key={tag}
-                  href={`/tags/${tag}`}
+                  href={`/tags/${encodeURIComponent(tag)}`}
                   className="text-xs bg-gray-200 px-2 py-1 rounded"
                 >
                   #{tag}

@@ -1,9 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { BackButton } from "@/components/back-button";
 import { getCard, updateCard, type Card } from "@/lib/cards";
 
 export default function EditCardPage() {
@@ -75,9 +75,9 @@ export default function EditCardPage() {
   if (!card) {
     return (
       <main className="p-10">
-        <Link href="/cards" className="text-sm text-gray-500">
+        <BackButton fallbackHref="/cards" className="text-sm text-gray-500">
           ← Назад
-        </Link>
+        </BackButton>
 
         <div className="mt-6 text-gray-500">Карточка не найдена</div>
       </main>
@@ -87,12 +87,12 @@ export default function EditCardPage() {
   return (
     <main className="min-h-screen bg-gray-100 p-10">
       <div className="max-w-xl mx-auto">
-        <Link
-          href={`/cards/${card.id}`}
+        <BackButton
+          fallbackHref={`/cards/${card.id}`}
           className="inline-block text-sm text-gray-500 hover:text-black mb-6"
         >
           ← Назад к карточке
-        </Link>
+        </BackButton>
 
         <div className="bg-white p-6 rounded-xl shadow">
           <h1 className="text-2xl font-bold mb-6">Редактировать карточку</h1>

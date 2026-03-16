@@ -1,10 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { usePlateEditor } from "platejs/react";
 
+import { BackButton } from "@/components/back-button";
 import PlateTextEditor, {
   insertTextCardLink,
   parseHtmlToTextValue,
@@ -182,12 +182,12 @@ export default function TextPage() {
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#eef2ff_0%,#f8fafc_30%,#ffffff_100%)] px-4 py-6 md:px-8 md:py-10">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
-        <Link
-          href="/texts"
+        <BackButton
+          fallbackHref="/texts"
           className="inline-flex w-fit rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"
         >
           ← Назад
-        </Link>
+        </BackButton>
 
         <div>
           <h1 className="text-3xl font-semibold tracking-tight text-slate-950">
