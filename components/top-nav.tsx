@@ -2,10 +2,11 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 
 export default function TopNav() {
   const pathname = usePathname()
+  const router = useRouter()
   const [isLoggingOut, setIsLoggingOut] = useState(false)
 
   if (pathname === "/login") {
@@ -43,12 +44,13 @@ export default function TopNav() {
             Memory
           </Link>
 
-          <Link
-            href="/planner"
+          <button
+            type="button"
+            onClick={() => router.replace("/planner")}
             className="text-sm text-muted-foreground hover:text-black"
           >
             Planner
-          </Link>
+          </button>
 
           <Link
             href="/cards"
