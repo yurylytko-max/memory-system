@@ -29,6 +29,7 @@ export type CourseLesson = {
 
 export type ImportedCourse = {
   id: string;
+  parserVersion: number;
   sourceFileName: string;
   importedAt: string;
   totalPages: number;
@@ -42,42 +43,43 @@ export type LessonProgress = {
 
 const LANGUAGE_COURSE_STORAGE_KEY = "language_course_db";
 const LANGUAGE_PROGRESS_STORAGE_KEY = "language_course_progress_db";
+const LANGUAGE_COURSE_PARSER_VERSION = 2;
 
 const LESSON_DEFINITIONS = [
   {
     index: 1,
     title: "Guten Tag. Mein Name ist...",
-    marker: "guten tag mein name ist",
+    keywords: ["guten", "tag", "name", "ist"],
   },
   {
     index: 2,
     title: "Meine Familie",
-    marker: "meine familie",
+    keywords: ["familie"],
   },
   {
     index: 3,
     title: "Einkaufen",
-    marker: "einkaufen",
+    keywords: ["einkaufen"],
   },
   {
     index: 4,
     title: "Meine Wohnung",
-    marker: "meine wohnung",
+    keywords: ["wohnung"],
   },
   {
     index: 5,
     title: "Mein Tag",
-    marker: "mein tag",
+    keywords: ["mein", "tag"],
   },
   {
     index: 6,
     title: "Freizeit",
-    marker: "freizeit",
+    keywords: ["freizeit"],
   },
   {
     index: 7,
     title: "Kinder und Schule",
-    marker: "kinder und schule",
+    keywords: ["kinder", "schule"],
   },
 ] as const;
 
@@ -174,9 +176,61 @@ function normalizeForMatch(text: string) {
     .trim();
 }
 
+function compactForSearch(text: string) {
+  return normalizeForMatch(text).replace(/\s+/g, "");
+}
+
+function getTopOfPage(text: string, lines = 8) {
+  return text
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .slice(0, lines)
+    .join(" ");
+}
+
+function isMostlyNoiseLine(line: string) {
+  const normalized = line.trim();
+
+  if (!normalized) {
+    return true;
+  }
+
+  if (/^[\d\s()[\]{}<>/*+.,:;=_%|-]+$/.test(normalized)) {
+    return true;
+  }
+
+  const tokens = normalized.split(/\s+/);
+  const singleLetterTokens = tokens.filter((token) =>
+    /^[A-Za-zÄÖÜäöüß]$/.test(token)
+  ).length;
+
+  if (tokens.length >= 6 && singleLetterTokens / tokens.length > 0.45) {
+    return true;
+  }
+
+  const letters = normalized.match(/[A-Za-zÄÖÜäöüß]/g)?.length ?? 0;
+
+  if (letters < 3) {
+    return true;
+  }
+
+  return false;
+}
+
 function cleanLessonContent(text: string) {
   return text
-    .replace(/[ \t]+/g, " ")
+    .split("\n")
+    .map((line) =>
+      line
+        .replace(/[ \t]+/g, " ")
+        .replace(/^[A-Z]?\s*[*>()[\]/\\-]*\s*\d+(?:\s*-\s*\d+)*\s*/g, "")
+        .replace(/^[A-E]\d?\s+/g, "")
+        .replace(/^Folge\s+\d+:?\s*/i, "")
+        .trim()
+    )
+    .filter((line) => !isMostlyNoiseLine(line))
+    .join("\n")
     .replace(/\n{3,}/g, "\n\n")
     .replace(/ ?• ?/g, "\n• ")
     .trim();
@@ -279,10 +333,11 @@ function generateGlossary(text: string, lessonIndex: number) {
 function detectLessonStartPages(pages: ImportedPage[]) {
   const lessonRegionStart =
     pages.find((page) =>
+      page.pageNumber >= 12 &&
       normalizeForMatch(page.text).includes("die erste stunde im kurs")
-    )?.pageNumber ?? 11;
+    )?.pageNumber ?? 12;
 
-  let searchFromPage = lessonRegionStart + 1;
+  let searchFromPage = lessonRegionStart;
 
   return LESSON_DEFINITIONS.map((definition) => {
     const startPage = pages.find((page) => {
@@ -290,17 +345,11 @@ function detectLessonStartPages(pages: ImportedPage[]) {
         return false;
       }
 
-      const normalized = normalizeForMatch(page.text);
+      const topCompact = compactForSearch(getTopOfPage(page.text, 3));
 
-      if (!normalized.includes(definition.marker)) {
-        return false;
-      }
-
-      if (definition.index === 1) {
-        return true;
-      }
-
-      return normalized.includes(`folge ${definition.index}`);
+      return definition.keywords.every((keyword) =>
+        topCompact.includes(compactForSearch(keyword))
+      );
     });
 
     if (!startPage) {
@@ -359,6 +408,7 @@ export function parseImportedCourse(
 
   return {
     id: crypto.randomUUID(),
+    parserVersion: LANGUAGE_COURSE_PARSER_VERSION,
     sourceFileName,
     importedAt: new Date().toISOString(),
     totalPages: pages.length,
@@ -378,7 +428,13 @@ export function getImportedCourse() {
   }
 
   try {
-    return JSON.parse(raw) as ImportedCourse;
+    const parsed = JSON.parse(raw) as ImportedCourse;
+
+    if (parsed.parserVersion !== LANGUAGE_COURSE_PARSER_VERSION) {
+      return null;
+    }
+
+    return parsed;
   } catch {
     return null;
   }
