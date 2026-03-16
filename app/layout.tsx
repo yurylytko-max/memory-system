@@ -1,9 +1,13 @@
 import "./globals.css";
+import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
 
-import CommandPalette from "@/components/command-palette";
 import TopNav from "@/components/top-nav";
 import { TooltipProvider } from "@/components/ui/tooltip";
+
+const CommandPalette = dynamic(() => import("@/components/command-palette"), {
+  ssr: false,
+});
 
 export default function RootLayout({
 children,

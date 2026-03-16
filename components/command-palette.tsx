@@ -2,8 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getAllCards } from "@/lib/cards";
-import { getAllTexts } from "@/lib/texts";
 
 type Doc = {
   id: string;
@@ -50,6 +48,11 @@ export default function CommandPalette() {
 
   useEffect(()=>{
     async function loadData() {
+      const [{ getAllTexts }, { getAllCards }] = await Promise.all([
+        import("@/lib/texts"),
+        import("@/lib/cards"),
+      ]);
+
       const [texts, cards] = await Promise.all([
         getAllTexts(),
         getAllCards(),

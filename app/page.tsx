@@ -58,6 +58,7 @@ function Card({
   return (
     <Link
       href={href}
+      prefetch={false}
       style={{
         border: "1px solid #ddd",
         borderRadius: 10,

@@ -39,6 +39,7 @@ export default function TopNav() {
 
           <Link
             href="/"
+            prefetch={false}
             className="font-semibold text-lg"
           >
             Memory
@@ -54,6 +55,7 @@ export default function TopNav() {
 
           <Link
             href="/cards"
+            prefetch={false}
             className="text-sm text-muted-foreground hover:text-black"
           >
             Cards
@@ -61,6 +63,7 @@ export default function TopNav() {
 
           <Link
             href="/texts"
+            prefetch={false}
             className="text-sm text-muted-foreground hover:text-black"
           >
             Тексты
@@ -71,6 +74,7 @@ export default function TopNav() {
         <div className="flex items-center gap-3">
           <Link
             href="/cards/new"
+            prefetch={false}
             className="text-sm bg-black text-white px-3 py-1.5 rounded"
           >
             New Card
