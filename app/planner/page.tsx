@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
+import { BackButton } from "@/components/back-button";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,9 +15,6 @@ import {
 } from "@/lib/plans";
 
 export default function Planner() {
-
-  const router = useRouter();
-
   const [plans, setPlans] = useState<Plan[]>([]);
   const [planName, setPlanName] = useState("");
   const [folderName, setFolderName] = useState("");
@@ -62,12 +59,12 @@ export default function Planner() {
 
       <div className="max-w-5xl mx-auto">
 
-        <button
-          onClick={() => router.back()}
+        <BackButton
+          fallbackHref="/"
           className="mb-6 text-sm text-muted-foreground hover:text-black"
         >
           ← Назад
-        </button>
+        </BackButton>
 
         <h1 className="text-3xl font-bold mb-8">
           Планировщик
