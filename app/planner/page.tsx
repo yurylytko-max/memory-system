@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
-import { BackButton } from "@/components/back-button";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -59,12 +58,12 @@ export default function Planner() {
 
       <div className="max-w-5xl mx-auto">
 
-        <BackButton
-          fallbackHref="/"
+        <Link
+          href="/"
           className="mb-6 text-sm text-muted-foreground hover:text-black"
         >
           ← Назад
-        </BackButton>
+        </Link>
 
         <h1 className="text-3xl font-bold mb-8">
           Планировщик

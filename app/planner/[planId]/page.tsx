@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 
-import { BackButton } from "@/components/back-button";
+import Link from "next/link";
 import {
   DndContext,
   closestCenter,
@@ -196,9 +196,9 @@ export default function PlanPage() {
 
   return (
     <main className="min-h-screen bg-gray-100 p-10">
-      <BackButton fallbackHref="/" className="text-sm text-gray-600">
+      <Link href="/" className="text-sm text-gray-600">
         ← Назад
-      </BackButton>
+      </Link>
 
       <h1 className="text-3xl font-bold mb-6">{plan.name}</h1>
 
