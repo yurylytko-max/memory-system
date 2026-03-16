@@ -157,10 +157,12 @@ export default function LessonPage() {
     );
   }
 
-  const contentBlocks = buildContentBlocks(lesson.content);
+  const currentLesson = lesson;
+  const lessonId = currentLesson.id;
+  const contentBlocks = buildContentBlocks(currentLesson.content);
 
   function updateProgress(nextAnswers: Record<string, string>, nextFlipped: string[]) {
-    saveLessonProgress(lesson.id, {
+    saveLessonProgress(lessonId, {
       answers: nextAnswers,
       flippedGlossaryIds: nextFlipped,
     });
@@ -229,7 +231,7 @@ export default function LessonPage() {
 
           <div className="mt-6 space-y-2">
             {course.lessons.map((item) => {
-              const active = item.id === lesson.id;
+              const active = item.id === currentLesson.id;
 
               return (
                 <Link
@@ -254,15 +256,15 @@ export default function LessonPage() {
         <div className="flex flex-col gap-6">
           <section className="rounded-[32px] border border-orange-200 bg-white/90 p-6 shadow-[0_18px_50px_-35px_rgba(120,53,15,0.35)] backdrop-blur">
             <div className="text-sm font-medium text-orange-700">
-              Урок {lesson.index}
+              Урок {currentLesson.index}
             </div>
             <h1 className="mt-3 text-4xl font-semibold tracking-tight text-slate-950">
-              {lesson.title}
+              {currentLesson.title}
             </h1>
             <div className="mt-4 flex flex-wrap gap-3 text-sm text-slate-500">
-              <span>страницы: {lesson.pageStart}-{lesson.pageEnd}</span>
-              <span>упражнений: {lesson.exercises.length}</span>
-              <span>словарь: {lesson.glossary.length} карточек</span>
+              <span>страницы: {currentLesson.pageStart}-{currentLesson.pageEnd}</span>
+              <span>упражнений: {currentLesson.exercises.length}</span>
+              <span>словарь: {currentLesson.glossary.length} карточек</span>
             </div>
           </section>
 
@@ -280,7 +282,7 @@ export default function LessonPage() {
 
             <div className="mt-6 space-y-4 text-[17px] leading-8 text-slate-800">
               {contentBlocks.map((block, index) => (
-                <p key={`${lesson.id}-block-${index}`}>
+                <p key={`${currentLesson.id}-block-${index}`}>
                   {block}
                 </p>
               ))}
@@ -296,7 +298,7 @@ export default function LessonPage() {
             </p>
 
             <div className="mt-6 space-y-4">
-              {lesson.exercises.map((exercise) => (
+              {currentLesson.exercises.map((exercise) => (
                 <ExerciseCard
                   key={exercise.id}
                   exercise={exercise}
@@ -318,7 +320,7 @@ export default function LessonPage() {
             </p>
 
             <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {lesson.glossary.map((card) => (
+              {currentLesson.glossary.map((card) => (
                 <GlossaryCard
                   key={card.id}
                   term={card.term}
@@ -327,7 +329,7 @@ export default function LessonPage() {
                   onFlip={() => handleFlip(card.id)}
                   onAddCard={() =>
                     void handleCreateVocabularyCard(
-                      lesson,
+                      currentLesson,
                       card.term,
                       card.context
                     )
