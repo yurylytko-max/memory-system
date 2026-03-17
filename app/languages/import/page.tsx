@@ -217,7 +217,7 @@ export default function LanguagesImportPage() {
           </h1>
           <p className="mt-4 text-base leading-7 text-slate-600">
             Новый курс создаётся через vision-first pipeline, а не через PDF text
-            parsing.
+            parsing. Backend может работать через OpenAI API или через Ollama.
           </p>
 
           <div className="mt-6 flex flex-wrap gap-3">

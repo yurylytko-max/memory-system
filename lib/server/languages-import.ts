@@ -23,8 +23,7 @@ import {
   upsertLanguageCourse,
   upsertLanguageImportJob,
 } from "@/lib/server/languages-store";
-
-const DEFAULT_MODEL = process.env.LANGUAGE_IMPORT_OPENAI_MODEL || "gpt-4o-mini";
+import { callStructuredLanguageModel } from "@/lib/server/languages-ai";
 
 const pageAnalysisBatchSchema = z.object({
   pages: z.array(
@@ -77,123 +76,6 @@ function slugify(value: string) {
 
 function dedupeNumbers(values: number[]) {
   return [...new Set(values)].sort((left, right) => left - right);
-}
-
-function getOpenAIApiKey() {
-  return process.env.OPENAI_API_KEY;
-}
-
-function buildDataUrl(mimeType: string, bytes: Buffer) {
-  return `data:${mimeType};base64,${bytes.toString("base64")}`;
-}
-
-async function extractStructuredText(payload: unknown): Promise<string> {
-  if (typeof payload !== "object" || payload === null) {
-    throw new Error("Invalid OpenAI response payload.");
-  }
-
-  const record = payload as Record<string, unknown>;
-
-  if (typeof record.output_text === "string" && record.output_text.trim()) {
-    return record.output_text.trim();
-  }
-
-  const output = Array.isArray(record.output) ? record.output : [];
-
-  for (const item of output) {
-    if (typeof item !== "object" || item === null) {
-      continue;
-    }
-
-    const content = Array.isArray((item as Record<string, unknown>).content)
-      ? ((item as Record<string, unknown>).content as unknown[])
-      : [];
-
-    for (const contentItem of content) {
-      if (typeof contentItem !== "object" || contentItem === null) {
-        continue;
-      }
-
-      const asRecord = contentItem as Record<string, unknown>;
-      const candidate =
-        typeof asRecord.text === "string"
-          ? asRecord.text
-          : typeof asRecord.value === "string"
-            ? asRecord.value
-            : null;
-
-      if (candidate) {
-        return candidate;
-      }
-    }
-  }
-
-  throw new Error("OpenAI response did not contain structured text output.");
-}
-
-async function callStructuredOpenAI<T>({
-  schema,
-  name,
-  prompt,
-  imageDataUrls = [],
-}: {
-  schema: z.ZodType<T>;
-  name: string;
-  prompt: string;
-  imageDataUrls?: string[];
-}) {
-  const apiKey = getOpenAIApiKey();
-
-  if (!apiKey) {
-    throw new Error("Missing OPENAI_API_KEY.");
-  }
-
-  const schemaJson = z.toJSONSchema(schema, {
-    reused: "inline",
-  });
-
-  const response = await fetch("https://api.openai.com/v1/responses", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: DEFAULT_MODEL,
-      input: [
-        {
-          role: "user",
-          content: [
-            { type: "input_text", text: prompt },
-            ...imageDataUrls.map((image_url) => ({
-              type: "input_image",
-              image_url,
-              detail: "high",
-            })),
-          ],
-        },
-      ],
-      text: {
-        format: {
-          type: "json_schema",
-          name,
-          schema: schemaJson,
-          strict: true,
-        },
-      },
-    }),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(
-      `OpenAI request failed with ${response.status}: ${errorText.slice(0, 500)}`
-    );
-  }
-
-  const payload = (await response.json()) as unknown;
-  const rawText = await extractStructuredText(payload);
-  return schema.parse(JSON.parse(rawText));
 }
 
 function summarizePageAnalyses(pageAnalyses: LanguagePageAnalysis[]) {
@@ -262,15 +144,14 @@ async function analyzeUploadedPageBatch(
     ),
   ].join("\n");
 
-  const imageDataUrls = batch.map(({ bytes }) =>
-    buildDataUrl("image/jpeg", Buffer.from(bytes))
-  );
+  const imageBase64s = batch.map(({ bytes }) => Buffer.from(bytes).toString("base64"));
 
-  const result = await callStructuredOpenAI({
+  const result = await callStructuredLanguageModel({
     schema: pageAnalysisBatchSchema,
     name: "language_page_analysis_batch",
+    purpose: "import",
     prompt,
-    imageDataUrls,
+    imageBase64s,
   });
 
   const analyzedPages = result.pages.map((page, index) =>
@@ -317,9 +198,10 @@ async function assembleLessons(job: LanguageImportJob): Promise<LanguageImportJo
     JSON.stringify(analyses),
   ].join("\n");
 
-  const result = await callStructuredOpenAI({
+  const result = await callStructuredLanguageModel({
     schema: lessonAssemblyResultSchema,
     name: "language_lesson_assembly",
+    purpose: "import",
     prompt,
   });
 
@@ -429,9 +311,10 @@ async function generateLesson(job: LanguageImportJob): Promise<LanguageImportJob
     compactLessonForPrompt(lessonDraft),
   ].join("\n");
 
-  const result = await callStructuredOpenAI({
+  const result = await callStructuredLanguageModel({
     schema: pedagogicalLessonResultSchema,
     name: "language_pedagogical_lesson",
+    purpose: "import",
     prompt,
   });
 

@@ -11,51 +11,10 @@ import {
   readLanguageTutorThread,
   upsertLanguageTutorThread,
 } from "@/lib/server/languages-store";
+import { callLanguageTextModel } from "@/lib/server/languages-ai";
 
 function nowIso() {
   return new Date().toISOString();
-}
-
-function getOpenAIApiKey() {
-  return process.env.OPENAI_API_KEY;
-}
-
-async function extractText(payload: unknown): Promise<string> {
-  if (typeof payload !== "object" || payload === null) {
-    throw new Error("Invalid OpenAI response.");
-  }
-
-  const record = payload as Record<string, unknown>;
-
-  if (typeof record.output_text === "string" && record.output_text.trim()) {
-    return record.output_text.trim();
-  }
-
-  const output = Array.isArray(record.output) ? record.output : [];
-
-  for (const item of output) {
-    if (typeof item !== "object" || item === null) {
-      continue;
-    }
-
-    const content = Array.isArray((item as Record<string, unknown>).content)
-      ? ((item as Record<string, unknown>).content as unknown[])
-      : [];
-
-    for (const chunk of content) {
-      if (typeof chunk !== "object" || chunk === null) {
-        continue;
-      }
-
-      const text = (chunk as Record<string, unknown>).text;
-
-      if (typeof text === "string" && text.trim()) {
-        return text.trim();
-      }
-    }
-  }
-
-  throw new Error("No assistant text returned.");
 }
 
 function buildCourseContext(course: LanguageCourse, lessonId: string | null) {
@@ -92,12 +51,6 @@ export async function answerLanguageTutorQuestion(input: {
   threadId?: string | null;
   message: string;
 }) {
-  const apiKey = getOpenAIApiKey();
-
-  if (!apiKey) {
-    throw new Error("Missing OPENAI_API_KEY.");
-  }
-
   const course = await readLanguageCourse(input.courseId);
 
   if (!course) {
@@ -118,57 +71,31 @@ export async function answerLanguageTutorQuestion(input: {
   const priorMessages = existingThread?.messages ?? [];
   const context = buildCourseContext(course, input.lessonId);
 
-  const response = await fetch("https://api.openai.com/v1/responses", {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: process.env.LANGUAGE_TUTOR_OPENAI_MODEL || "gpt-4o-mini",
-      input: [
-        {
-          role: "system",
-          content: [
-            {
-              type: "input_text",
-              text:
-                "You are an AI language tutor. Explain grammar clearly, answer in the user's language unless asked otherwise, use the current course and lesson context, avoid hallucinating textbook content, and give examples when useful.",
-            },
-          ],
-        },
-        {
-          role: "system",
-          content: [
-            {
-              type: "input_text",
-              text: context,
-            },
-          ],
-        },
-        ...priorMessages
-          .filter((item) => item.role !== "system")
-          .slice(-10)
-          .map((item) => ({
-            role: item.role,
-            content: [{ type: "input_text", text: item.content }],
-          })),
-        {
-          role: "user",
-          content: [{ type: "input_text", text: input.message }],
-        },
-      ],
-    }),
+  const assistantText = await callLanguageTextModel({
+    purpose: "tutor",
+    messages: [
+      {
+        role: "system",
+        content:
+          "You are an AI language tutor. Explain grammar clearly, answer in the user's language unless asked otherwise, use the current course and lesson context, avoid hallucinating textbook content, and give examples when useful.",
+      },
+      {
+        role: "system",
+        content: context,
+      },
+      ...priorMessages
+        .filter((item) => item.role !== "system")
+        .slice(-10)
+        .map((item) => ({
+          role: item.role,
+          content: item.content,
+        })),
+      {
+        role: "user",
+        content: input.message,
+      },
+    ],
   });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(
-      `OpenAI tutor request failed with ${response.status}: ${errorText.slice(0, 400)}`
-    );
-  }
-
-  const assistantText = await extractText(await response.json());
   const assistantMessage: LanguageTutorMessage = {
     id: crypto.randomUUID(),
     role: "assistant",
