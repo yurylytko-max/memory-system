@@ -40,8 +40,8 @@ export default function Home() {
         />
 
         <Card
-          title="Языковая среда"
-          href="/import"
+          title="Изучение языков"
+          href="/languages"
         />
       </div>
     </main>
