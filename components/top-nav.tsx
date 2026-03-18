@@ -69,6 +69,14 @@ export default function TopNav() {
             Тексты
           </Link>
 
+          <Link
+            href="/study"
+            prefetch={false}
+            className="text-sm text-muted-foreground hover:text-black"
+          >
+            Study
+          </Link>
+
         </div>
 
         <div className="flex items-center gap-3">
