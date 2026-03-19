@@ -109,6 +109,7 @@ export default function NewCardPage() {
           className="border p-3 rounded w-full"
         >
           <option value="thought">Мысль</option>
+          <option value="article">Статья</option>
           <option value="quote">Цитата</option>
           <option value="book">Книга</option>
           <option value="music">Музыка</option>

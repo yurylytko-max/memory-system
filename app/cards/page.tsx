@@ -12,6 +12,8 @@ function getTypeLabel(type: string) {
   switch (type) {
     case "thought":
       return "Мысль";
+    case "article":
+      return "Статья";
     case "quote":
       return "Цитата";
     case "book":
@@ -115,6 +117,7 @@ export default function CardsPage() {
             >
               <option value="all">Все типы</option>
               <option value="thought">Мысли</option>
+              <option value="article">Статьи</option>
               <option value="quote">Цитаты</option>
               <option value="book">Книги</option>
               <option value="music">Музыка</option>
