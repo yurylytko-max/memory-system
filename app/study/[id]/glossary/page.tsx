@@ -37,7 +37,8 @@ export default function StudyGlossaryPage() {
 
     return flattenGlossary(textbook).filter((item) => {
       const lessonMatch = lessonFilter === "all" || item.lessonId === lessonFilter;
-      const haystack = `${item.entry.term} ${item.entry.translation} ${item.entry.article ?? ""} ${item.entry.section ?? ""}`.toLowerCase();
+      const haystack =
+        `${item.entry.de} ${item.entry.ru} ${item.entry.article ?? ""} ${item.entry.sectionType ?? ""} ${(item.entry.tags ?? []).join(" ")}`.toLowerCase();
       const searchMatch = haystack.includes(search.toLowerCase());
       return lessonMatch && searchMatch;
     });
@@ -103,7 +104,7 @@ export default function StudyGlossaryPage() {
             <input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Поиск по слову, переводу или разделу"
+              placeholder="Поиск по слову, переводу, тегу или блоку"
               className="h-12 rounded-2xl border border-slate-200 bg-white px-4 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-400"
             />
             <select
@@ -156,8 +157,8 @@ export default function StudyGlossaryPage() {
                       </div>
                       <div className="mt-1 text-sm text-slate-500">{item.lessonTitle}</div>
                     </div>
-                    <div className="text-sm text-slate-700">{item.entry.translation}</div>
-                    <div className="text-sm text-slate-500">{item.entry.section ?? "general"}</div>
+                    <div className="text-sm text-slate-700">{item.entry.ru}</div>
+                    <div className="text-sm text-slate-500">{item.entry.sectionType ?? "general"}</div>
                   </article>
                 ))
               )}
@@ -191,10 +192,10 @@ export default function StudyGlossaryPage() {
                       <span>{isFlipped ? "RU" : "DE"}</span>
                     </div>
                     <div className="mt-8 text-3xl font-semibold tracking-tight text-slate-950">
-                      {isFlipped ? item.entry.translation : formatVocabularyLabel(item.entry)}
+                      {isFlipped ? item.entry.ru : formatVocabularyLabel(item.entry)}
                     </div>
                     <div className="mt-4 text-sm leading-7 text-slate-500">
-                      {isFlipped ? formatVocabularyLabel(item.entry) : item.entry.translation}
+                      {isFlipped ? formatVocabularyLabel(item.entry) : item.entry.ru}
                     </div>
                     <div className="mt-6 text-xs font-medium uppercase tracking-[0.2em] text-slate-400">
                       Нажми для переворота

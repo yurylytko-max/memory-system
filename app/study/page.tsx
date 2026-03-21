@@ -8,6 +8,7 @@ import {
   countDueCards,
   createStudyTextbook,
   deleteStudyTextbook,
+  flattenGlossary,
   getAllStudyTextbooks,
   importStudyTextbook,
   type StudyTextbook,
@@ -18,6 +19,7 @@ function createEmptyTextbook() {
   const now = new Date().toISOString();
 
   return {
+    version: 2,
     id: Math.random().toString(36).slice(2, 10),
     title: "Новый учебник",
     languageCode: "de",
@@ -134,10 +136,7 @@ export default function StudyPage() {
             ) : (
               <div className="grid gap-4 md:grid-cols-2">
                 {textbooks.map((textbook) => {
-                  const glossarySize = textbook.lessons.reduce(
-                    (sum, lesson) => sum + lesson.vocabulary.length,
-                    0
-                  );
+                  const glossarySize = flattenGlossary(textbook).length;
 
                   return (
                     <article

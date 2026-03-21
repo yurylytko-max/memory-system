@@ -4,7 +4,13 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 
-import { buildReviewQueue, countDueCards, flattenGlossary, getStudyTextbook, type StudyTextbook } from "@/lib/study";
+import {
+  buildReviewQueue,
+  countDueCards,
+  flattenGlossary,
+  getStudyTextbook,
+  type StudyTextbook,
+} from "@/lib/study";
 
 type Params = {
   id: string;
@@ -125,7 +131,7 @@ export default function StudyTextbookPage() {
             <div>
               <h2 className="text-2xl font-semibold text-slate-950">Уроки</h2>
               <p className="text-sm text-slate-500">
-                Каждый урок содержит грамматику, лексику, чтение и упражнения без привязки к ИИ.
+                Каждый урок состоит из блоков, словаря, summary и отдельных материалов для повторения.
               </p>
             </div>
           </div>
@@ -150,22 +156,22 @@ export default function StudyTextbookPage() {
                         ) : null}
                       </div>
                       <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-slate-600">
-                        {lesson.vocabulary.length} слов
+                        {lesson.lessonGlossary.length} слов
                       </span>
                     </div>
 
                     <div className="mt-4 grid grid-cols-3 gap-3 text-sm">
                       <div className="rounded-2xl bg-white px-3 py-3">
-                        <div className="text-xs uppercase tracking-wide text-slate-400">Грамматика</div>
-                        <div className="mt-1 font-semibold text-slate-950">{lesson.grammar.length}</div>
+                        <div className="text-xs uppercase tracking-wide text-slate-400">Блоки</div>
+                        <div className="mt-1 font-semibold text-slate-950">{lesson.blocks.length}</div>
                       </div>
                       <div className="rounded-2xl bg-white px-3 py-3">
                         <div className="text-xs uppercase tracking-wide text-slate-400">Лексика</div>
-                        <div className="mt-1 font-semibold text-slate-950">{lesson.vocabulary.length}</div>
+                        <div className="mt-1 font-semibold text-slate-950">{lesson.lessonGlossary.length}</div>
                       </div>
                       <div className="rounded-2xl bg-white px-3 py-3">
-                        <div className="text-xs uppercase tracking-wide text-slate-400">Разделы</div>
-                        <div className="mt-1 font-semibold text-slate-950">{lesson.sections.length}</div>
+                        <div className="text-xs uppercase tracking-wide text-slate-400">Extras</div>
+                        <div className="mt-1 font-semibold text-slate-950">{lesson.extras.length}</div>
                       </div>
                     </div>
 

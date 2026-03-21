@@ -5,6 +5,7 @@ import { dirname, join } from "node:path";
 import { createClient } from "redis";
 
 import type { StudyTextbook } from "@/lib/study";
+import { normalizeStudyTextbook } from "@/lib/study";
 
 const KEY = "study_db";
 const FALLBACK_STUDY_PATH = join(process.cwd(), ".data", "study-db.json");
@@ -23,7 +24,7 @@ async function readFallbackStudy(): Promise<StudyTextbook[]> {
   try {
     const raw = await readFile(FALLBACK_STUDY_PATH, "utf8");
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    return Array.isArray(parsed) ? parsed.map(normalizeStudyTextbook) : [];
   } catch {
     return [];
   }
@@ -70,7 +71,7 @@ export async function readStudyTextbooks(): Promise<StudyTextbook[]> {
     }
 
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    return Array.isArray(parsed) ? parsed.map(normalizeStudyTextbook) : [];
   } catch {
     return await readFallbackStudy();
   }

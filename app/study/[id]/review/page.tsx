@@ -32,6 +32,8 @@ export default function StudyReviewPage() {
   const params = useParams() as Params;
   const searchParams = useSearchParams();
   const modeParam = searchParams.get("mode");
+  const lessonId = searchParams.get("lessonId") ?? undefined;
+  const blockId = searchParams.get("blockId") ?? undefined;
   const mode: "learn" | "review" | "all" =
     modeParam === "learn" || modeParam === "review" || modeParam === "all"
       ? modeParam
@@ -58,8 +60,8 @@ export default function StudyReviewPage() {
       return [];
     }
 
-    return buildReviewQueue(textbook, mode);
-  }, [mode, textbook]);
+    return buildReviewQueue(textbook, mode, { lessonId, blockId });
+  }, [blockId, lessonId, mode, textbook]);
 
   const current = queue[index] ?? null;
 
@@ -79,7 +81,7 @@ export default function StudyReviewPage() {
 
         return {
           ...lesson,
-          vocabulary: lesson.vocabulary.map((entry) => {
+          lessonGlossary: lesson.lessonGlossary.map((entry) => {
             if (entry.id !== current.entry.id) {
               return entry;
             }
@@ -131,7 +133,11 @@ export default function StudyReviewPage() {
             ← К учебнику
           </Link>
           <Link
-            href={`/study/${textbook.id}/glossary`}
+            href={
+              lessonId
+                ? `/study/${textbook.id}/glossary?lessonId=${lessonId}`
+                : `/study/${textbook.id}/glossary`
+            }
             className="inline-flex rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"
           >
             Глоссарий
@@ -150,13 +156,18 @@ export default function StudyReviewPage() {
               <p className="mt-2 text-sm text-slate-500">
                 Отдельное состояние для направлений `DE → RU` и `RU → DE`.
               </p>
+              {lessonId ? (
+                <p className="mt-2 text-sm font-medium text-amber-700">
+                  Фильтр: только карточки текущего урока{blockId ? " и текущего блока" : ""}
+                </p>
+              ) : null}
             </div>
 
             <div className="flex flex-wrap gap-2">
               {(["learn", "review", "all"] as const).map((modeOption) => (
                 <Link
                   key={modeOption}
-                  href={`/study/${textbook.id}/review?mode=${modeOption}`}
+                  href={`/study/${textbook.id}/review?mode=${modeOption}${lessonId ? `&lessonId=${lessonId}` : ""}${blockId ? `&blockId=${blockId}` : ""}`}
                   className={`rounded-full px-4 py-2 text-sm font-medium ${mode === modeOption ? "bg-slate-950 text-white" : "bg-slate-100 text-slate-700"}`}
                 >
                   {getModeLabel(modeOption)}
@@ -190,13 +201,13 @@ export default function StudyReviewPage() {
                 <div className="text-4xl font-semibold tracking-tight">
                   {current.direction === "de_to_ru"
                     ? formatVocabularyLabel(current.entry)
-                    : current.entry.translation}
+                    : current.entry.ru}
                 </div>
 
                 {revealed ? (
                   <div className="rounded-[24px] bg-white/10 px-5 py-4 text-lg leading-8 text-slate-100">
                     {current.direction === "de_to_ru"
-                      ? current.entry.translation
+                      ? current.entry.ru
                       : formatVocabularyLabel(current.entry)}
                   </div>
                 ) : null}

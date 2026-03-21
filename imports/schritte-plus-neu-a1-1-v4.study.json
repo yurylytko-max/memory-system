@@ -1,0 +1,575 @@
+{
+  "version": 2,
+  "textbook": {
+    "id": "schritte-plus-neu-a1-1-v4",
+    "title": "Schritte plus Neu A1.1",
+    "languageCode": "de",
+    "baseLanguageCode": "ru",
+    "level": "A1.1",
+    "series": "Schritte plus Neu",
+    "notes": "Тестовый импорт под новую модель: уроки -> блоки -> словарь -> упражнения с автопроверкой.",
+    "lessons": [
+      {
+        "id": "lektion-1",
+        "order": 1,
+        "title": "Lektion 1",
+        "topic": "Begruessung, Name, Herkunft, Sprache, Adresse",
+        "notes": "Вводный урок. Уже разложен на блоки A-E.",
+        "lessonGlossary": [
+          {
+            "id": "l1-a-guten-tag",
+            "de": "Guten Tag",
+            "ru": "Добрый день",
+            "lessonId": "lektion-1",
+            "blockId": "l1-block-a",
+            "sectionType": "dialogue",
+            "tags": ["greeting"],
+            "cardModes": ["de_to_ru", "ru_to_de"]
+          },
+          {
+            "id": "l1-a-auf-wiedersehen",
+            "de": "Auf Wiedersehen",
+            "ru": "До свидания",
+            "lessonId": "lektion-1",
+            "blockId": "l1-block-a",
+            "sectionType": "dialogue",
+            "tags": ["farewell"],
+            "cardModes": ["de_to_ru", "ru_to_de"]
+          },
+          {
+            "id": "l1-b-name",
+            "de": "der Name",
+            "ru": "имя",
+            "article": "der",
+            "lessonId": "lektion-1",
+            "blockId": "l1-block-b",
+            "sectionType": "dialogue",
+            "tags": ["identity"],
+            "cardModes": ["de_to_ru", "ru_to_de"]
+          },
+          {
+            "id": "l1-c-polen",
+            "de": "Polen",
+            "ru": "Польша",
+            "lessonId": "lektion-1",
+            "blockId": "l1-block-c",
+            "sectionType": "reading",
+            "tags": ["country"],
+            "cardModes": ["de_to_ru", "ru_to_de"]
+          },
+          {
+            "id": "l1-c-deutsch",
+            "de": "Deutsch",
+            "ru": "немецкий язык",
+            "lessonId": "lektion-1",
+            "blockId": "l1-block-c",
+            "sectionType": "reading",
+            "tags": ["language"],
+            "cardModes": ["de_to_ru", "ru_to_de"]
+          },
+          {
+            "id": "l1-e-stadt",
+            "de": "die Stadt",
+            "ru": "город",
+            "article": "die",
+            "lessonId": "lektion-1",
+            "blockId": "l1-block-e",
+            "sectionType": "forms",
+            "tags": ["address"],
+            "cardModes": ["de_to_ru", "ru_to_de"]
+          }
+        ],
+        "blocks": [
+          {
+            "id": "l1-block-a",
+            "code": "A",
+            "title": "Guten Tag",
+            "goal": "Научиться здороваться и прощаться в типовых ситуациях.",
+            "sceneType": "dialogue",
+            "intro": "Вводный блок про приветствия и прощания в бытовых сценах.",
+            "corePhrases": ["Guten Tag.", "Hallo.", "Auf Wiedersehen.", "Tschuess."],
+            "content": {
+              "dialogues": [
+                {
+                  "id": "l1-a-dialogue-1",
+                  "title": "У входа",
+                  "type": "dialogue",
+                  "lines": [
+                    { "speaker": "A", "text": "Guten Tag." },
+                    { "speaker": "B", "text": "Hallo." }
+                  ],
+                  "translationRu": [
+                    { "speaker": "A", "text": "Добрый день." },
+                    { "speaker": "B", "text": "Привет." }
+                  ]
+                }
+              ],
+              "readings": [],
+              "explainer": "На старте важно отличить нейтральное приветствие и формулы прощания."
+            },
+            "grammarPoints": [],
+            "vocabulary": ["l1-a-guten-tag", "l1-a-auf-wiedersehen"],
+            "tasks": [
+              {
+                "id": "l1-a-task-1",
+                "type": "matching",
+                "skill": "recognition",
+                "instruction": "Соотнесите немецкую реплику и перевод.",
+                "leftItems": [
+                  { "id": "left-1", "text": "Guten Tag." },
+                  { "id": "left-2", "text": "Auf Wiedersehen." }
+                ],
+                "rightItems": [
+                  { "id": "right-1", "text": "До свидания." },
+                  { "id": "right-2", "text": "Добрый день." }
+                ],
+                "correctPairs": [
+                  ["left-1", "right-2"],
+                  ["left-2", "right-1"]
+                ],
+                "explanation": "Guten Tag — приветствие, Auf Wiedersehen — прощание."
+              }
+            ]
+          },
+          {
+            "id": "l1-block-b",
+            "code": "B",
+            "title": "Ich heisse Lara Nowak",
+            "goal": "Научиться спрашивать имя и представляться.",
+            "sceneType": "dialogue",
+            "intro": "Блок про формулы знакомства и представления.",
+            "corePhrases": ["Wie heissen Sie?", "Ich heisse ...", "Mein Name ist ..."],
+            "content": {
+              "dialogues": [
+                {
+                  "id": "l1-b-dialogue-1",
+                  "title": "Первое знакомство",
+                  "type": "dialogue",
+                  "lines": [
+                    { "speaker": "A", "text": "Guten Tag. Mein Name ist Richard Yulu." },
+                    { "speaker": "B", "text": "Wie heissen Sie?" },
+                    { "speaker": "A", "text": "Ich heisse Lara Nowak." }
+                  ],
+                  "translationRu": [
+                    { "speaker": "A", "text": "Добрый день. Меня зовут Рихард Юлу." },
+                    { "speaker": "B", "text": "Как вас зовут?" },
+                    { "speaker": "A", "text": "Меня зовут Лара Новак." }
+                  ]
+                }
+              ],
+              "readings": [],
+              "explainer": "Вежливая форма строится через Sie. Ответ можно дать двумя моделями."
+            },
+            "grammarPoints": [
+              {
+                "id": "l1-b-grammar-1",
+                "title": "Wie heissen Sie? / Ich heisse ...",
+                "summary": "Как спросить имя и назвать своё имя.",
+                "explanation": "В официальной ситуации используем Wie heissen Sie? Ответ: Ich heisse ... или Mein Name ist ...",
+                "pattern": "Wie heissen Sie? -> Ich heisse Lara. / Mein Name ist Lara Nowak.",
+                "examples": [
+                  "Wie heissen Sie? - Ich heisse Richard Yulu.",
+                  "Mein Name ist Walter Baumann."
+                ],
+                "pitfalls": ["Не путать Sie и du."],
+                "linkedTaskIds": ["l1-b-task-1", "l1-b-task-2"]
+              }
+            ],
+            "vocabulary": ["l1-b-name"],
+            "tasks": [
+              {
+                "id": "l1-b-task-1",
+                "type": "fill_in_blank",
+                "skill": "guided_production",
+                "instruction": "Впишите правильный глагол.",
+                "prompt": "Wie ___ Sie?",
+                "acceptedAnswers": ["heissen", "heißen"],
+                "normalizedAcceptedAnswers": ["heissen"],
+                "explanation": "В этой формуле знакомства нужен глагол heissen/heißen."
+              },
+              {
+                "id": "l1-b-task-2",
+                "type": "single_choice",
+                "skill": "recognition",
+                "instruction": "Выберите корректный ответ.",
+                "prompt": "Wie heissen Sie?",
+                "options": [
+                  { "id": "a", "text": "Ich heisse Lara.", "isCorrect": true },
+                  { "id": "b", "text": "Ich komme aus Polen." },
+                  { "id": "c", "text": "Ich spreche Deutsch." }
+                ],
+                "explanation": "Вопрос про имя требует ответа с heissen или Mein Name ist ..."
+              }
+            ]
+          },
+          {
+            "id": "l1-block-c",
+            "code": "C",
+            "title": "Ich komme aus Polen",
+            "goal": "Научиться говорить, откуда человек и на каком языке он говорит.",
+            "sceneType": "reading",
+            "intro": "Блок про страну происхождения, язык и различие du/Sie.",
+            "corePhrases": ["Woher kommen Sie?", "Ich komme aus ...", "Ich spreche ..."],
+            "content": {
+              "dialogues": [],
+              "readings": [
+                {
+                  "id": "l1-c-reading-1",
+                  "title": "Мини-текст о происхождении",
+                  "type": "reading",
+                  "text": "Guten Tag. Ich heisse Klara Schneider. Ich komme aus Polen. Ich spreche Polnisch und Deutsch.",
+                  "translationRu": "Добрый день. Меня зовут Клара Шнайдер. Я приехала из Польши. Я говорю по-польски и по-немецки.",
+                  "comprehensionFocus": ["имя", "страна", "язык"]
+                }
+              ],
+              "explainer": "После aus идёт страна или место происхождения. Для языка используется Ich spreche ..."
+            },
+            "grammarPoints": [
+              {
+                "id": "l1-c-grammar-1",
+                "title": "Woher kommen Sie? / Ich komme aus ...",
+                "summary": "Как спросить о происхождении.",
+                "explanation": "Вежливый вопрос строится через Woher kommen Sie?, разговорный — Woher kommst du?",
+                "pattern": "Woher kommen Sie? -> Ich komme aus Polen.",
+                "examples": ["Woher kommen Sie? - Aus Polen.", "Was sprechen Sie? - Deutsch."],
+                "pitfalls": ["После aus нужен пункт происхождения, а не язык."]
+              }
+            ],
+            "vocabulary": ["l1-c-polen", "l1-c-deutsch"],
+            "tasks": [
+              {
+                "id": "l1-c-task-1",
+                "type": "single_choice",
+                "skill": "recognition",
+                "instruction": "Выберите правильный ответ на вопрос о происхождении.",
+                "prompt": "Woher kommen Sie?",
+                "options": [
+                  { "id": "a", "text": "Aus Polen.", "isCorrect": true },
+                  { "id": "b", "text": "Ich spreche Polen." },
+                  { "id": "c", "text": "Mein Name ist Polen." }
+                ],
+                "explanation": "На вопрос Woher ... отвечаем через aus + страна."
+              },
+              {
+                "id": "l1-c-task-2",
+                "type": "guided_writing",
+                "skill": "free_production",
+                "instruction": "Напишите 3 короткие фразы о себе по модели.",
+                "template": ["Ich heisse ...", "Ich komme aus ...", "Ich spreche ..."],
+                "requiredPhrases": ["ich heisse", "ich komme aus", "ich spreche"],
+                "sampleAnswer": "Ich heisse Anna. Ich komme aus Litauen. Ich spreche Litauisch und ein bisschen Deutsch.",
+                "explanation": "Проверка смотрит, есть ли в ответе все три смысловых блока."
+              }
+            ]
+          },
+          {
+            "id": "l1-block-d",
+            "code": "D",
+            "title": "Buchstaben",
+            "goal": "Повторить алфавит и уметь продиктовать имя по буквам.",
+            "sceneType": "phonetics",
+            "intro": "Блок про алфавит, произношение букв и spelling.",
+            "corePhrases": ["Wie bitte?", "Buchstabieren Sie bitte.", "Ich buchstabiere ..."],
+            "content": {
+              "dialogues": [],
+              "readings": [
+                {
+                  "id": "l1-d-reading-1",
+                  "title": "Алфавит и буквы",
+                  "type": "reading",
+                  "text": "Aa, Bb, Cc ... Zz. Umlaute: Ää, Öö, Üü. Dazu kommt ß.",
+                  "translationRu": "Aa, Bb, Cc ... Zz. Умлауты: Ää, Öö, Üü. Также есть ß.",
+                  "comprehensionFocus": ["алфавит", "умлауты", "буквование"]
+                }
+              ],
+              "explainer": "Блок нужен не для зубрёжки всего списка слов, а для уверенного spelling по буквам."
+            },
+            "grammarPoints": [],
+            "vocabulary": [],
+            "tasks": [
+              {
+                "id": "l1-d-task-1",
+                "type": "ordering",
+                "skill": "guided_production",
+                "instruction": "Соберите фразу.",
+                "tokens": ["Buchstabieren", "Sie", "bitte"],
+                "correctOrder": ["Buchstabieren", "Sie", "bitte"],
+                "explanation": "Это стандартная вежливая просьба продиктовать слово по буквам."
+              }
+            ]
+          },
+          {
+            "id": "l1-block-e",
+            "code": "E",
+            "title": "Adresse",
+            "goal": "Научиться читать и заполнять простые формы с именем и адресом.",
+            "sceneType": "forms",
+            "intro": "Блок про визитки, страну, город и формуляр.",
+            "corePhrases": ["Vorname", "Familienname", "Stadt", "Land"],
+            "content": {
+              "dialogues": [],
+              "readings": [
+                {
+                  "id": "l1-e-reading-1",
+                  "title": "Визитка",
+                  "type": "reading",
+                  "text": "Lorenzo Menardi, Merzstrasse 18, 10453 Berlin",
+                  "translationRu": "Лоренцо Менарди, Мерцштрассе 18, 10453 Берлин",
+                  "comprehensionFocus": ["имя", "улица", "город"]
+                }
+              ],
+              "explainer": "Ученик учится различать Vorname, Familienname, Stadt, Land и переносить данные в форму."
+            },
+            "grammarPoints": [],
+            "vocabulary": ["l1-e-stadt"],
+            "tasks": [
+              {
+                "id": "l1-e-task-1",
+                "type": "form_fill",
+                "skill": "guided_production",
+                "instruction": "Заполните формуляр по образцу.",
+                "fields": [
+                  {
+                    "id": "firstName",
+                    "label": "Vorname",
+                    "inputType": "text",
+                    "acceptedAnswers": ["Lara"]
+                  },
+                  {
+                    "id": "lastName",
+                    "label": "Familienname",
+                    "inputType": "text",
+                    "acceptedAnswers": ["Nowak"]
+                  },
+                  {
+                    "id": "city",
+                    "label": "Stadt",
+                    "inputType": "text",
+                    "acceptedAnswers": ["Berlin"]
+                  }
+                ],
+                "explanation": "Формуляр проверяется по каждому полю отдельно."
+              }
+            ]
+          }
+        ],
+        "summary": {
+          "grammar": [
+            {
+              "id": "l1-summary-g1",
+              "title": "W-Fragen",
+              "content": "Wie heissen Sie? Woher kommen Sie? Was sprechen Sie?"
+            }
+          ],
+          "communication": [
+            {
+              "id": "l1-summary-c1",
+              "title": "Begruessung und Abschied",
+              "phrases": ["Hallo.", "Guten Tag.", "Auf Wiedersehen.", "Tschuess."]
+            }
+          ],
+          "goals": [
+            "Я могу поздороваться и попрощаться.",
+            "Я могу назвать своё имя.",
+            "Я могу сказать, откуда я.",
+            "Я могу заполнить простую форму."
+          ]
+        },
+        "extras": [
+          {
+            "id": "l1-extra-1",
+            "type": "culture",
+            "title": "Begruessung regional",
+            "content": {
+              "text": "Региональные формы приветствия в Германии, Австрии и Швейцарии.",
+              "items": ["Moin", "Servus", "Gruezi"]
+            }
+          }
+        ]
+      },
+      {
+        "id": "lektion-2",
+        "order": 2,
+        "title": "Lektion 2",
+        "topic": "Befinden, Familie, Wohnen, Personalien",
+        "notes": "Второй урок уже в новой структуре, но пока короче первого.",
+        "lessonGlossary": [
+          {
+            "id": "l2-a-super",
+            "de": "Super",
+            "ru": "супер",
+            "lessonId": "lektion-2",
+            "blockId": "l2-block-a",
+            "sectionType": "dialogue",
+            "tags": ["feeling"],
+            "cardModes": ["de_to_ru", "ru_to_de"]
+          },
+          {
+            "id": "l2-b-bruder",
+            "de": "der Bruder",
+            "ru": "брат",
+            "article": "der",
+            "lessonId": "lektion-2",
+            "blockId": "l2-block-b",
+            "sectionType": "dialogue",
+            "tags": ["family"],
+            "cardModes": ["de_to_ru", "ru_to_de"]
+          },
+          {
+            "id": "l2-b-tochter",
+            "de": "die Tochter",
+            "ru": "дочь",
+            "article": "die",
+            "lessonId": "lektion-2",
+            "blockId": "l2-block-b",
+            "sectionType": "dialogue",
+            "tags": ["family"],
+            "cardModes": ["de_to_ru", "ru_to_de"]
+          }
+        ],
+        "blocks": [
+          {
+            "id": "l2-block-a",
+            "code": "A",
+            "title": "Wie geht's?",
+            "goal": "Уметь спросить о самочувствии и ответить.",
+            "sceneType": "dialogue",
+            "intro": "Диалоги с du и Sie про самочувствие.",
+            "corePhrases": ["Wie geht's?", "Wie geht es Ihnen?", "Danke, gut."],
+            "content": {
+              "dialogues": [
+                {
+                  "id": "l2-a-dialogue-1",
+                  "title": "Короткий обмен",
+                  "type": "dialogue",
+                  "lines": [
+                    { "speaker": "A", "text": "Hallo, Tim. Wie geht's?" },
+                    { "speaker": "B", "text": "Danke, gut. Und dir?" }
+                  ],
+                  "translationRu": [
+                    { "speaker": "A", "text": "Привет, Тим. Как дела?" },
+                    { "speaker": "B", "text": "Спасибо, хорошо. А у тебя?" }
+                  ]
+                }
+              ],
+              "readings": [],
+              "explainer": "Для du и Sie используются разные модели вопроса."
+            },
+            "grammarPoints": [
+              {
+                "id": "l2-a-grammar-1",
+                "title": "Wie geht's? / Wie geht es Ihnen?",
+                "summary": "Вопрос о самочувствии в двух регистрах.",
+                "explanation": "С друзьями: Wie geht's? или Wie geht es dir? В вежливой форме: Wie geht es Ihnen?",
+                "pattern": "Wie geht's? -> Gut, danke. / Wie geht es Ihnen? -> Sehr gut, danke.",
+                "examples": ["Wie geht es Ihnen? - Gut, danke.", "Und dir? - Auch gut."],
+                "pitfalls": ["Не смешивать dir и Ihnen."]
+              }
+            ],
+            "vocabulary": ["l2-a-super"],
+            "tasks": [
+              {
+                "id": "l2-a-task-1",
+                "type": "single_choice",
+                "skill": "recognition",
+                "instruction": "Выберите подходящий ответ.",
+                "prompt": "Wie geht es Ihnen?",
+                "options": [
+                  { "id": "a", "text": "Gut, danke.", "isCorrect": true },
+                  { "id": "b", "text": "Ich heisse Lara." },
+                  { "id": "c", "text": "Aus Polen." }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "l2-block-b",
+            "code": "B",
+            "title": "Das ist mein Bruder",
+            "goal": "Представить членов семьи и освоить mein/dein/Ihr.",
+            "sceneType": "dialogue",
+            "intro": "Блок про семью и притяжательные артикли.",
+            "corePhrases": ["Das ist mein Bruder.", "Wer ist das?", "Nein, das ist meine Tochter."],
+            "content": {
+              "dialogues": [],
+              "readings": [
+                {
+                  "id": "l2-b-reading-1",
+                  "title": "Семейные фото",
+                  "type": "reading",
+                  "text": "Das ist mein Bruder Tobias. Das ist meine Tochter Sofia.",
+                  "translationRu": "Это мой брат Тобиас. Это моя дочь София.",
+                  "comprehensionFocus": ["семья", "mein/meine"]
+                }
+              ],
+              "explainer": "Притяжательный артикль меняется по роду существительного."
+            },
+            "grammarPoints": [
+              {
+                "id": "l2-b-grammar-1",
+                "title": "Possessivartikel: mein/e, dein/e, Ihr/e",
+                "summary": "Притяжательные артикли с семейной лексикой.",
+                "explanation": "С мужским и средним родом: mein Bruder, mein Kind. С женским и множественным: meine Tochter, meine Kinder.",
+                "pattern": "mein Bruder / mein Kind / meine Tochter / meine Kinder",
+                "examples": ["Das ist mein Bruder.", "Das sind meine Kinder."],
+                "pitfalls": ["Не забывать -e с die и plural."]
+              }
+            ],
+            "vocabulary": ["l2-b-bruder", "l2-b-tochter"],
+            "tasks": [
+              {
+                "id": "l2-b-task-1",
+                "type": "ordering",
+                "skill": "guided_production",
+                "instruction": "Соберите фразу.",
+                "tokens": ["Das", "ist", "mein", "Bruder"],
+                "correctOrder": ["Das", "ist", "mein", "Bruder"],
+                "explanation": "Базовый порядок слов в утверждении."
+              },
+              {
+                "id": "l2-b-task-2",
+                "type": "fill_in_blank",
+                "skill": "guided_production",
+                "instruction": "Впишите форму артикля.",
+                "prompt": "Das ist ___ Tochter.",
+                "acceptedAnswers": ["meine"],
+                "normalizedAcceptedAnswers": ["meine"],
+                "explanation": "С die Tochter нужен mein + e."
+              }
+            ]
+          }
+        ],
+        "summary": {
+          "grammar": [
+            {
+              "id": "l2-summary-g1",
+              "title": "Possessivartikel",
+              "content": "mein Bruder, mein Kind, meine Tochter, meine Kinder"
+            }
+          ],
+          "communication": [
+            {
+              "id": "l2-summary-c1",
+              "title": "Befinden",
+              "phrases": ["Wie geht's?", "Wie geht es Ihnen?", "Danke, gut."]
+            }
+          ],
+          "goals": [
+            "Я могу спросить, как дела.",
+            "Я могу представить членов семьи."
+          ]
+        },
+        "extras": [
+          {
+            "id": "l2-extra-1",
+            "type": "project",
+            "title": "Kurs-Kontaktliste",
+            "content": {
+              "text": "Проектный блок для сбора контактов в курсе."
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
