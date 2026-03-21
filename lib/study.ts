@@ -6,6 +6,7 @@ export type StudySceneType =
   | "forms"
   | "phonetics"
   | "culture"
+  | "custom"
   | "mixed";
 
 export type StudyContentType = "dialogue" | "reading";

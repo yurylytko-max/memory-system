@@ -110,7 +110,7 @@ const blockSchema = z.object({
   title: z.string(),
   goal: z.string().optional(),
   sceneType: z
-    .enum(["dialogue", "reading", "forms", "phonetics", "culture", "mixed"])
+    .enum(["dialogue", "reading", "forms", "phonetics", "culture", "custom", "mixed"])
     .optional(),
   intro: z.string().optional(),
   corePhrases: z.array(z.string()).optional(),
