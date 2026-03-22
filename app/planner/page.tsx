@@ -92,44 +92,42 @@ export default function Planner() {
         {!loaded ? (
           <div className="text-sm text-muted-foreground">Загрузка планов...</div>
         ) : (
-          <div className="overflow-x-auto pb-4">
-            <div className="flex min-w-full items-start gap-6">
-              {folders.map((folder) => (
-                <section
-                  key={folder}
-                  className="w-[320px] min-w-[320px] shrink-0 rounded-2xl border bg-white/70 p-4 shadow-sm"
-                >
-                  <h2 className="mb-4 text-lg font-semibold">
-                    {folder}
-                  </h2>
+          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+            {folders.map((folder) => (
+              <section
+                key={folder}
+                className="rounded-2xl border bg-white/70 p-4 shadow-sm"
+              >
+                <h2 className="mb-4 text-lg font-semibold">
+                  {folder}
+                </h2>
 
-                  <div className="space-y-4">
-                    {plans
-                      .filter((p) => p.folder === folder)
-                      .map((plan) => (
-                        <Card key={plan.id} className="relative hover:shadow-md transition">
-                          <CardHeader>
-                            <Link href={`/planner/${plan.id}`}>
-                              <CardTitle className="cursor-pointer text-base">
-                                {plan.name}
-                              </CardTitle>
-                            </Link>
+                <div className="space-y-4">
+                  {plans
+                    .filter((p) => p.folder === folder)
+                    .map((plan) => (
+                      <Card key={plan.id} className="relative hover:shadow-md transition">
+                        <CardHeader>
+                          <Link href={`/planner/${plan.id}`}>
+                            <CardTitle className="cursor-pointer text-base">
+                              {plan.name}
+                            </CardTitle>
+                          </Link>
 
-                            <button
-                              onClick={() => {
-                                void handleDeletePlan(plan.id);
-                              }}
-                              className="absolute top-3 right-4 text-muted-foreground hover:text-red-500"
-                            >
-                              ×
-                            </button>
-                          </CardHeader>
-                        </Card>
-                      ))}
-                  </div>
-                </section>
-              ))}
-            </div>
+                          <button
+                            onClick={() => {
+                              void handleDeletePlan(plan.id);
+                            }}
+                            className="absolute top-3 right-4 text-muted-foreground hover:text-red-500"
+                          >
+                            ×
+                          </button>
+                        </CardHeader>
+                      </Card>
+                    ))}
+                </div>
+              </section>
+            ))}
           </div>
         )}
 
