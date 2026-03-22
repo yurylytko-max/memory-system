@@ -18,6 +18,8 @@ import {
 } from "@dnd-kit/sortable";
 
 import { CSS } from "@dnd-kit/utilities";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   migrateLegacyPlansToServer,
   savePlans,
@@ -34,6 +36,7 @@ export default function PlanPage() {
 
   const [input, setInput] = useState("");
   const [search, setSearch] = useState("");
+  const [planName, setPlanName] = useState("");
   const [activeTask, setActiveTask] = useState<number | null>(null);
   const [moveTaskIndex, setMoveTaskIndex] = useState<number | null>(null);
   const [loaded, setLoaded] = useState(false);
@@ -41,9 +44,11 @@ export default function PlanPage() {
   useEffect(() => {
     async function loadPlans() {
       const parsed = await migrateLegacyPlansToServer();
+      const currentPlan = parsed.find((p) => p.id === planId) || null;
 
       setPlans(parsed);
-      setPlan(parsed.find((p) => p.id === planId) || null);
+      setPlan(currentPlan);
+      setPlanName(currentPlan?.name || "");
       setLoaded(true);
     }
 
@@ -56,6 +61,27 @@ export default function PlanPage() {
 
     const found = updated.find((p) => p.id === planId) || null;
     setPlan(found);
+    setPlanName(found?.name || "");
+  }
+
+  function renamePlan() {
+    if (!plan) return;
+
+    const trimmedName = planName.trim();
+    if (!trimmedName) {
+      setPlanName(plan.name);
+      return;
+    }
+
+    if (trimmedName === plan.name) {
+      return;
+    }
+
+    const updated = plans.map((p) =>
+      p.id === planId ? { ...p, name: trimmedName } : p
+    );
+
+    void save(updated);
   }
 
   function addTasks() {
@@ -200,7 +226,25 @@ export default function PlanPage() {
         ← Назад
       </Link>
 
-      <h1 className="text-3xl font-bold mb-6">{plan.name}</h1>
+      <div className="mb-6 flex max-w-xl flex-col gap-3 sm:flex-row sm:items-center">
+        <Input
+          value={planName}
+          onChange={(e) => setPlanName(e.target.value)}
+          onBlur={renamePlan}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              renamePlan();
+            }
+          }}
+          placeholder="Название плана"
+          className="bg-white"
+        />
+
+        <Button type="button" onClick={renamePlan} variant="outline">
+          Сохранить название
+        </Button>
+      </div>
 
       <input
         placeholder="Search"
