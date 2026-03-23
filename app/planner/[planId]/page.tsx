@@ -27,6 +27,28 @@ import {
   type PlanTask,
 } from "@/lib/plans";
 
+function formatPlanPeriod(plan: Pick<Plan, "periodStart" | "periodEnd">) {
+  const formatter = new Intl.DateTimeFormat("ru-RU", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+
+  if (plan.periodStart && plan.periodEnd) {
+    return `${formatter.format(new Date(`${plan.periodStart}T00:00:00`))} - ${formatter.format(new Date(`${plan.periodEnd}T00:00:00`))}`;
+  }
+
+  if (plan.periodStart) {
+    return `С ${formatter.format(new Date(`${plan.periodStart}T00:00:00`))}`;
+  }
+
+  if (plan.periodEnd) {
+    return `До ${formatter.format(new Date(`${plan.periodEnd}T00:00:00`))}`;
+  }
+
+  return null;
+}
+
 export default function PlanPage() {
   const params = useParams();
   const planId = params.planId as string;
@@ -213,6 +235,7 @@ export default function PlanPage() {
   if (!plan) return null;
 
   const availableMoveTargets = plans.filter((p) => p.id !== planId);
+  const periodLabel = formatPlanPeriod(plan);
 
   const indexedTasks = plan.tasks
     .map((task, originalIndex) => ({ task, originalIndex }))
@@ -245,6 +268,12 @@ export default function PlanPage() {
           Сохранить название
         </Button>
       </div>
+
+      {periodLabel ? (
+        <p className="mb-4 text-sm text-gray-600">
+          Период плана: {periodLabel}
+        </p>
+      ) : null}
 
       <input
         placeholder="Search"

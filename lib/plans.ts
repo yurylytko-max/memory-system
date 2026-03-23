@@ -10,6 +10,8 @@ export type Plan = {
   id: string;
   name: string;
   folder: string;
+  periodStart?: string;
+  periodEnd?: string;
   tasks: PlanTask[];
 };
 
@@ -38,6 +40,8 @@ function normalizePlan(plan: Partial<Plan>): Plan {
     id: plan.id || crypto.randomUUID(),
     name: plan.name || "Без названия",
     folder: plan.folder || "Без папки",
+    periodStart: plan.periodStart,
+    periodEnd: plan.periodEnd,
     tasks: Array.isArray(plan.tasks) ? plan.tasks.map(normalizeTask) : [],
   };
 }
