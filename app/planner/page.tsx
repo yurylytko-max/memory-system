@@ -23,6 +23,7 @@ import {
   savePlans,
   type Plan,
 } from "@/lib/plans";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 function formatPlanPeriod(plan: Pick<Plan, "periodStart" | "periodEnd">) {
   const formatter = new Intl.DateTimeFormat("ru-RU", {
@@ -61,6 +62,7 @@ function toIsoDate(date?: Date) {
 }
 
 export default function Planner() {
+  const isMobile = useIsMobile();
   const [plans, setPlans] = useState<Plan[]>([]);
   const [planName, setPlanName] = useState("");
   const [folderName, setFolderName] = useState("");
@@ -288,7 +290,7 @@ export default function Planner() {
           closeEditDialog();
         }
       }}>
-        <DialogContent className="max-w-[720px]">
+        <DialogContent className="max-h-[calc(100vh-2rem)] w-[min(860px,calc(100vw-2rem))] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Редактировать план</DialogTitle>
             <DialogDescription>
@@ -297,7 +299,7 @@ export default function Planner() {
           </DialogHeader>
 
           <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
+            <div className="min-w-0 space-y-2">
               <label className="text-sm font-medium">Название</label>
               <Input
                 value={editingName}
@@ -307,7 +309,7 @@ export default function Planner() {
               />
             </div>
 
-            <div className="space-y-2">
+            <div className="min-w-0 space-y-2">
               <label className="text-sm font-medium">Папка</label>
               <Input
                 value={editingFolder}
@@ -336,13 +338,13 @@ export default function Planner() {
               </Button>
             </div>
 
-            <div className="rounded-xl border p-3">
+            <div className="overflow-x-auto rounded-xl border p-3">
               <Calendar
                 mode="range"
-                numberOfMonths={2}
+                numberOfMonths={isMobile ? 1 : 2}
                 selected={editingRange}
                 onSelect={setEditingRange}
-                className="w-full"
+                className="mx-auto w-fit min-w-0"
               />
             </div>
           </div>
