@@ -10,6 +10,7 @@ export type Plan = {
   id: string;
   name: string;
   folder: string;
+  folderOrder?: number;
   periodStart?: string;
   periodEnd?: string;
   tasks: PlanTask[];
@@ -40,6 +41,7 @@ function normalizePlan(plan: Partial<Plan>): Plan {
     id: plan.id || crypto.randomUUID(),
     name: plan.name || "Без названия",
     folder: plan.folder || "Без папки",
+    folderOrder: typeof plan.folderOrder === "number" ? plan.folderOrder : 0,
     periodStart: plan.periodStart,
     periodEnd: plan.periodEnd,
     tasks: Array.isArray(plan.tasks) ? plan.tasks.map(normalizeTask) : [],

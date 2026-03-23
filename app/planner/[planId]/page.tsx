@@ -82,6 +82,10 @@ function getTaskDeadlineTone(deadline?: string, done?: boolean) {
   return "text-gray-500";
 }
 
+function getDeadlineSortValue(deadline?: string) {
+  return deadline ? Date.parse(`${deadline}T00:00:00`) : Number.POSITIVE_INFINITY;
+}
+
 export default function PlanPage() {
   const params = useParams();
   const planId = params.planId as string;
@@ -282,6 +286,34 @@ export default function PlanPage() {
     void save(updated);
   }
 
+  function sortTasksByDeadline() {
+    if (!plan) return;
+
+    const reordered = [...plan.tasks]
+      .map((task, index) => ({ task, index }))
+      .sort((a, b) => {
+        if (a.task.done !== b.task.done) {
+          return Number(a.task.done) - Number(b.task.done);
+        }
+
+        const deadlineDiff =
+          getDeadlineSortValue(a.task.deadline) - getDeadlineSortValue(b.task.deadline);
+
+        if (deadlineDiff !== 0) {
+          return deadlineDiff;
+        }
+
+        return a.index - b.index;
+      })
+      .map(({ task }) => task);
+
+    const updated = plans.map((p) =>
+      p.id === planId ? { ...p, tasks: reordered } : p
+    );
+
+    void save(updated);
+  }
+
   if (!loaded) return null;
   if (!plan) return null;
 
@@ -330,12 +362,18 @@ export default function PlanPage() {
         </p>
       ) : null}
 
-      <input
-        placeholder="Search"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="border px-3 py-2 rounded mb-6 w-64"
-      />
+      <div className="mb-6 flex flex-wrap items-center gap-3">
+        <input
+          placeholder="Search"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-64 rounded border px-3 py-2"
+        />
+
+        <Button type="button" variant="outline" onClick={sortTasksByDeadline}>
+          Сортировать по дедлайну
+        </Button>
+      </div>
 
       <div className="bg-white p-6 rounded-xl shadow max-w-xl">
         <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>

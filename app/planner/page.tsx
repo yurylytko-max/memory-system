@@ -62,6 +62,22 @@ function toIsoDate(date?: Date) {
   return `${year}-${month}-${day}`;
 }
 
+function getFolderOrderMap(plans: Plan[]) {
+  const entries = new Map<string, number>();
+
+  for (const plan of plans) {
+    if (!entries.has(plan.folder)) {
+      entries.set(plan.folder, plan.folderOrder ?? 0);
+      continue;
+    }
+
+    const currentValue = entries.get(plan.folder) ?? 0;
+    entries.set(plan.folder, Math.min(currentValue, plan.folderOrder ?? 0));
+  }
+
+  return entries;
+}
+
 export default function Planner() {
   const isMobile = useIsMobile();
   const [plans, setPlans] = useState<Plan[]>([]);
@@ -84,13 +100,22 @@ export default function Planner() {
     void loadPlans();
   }, []);
   async function handleCreatePlan() {
-
     if (!planName.trim()) return;
+
+    const trimmedFolder = folderName.trim() || "Без папки";
+    const folderOrderMap = getFolderOrderMap(plans);
+    const existingFolderOrder = folderOrderMap.get(trimmedFolder);
+    const nextFolderOrder =
+      existingFolderOrder ??
+      (folderOrderMap.size === 0
+        ? 0
+        : Math.max(...Array.from(folderOrderMap.values())) + 1);
 
     const newPlan: Plan = {
       id: Date.now().toString(),
       name: planName,
-      folder: folderName || "Без папки",
+      folder: trimmedFolder,
+      folderOrder: nextFolderOrder,
       periodStart: undefined,
       periodEnd: undefined,
       tasks: []
@@ -154,6 +179,14 @@ export default function Planner() {
       ...editingPlan,
       name: trimmedName,
       folder: trimmedFolder || "Без папки",
+      folderOrder:
+        plans.find(
+          (plan) =>
+            plan.id !== editingPlan.id &&
+            plan.folder === (trimmedFolder || "Без папки")
+        )?.folderOrder ??
+        editingPlan.folderOrder ??
+        Math.max(0, plans.length),
       periodStart: toIsoDate(editingRange?.from),
       periodEnd: toIsoDate(editingRange?.to),
     };
@@ -181,7 +214,38 @@ export default function Planner() {
     setPlans(updatedPlans);
   }
 
-  const folders = [...new Set(plans.map(p => p.folder))];
+  async function moveFolder(folderNameToMove: string, direction: "left" | "right") {
+    const folderOrderMap = getFolderOrderMap(plans);
+    const orderedFolders = Array.from(folderOrderMap.entries())
+      .sort((a, b) => a[1] - b[1] || a[0].localeCompare(b[0], "ru"))
+      .map(([folder]) => folder);
+
+    const currentIndex = orderedFolders.indexOf(folderNameToMove);
+    if (currentIndex === -1) {
+      return;
+    }
+
+    const targetIndex = direction === "left" ? currentIndex - 1 : currentIndex + 1;
+    if (targetIndex < 0 || targetIndex >= orderedFolders.length) {
+      return;
+    }
+
+    const reorderedFolders = [...orderedFolders];
+    const [movedFolder] = reorderedFolders.splice(currentIndex, 1);
+    reorderedFolders.splice(targetIndex, 0, movedFolder);
+
+    const updatedPlans = plans.map((plan) => ({
+      ...plan,
+      folderOrder: reorderedFolders.indexOf(plan.folder),
+    }));
+
+    await createOrUpdatePlans(updatedPlans);
+  }
+
+  const folderOrderMap = getFolderOrderMap(plans);
+  const folders = Array.from(folderOrderMap.entries())
+    .sort((a, b) => a[1] - b[1] || a[0].localeCompare(b[0], "ru"))
+    .map(([folder]) => folder);
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-muted/40 px-4 py-10 sm:px-6 lg:px-10">
@@ -234,9 +298,36 @@ export default function Planner() {
                 key={folder}
                 className="min-w-0 rounded-2xl border bg-white/70 p-4 shadow-sm"
               >
-                <h2 className="mb-4 text-lg font-semibold">
-                  {folder}
-                </h2>
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <h2 className="text-lg font-semibold">
+                    {folder}
+                  </h2>
+
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        void moveFolder(folder, "left");
+                      }}
+                      disabled={folders[0] === folder}
+                    >
+                      ←
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        void moveFolder(folder, "right");
+                      }}
+                      disabled={folders[folders.length - 1] === folder}
+                    >
+                      →
+                    </Button>
+                  </div>
+                </div>
 
                 <div className="space-y-4">
                   {plans
