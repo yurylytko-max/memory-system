@@ -80,6 +80,7 @@ export type PendingTextCardLink = {
 
 const DEFAULT_FONT_SIZE = "12";
 const DEFAULT_LINE_HEIGHT = 1.15;
+const EDITOR_DISPLAY_ZOOM = 1.2;
 
 const FONT_SIZE_OPTIONS = ["8", "9", "10", "12", "14", "16", "18", "20", "24", "30", "36"] as const;
 const LINE_HEIGHT_OPTIONS = ["1", "1.15", "1.5", "2"] as const;
@@ -535,6 +536,7 @@ export default function PlateTextEditor({ createCard, editor }: PlateTextEditorP
               className="min-h-[720px] px-16 pt-4 pb-72 text-[12px] leading-[1.15] sm:px-24"
               style={{
                 fontFamily: '"Times New Roman", Times, serif',
+                zoom: EDITOR_DISPLAY_ZOOM,
               }}
               variant="fullWidth"
             />
