@@ -3,6 +3,18 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { DateRange } from "react-day-picker";
+import {
+  DndContext,
+  closestCenter,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  rectSortingStrategy,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -214,32 +226,35 @@ export default function Planner() {
     setPlans(updatedPlans);
   }
 
-  async function moveFolder(folderNameToMove: string, direction: "left" | "right") {
-    const folderOrderMap = getFolderOrderMap(plans);
-    const orderedFolders = Array.from(folderOrderMap.entries())
-      .sort((a, b) => a[1] - b[1] || a[0].localeCompare(b[0], "ru"))
-      .map(([folder]) => folder);
-
-    const currentIndex = orderedFolders.indexOf(folderNameToMove);
-    if (currentIndex === -1) {
-      return;
-    }
-
-    const targetIndex = direction === "left" ? currentIndex - 1 : currentIndex + 1;
-    if (targetIndex < 0 || targetIndex >= orderedFolders.length) {
-      return;
-    }
-
-    const reorderedFolders = [...orderedFolders];
-    const [movedFolder] = reorderedFolders.splice(currentIndex, 1);
-    reorderedFolders.splice(targetIndex, 0, movedFolder);
-
+  async function reorderFolders(reorderedFolders: string[]) {
     const updatedPlans = plans.map((plan) => ({
       ...plan,
       folderOrder: reorderedFolders.indexOf(plan.folder),
     }));
 
     await createOrUpdatePlans(updatedPlans);
+  }
+
+  function handleFolderDragEnd(event: DragEndEvent) {
+    const folderOrderMap = getFolderOrderMap(plans);
+    const orderedFolders = Array.from(folderOrderMap.entries())
+      .sort((a, b) => a[1] - b[1] || a[0].localeCompare(b[0], "ru"))
+      .map(([folder]) => folder);
+
+    const { active, over } = event;
+    if (!over || active.id === over.id) {
+      return;
+    }
+
+    const currentIndex = orderedFolders.indexOf(String(active.id));
+    const targetIndex = orderedFolders.indexOf(String(over.id));
+
+    if (currentIndex === -1 || targetIndex === -1) {
+      return;
+    }
+
+    const reorderedFolders = arrayMove(orderedFolders, currentIndex, targetIndex);
+    void reorderFolders(reorderedFolders);
   }
 
   const folderOrderMap = getFolderOrderMap(plans);
@@ -292,91 +307,21 @@ export default function Planner() {
         {!loaded ? (
           <div className="text-sm text-muted-foreground">Загрузка планов...</div>
         ) : (
-          <div className="grid gap-6 lg:grid-cols-2 2xl:grid-cols-3">
-            {folders.map((folder) => (
-              <section
-                key={folder}
-                className="min-w-0 rounded-2xl border bg-white/70 p-4 shadow-sm"
-              >
-                <div className="mb-4 flex items-center justify-between gap-3">
-                  <h2 className="text-lg font-semibold">
-                    {folder}
-                  </h2>
-
-                  <div className="flex items-center gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        void moveFolder(folder, "left");
-                      }}
-                      disabled={folders[0] === folder}
-                    >
-                      ←
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        void moveFolder(folder, "right");
-                      }}
-                      disabled={folders[folders.length - 1] === folder}
-                    >
-                      →
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  {plans
-                    .filter((p) => p.folder === folder)
-                    .map((plan) => {
-                      const periodLabel = formatPlanPeriod(plan);
-
-                      return (
-                      <Card key={plan.id} className="relative min-w-0 hover:shadow-md transition">
-                        <CardHeader>
-                          <Link href={`/planner/${plan.id}`}>
-                            <CardTitle className="cursor-pointer break-words pr-8 text-base">
-                              {plan.name}
-                            </CardTitle>
-                          </Link>
-
-                          {periodLabel ? (
-                            <p className="text-xs text-muted-foreground">
-                              {periodLabel}
-                            </p>
-                          ) : null}
-
-                          <div className="flex items-center gap-2 pt-2">
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => openEditDialog(plan)}
-                            >
-                              Редактировать
-                            </Button>
-                          </div>
-
-                          <button
-                            onClick={() => {
-                              void handleDeletePlan(plan.id);
-                            }}
-                            className="absolute top-3 right-4 text-muted-foreground hover:text-red-500"
-                          >
-                            ×
-                          </button>
-                        </CardHeader>
-                      </Card>
-                    );
-                    })}
-                </div>
-              </section>
-            ))}
-          </div>
+          <DndContext collisionDetection={closestCenter} onDragEnd={handleFolderDragEnd}>
+            <SortableContext items={folders} strategy={rectSortingStrategy}>
+              <div className="grid gap-6 lg:grid-cols-2 2xl:grid-cols-3">
+                {folders.map((folder) => (
+                  <SortableFolderSection
+                    key={folder}
+                    folder={folder}
+                    plans={plans.filter((p) => p.folder === folder)}
+                    onEditPlan={openEditDialog}
+                    onDeletePlan={handleDeletePlan}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
         )}
 
       </div>
@@ -474,5 +419,95 @@ export default function Planner() {
       </Dialog>
 
     </main>
+  );
+}
+
+function SortableFolderSection({
+  folder,
+  plans,
+  onEditPlan,
+  onDeletePlan,
+}: {
+  folder: string;
+  plans: Plan[];
+  onEditPlan: (plan: Plan) => void;
+  onDeletePlan: (id: string) => Promise<void>;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: folder });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <section
+      ref={setNodeRef}
+      style={style}
+      className={`min-w-0 rounded-2xl border bg-white/70 p-4 shadow-sm ${
+        isDragging ? "z-10 shadow-xl ring-2 ring-black/10" : ""
+      }`}
+    >
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <h2 className="text-lg font-semibold">
+          {folder}
+        </h2>
+
+        <button
+          type="button"
+          {...attributes}
+          {...listeners}
+          className="cursor-grab rounded border px-2 py-1 text-sm text-muted-foreground active:cursor-grabbing"
+          title="Перетащить папку"
+        >
+          ⋮⋮
+        </button>
+      </div>
+
+      <div className="space-y-4">
+        {plans.map((plan) => {
+          const periodLabel = formatPlanPeriod(plan);
+
+          return (
+            <Card key={plan.id} className="relative min-w-0 hover:shadow-md transition">
+              <CardHeader>
+                <Link href={`/planner/${plan.id}`}>
+                  <CardTitle className="cursor-pointer break-words pr-8 text-base">
+                    {plan.name}
+                  </CardTitle>
+                </Link>
+
+                {periodLabel ? (
+                  <p className="text-xs text-muted-foreground">
+                    {periodLabel}
+                  </p>
+                ) : null}
+
+                <div className="flex items-center gap-2 pt-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onEditPlan(plan)}
+                  >
+                    Редактировать
+                  </Button>
+                </div>
+
+                <button
+                  onClick={() => {
+                    void onDeletePlan(plan.id);
+                  }}
+                  className="absolute top-3 right-4 text-muted-foreground hover:text-red-500"
+                >
+                  ×
+                </button>
+              </CardHeader>
+            </Card>
+          );
+        })}
+      </div>
+    </section>
   );
 }

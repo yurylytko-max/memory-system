@@ -362,6 +362,12 @@ export default function PlanPage() {
         </p>
       ) : null}
 
+      <div className="mb-3">
+        <Button type="button" onClick={sortTasksByDeadline}>
+          Сортировать задачи по дедлайну
+        </Button>
+      </div>
+
       <div className="mb-6 flex flex-wrap items-center gap-3">
         <input
           placeholder="Search"
@@ -369,10 +375,6 @@ export default function PlanPage() {
           onChange={(e) => setSearch(e.target.value)}
           className="w-64 rounded border px-3 py-2"
         />
-
-        <Button type="button" variant="outline" onClick={sortTasksByDeadline}>
-          Сортировать по дедлайну
-        </Button>
       </div>
 
       <div className="bg-white p-6 rounded-xl shadow max-w-xl">
