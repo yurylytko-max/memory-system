@@ -8,6 +8,7 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
+import PlannerNotificationsButton from "@/components/planner-notifications-button";
 import {
   Dialog,
   DialogContent,
@@ -197,6 +198,10 @@ export default function Planner() {
         <h1 className="text-3xl font-bold mb-8">
           Планировщик
         </h1>
+
+        <div className="mb-6">
+          <PlannerNotificationsButton />
+        </div>
 
         <div className="mb-10 grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
 

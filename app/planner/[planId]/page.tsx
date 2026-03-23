@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import type { ChangeEvent } from "react";
 
 import Link from "next/link";
 import {
@@ -20,6 +21,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import PlannerNotificationsButton from "@/components/planner-notifications-button";
 import {
   migrateLegacyPlansToServer,
   savePlans,
@@ -47,6 +49,37 @@ function formatPlanPeriod(plan: Pick<Plan, "periodStart" | "periodEnd">) {
   }
 
   return null;
+}
+
+function formatTaskDeadline(deadline?: string) {
+  if (!deadline) {
+    return null;
+  }
+
+  return new Intl.DateTimeFormat("ru-RU", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(`${deadline}T00:00:00`));
+}
+
+function getTaskDeadlineTone(deadline?: string, done?: boolean) {
+  if (!deadline || done) {
+    return "text-gray-500";
+  }
+
+  const today = new Date();
+  const todayIso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+
+  if (deadline < todayIso) {
+    return "text-red-600";
+  }
+
+  if (deadline === todayIso) {
+    return "text-amber-600";
+  }
+
+  return "text-gray-500";
 }
 
 export default function PlanPage() {
@@ -184,6 +217,24 @@ export default function PlanPage() {
     alert(plan.tasks[i].versions.join("\n") || "No history");
   }
 
+  function updateTaskDeadline(i: number, deadline?: string) {
+    if (!plan) return;
+
+    const updated = plans.map((p) => {
+      if (p.id !== planId) return p;
+
+      const tasks = [...p.tasks];
+      tasks[i] = {
+        ...tasks[i],
+        deadline,
+      };
+
+      return { ...p, tasks };
+    });
+
+    void save(updated);
+  }
+
   function moveTo(targetId: string) {
     if (moveTaskIndex === null || !plan) return;
 
@@ -269,6 +320,10 @@ export default function PlanPage() {
         </Button>
       </div>
 
+      <div className="mb-4">
+        <PlannerNotificationsButton />
+      </div>
+
       {periodLabel ? (
         <p className="mb-4 text-sm text-gray-600">
           Период плана: {periodLabel}
@@ -305,6 +360,7 @@ export default function PlanPage() {
                   moveOpen={moveTaskIndex === originalIndex}
                   moveTargets={availableMoveTargets}
                   moveTo={(targetId) => moveTo(targetId)}
+                  setDeadline={(deadline) => updateTaskDeadline(originalIndex, deadline)}
                   cancelMove={() => setMoveTaskIndex(null)}
                   deleteTask={() => deleteTask(originalIndex)}
                 />
@@ -344,6 +400,7 @@ function SortableTask({
   moveOpen,
   moveTargets,
   moveTo,
+  setDeadline,
   cancelMove,
 }: {
   id: number;
@@ -358,6 +415,7 @@ function SortableTask({
   moveOpen: boolean;
   moveTargets: Array<{ id: string; name: string }>;
   moveTo: (targetId: string) => void;
+  setDeadline: (deadline?: string) => void;
   cancelMove: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition } =
@@ -387,6 +445,12 @@ function SortableTask({
           <span className={task.done ? "line-through text-gray-400" : ""}>
             {task.text}
           </span>
+
+          {task.deadline ? (
+            <div className={`mt-1 text-xs ${getTaskDeadlineTone(task.deadline, task.done)}`}>
+              Дедлайн: {formatTaskDeadline(task.deadline)}
+            </div>
+          ) : null}
         </button>
 
         <button
@@ -418,6 +482,28 @@ function SortableTask({
             <button type="button" onClick={deleteTask} className="text-red-500">
               Delete
             </button>
+          </div>
+
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <input
+              type="date"
+              value={task.deadline || ""}
+              onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                const nextValue = event.target.value || undefined;
+                setDeadline(nextValue);
+              }}
+              className="rounded border px-3 py-1.5 text-sm"
+            />
+
+            {task.deadline ? (
+              <button
+                type="button"
+                onClick={() => setDeadline(undefined)}
+                className="text-sm text-gray-600"
+              >
+                Снять дедлайн
+              </button>
+            ) : null}
           </div>
 
           {moveOpen && (
