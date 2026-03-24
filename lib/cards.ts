@@ -4,8 +4,39 @@ export type Card = {
   content: string
   source?: string
   type: string
+  sphere: string
   tags: string[]
   image?: string | null
+}
+
+export const DEFAULT_CARD_SPHERE = "Без сферы"
+
+export function normalizeCard(card: Partial<Card>, index = 0): Card {
+  const safeId =
+    card?.id && String(card.id).trim() !== ""
+      ? String(card.id)
+      : `legacy-${index}-${card?.title ?? "card"}`
+
+  return {
+    ...card,
+    id: safeId,
+    title: card?.title ?? "",
+    content: card?.content ?? "",
+    source: card?.source ?? "",
+    type: card?.type ?? "thought",
+    sphere:
+      card?.sphere && String(card.sphere).trim() !== ""
+        ? String(card.sphere).trim()
+        : DEFAULT_CARD_SPHERE,
+    tags: Array.isArray(card?.tags) ? card.tags : [],
+    image: card?.image ?? null,
+  }
+}
+
+export function normalizeCards(cards: unknown): Card[] {
+  return Array.isArray(cards)
+    ? cards.map((card, index) => normalizeCard(card as Partial<Card>, index))
+    : []
 }
 
 export async function getAllCards(): Promise<Card[]> {
@@ -22,7 +53,7 @@ export async function getAllCards(): Promise<Card[]> {
   }
 
   const cards = await response.json()
-  return Array.isArray(cards) ? cards : []
+  return normalizeCards(cards)
 }
 
 export async function saveCards(cards: Card[]) {

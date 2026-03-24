@@ -4,7 +4,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises"
 import { dirname, join } from "node:path"
 import { createClient } from "redis"
 
-import type { Card } from "@/lib/cards"
+import { normalizeCards, type Card } from "@/lib/cards"
 
 const KEY = "cards_db"
 const FALLBACK_CARDS_PATH = join(process.cwd(), ".data", "cards-db.json")
@@ -22,8 +22,15 @@ function getRedisUrl() {
 async function readFallbackCards(): Promise<Card[]> {
   try {
     const raw = await readFile(FALLBACK_CARDS_PATH, "utf8")
-    const parsed = JSON.parse(raw)
-    return Array.isArray(parsed) ? parsed : []
+    const cards = normalizeCards(JSON.parse(raw))
+    const normalizedRaw = JSON.stringify(cards)
+
+    if (raw !== normalizedRaw) {
+      await mkdir(dirname(FALLBACK_CARDS_PATH), { recursive: true })
+      await writeFile(FALLBACK_CARDS_PATH, normalizedRaw, "utf8")
+    }
+
+    return cards
   } catch {
     return []
   }
@@ -31,7 +38,7 @@ async function readFallbackCards(): Promise<Card[]> {
 
 async function writeFallbackCards(cards: Card[]) {
   await mkdir(dirname(FALLBACK_CARDS_PATH), { recursive: true })
-  await writeFile(FALLBACK_CARDS_PATH, JSON.stringify(cards), "utf8")
+  await writeFile(FALLBACK_CARDS_PATH, JSON.stringify(normalizeCards(cards)), "utf8")
 }
 
 async function getClient() {
@@ -72,8 +79,14 @@ export async function readCards(): Promise<Card[]> {
       return []
     }
 
-    const parsed = JSON.parse(raw)
-    return Array.isArray(parsed) ? parsed : []
+    const cards = normalizeCards(JSON.parse(raw))
+    const normalizedRaw = JSON.stringify(cards)
+
+    if (raw !== normalizedRaw) {
+      await client.set(KEY, normalizedRaw)
+    }
+
+    return cards
   } catch {
     return await readFallbackCards()
   }
@@ -82,13 +95,14 @@ export async function readCards(): Promise<Card[]> {
 export async function writeCards(cards: Card[]) {
   try {
     const client = await getClient()
+    const normalizedCards = normalizeCards(cards)
 
     if (!client) {
-      await writeFallbackCards(cards)
+      await writeFallbackCards(normalizedCards)
       return
     }
 
-    await client.set(KEY, JSON.stringify(cards))
+    await client.set(KEY, JSON.stringify(normalizedCards))
   } catch {
     await writeFallbackCards(cards)
   }

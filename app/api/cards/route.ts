@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 
-import type { Card } from "@/lib/cards"
+import { normalizeCard, normalizeCards, type Card } from "@/lib/cards"
 import { readCards, writeCards } from "@/lib/server/cards-store"
 
 export async function GET() {
@@ -9,7 +9,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const card = (await request.json()) as Card
+  const card = normalizeCard((await request.json()) as Card)
   const cards = await readCards()
 
   const updated = [...cards, card]
@@ -20,9 +20,9 @@ export async function POST(request: Request) {
 }
 
 export async function PUT(request: Request) {
-  const cards = (await request.json()) as Card[]
+  const cards = normalizeCards((await request.json()) as Card[])
 
-  await writeCards(Array.isArray(cards) ? cards : [])
+  await writeCards(cards)
 
   return NextResponse.json({ success: true })
 }

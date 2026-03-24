@@ -22,6 +22,7 @@ export default function NewCardPage() {
   const [title, setTitle] = useState(initialText);
   const [content, setContent] = useState(initialText);
   const [source, setSource] = useState(initialSource);
+  const [sphere, setSphere] = useState("");
   const [tags, setTags] = useState(initialTag);
   const [type, setType] = useState("thought");
   const [image, setImage] = useState<string | null>(null);
@@ -43,6 +44,7 @@ export default function NewCardPage() {
       content,
       source,
       type,
+      sphere: sphere.trim(),
       image: withImage ? image : null,
       tags: tags
         .split(" ")
@@ -66,6 +68,10 @@ export default function NewCardPage() {
 
   async function handleSave() {
     if (isSaving) return;
+    if (!sphere.trim()) {
+      alert("Укажи сферу карточки.");
+      return;
+    }
 
     setIsSaving(true);
 
@@ -137,6 +143,14 @@ export default function NewCardPage() {
           value={source}
           onChange={(e) => setSource(e.target.value)}
           className="border p-3 rounded w-full"
+        />
+
+        <input
+          placeholder="Сфера"
+          value={sphere}
+          onChange={(e) => setSphere(e.target.value)}
+          className="border p-3 rounded w-full"
+          required
         />
 
         <input

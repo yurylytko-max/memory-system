@@ -12,6 +12,8 @@ function getTypeLabel(type: string) {
   switch (type) {
     case "thought":
       return "Мысль";
+    case "article":
+      return "Статья";
     case "quote":
       return "Цитата";
     case "book":
@@ -125,6 +127,10 @@ export default function CardPage() {
         <div className="bg-white p-6 rounded-xl shadow">
           <div className="text-sm text-gray-500 mb-1">
             {getTypeLabel(card.type)}
+          </div>
+
+          <div className="text-sm text-gray-500 mb-4">
+            Сфера: {card.sphere}
           </div>
 
           <h1 className="text-2xl font-bold mb-4">{card.title}</h1>

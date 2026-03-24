@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { Card as MemoryCard } from "@/lib/cards";
+import { normalizeCard, type Card as MemoryCard } from "@/lib/cards";
 import { readCards } from "@/lib/server/cards-store";
 
 type TagPageProps = {
@@ -15,6 +15,8 @@ function getTypeLabel(type: string) {
   switch (type) {
     case "thought":
       return "Мысль";
+    case "article":
+      return "Статья";
     case "quote":
       return "Цитата";
     case "book":
@@ -30,23 +32,6 @@ function getTypeLabel(type: string) {
     default:
       return "Карточка";
   }
-}
-
-function normalizeCard(card: Partial<MemoryCard>, index: number): MemoryCard {
-  const safeId =
-    card?.id && String(card.id).trim() !== ""
-      ? String(card.id)
-      : `legacy-${index}-${card?.title ?? "card"}`;
-
-  return {
-    ...card,
-    id: safeId,
-    title: card?.title ?? "",
-    content: card?.content ?? "",
-    source: card?.source ?? "",
-    type: card?.type ?? "thought",
-    tags: Array.isArray(card?.tags) ? card.tags : [],
-  };
 }
 
 function decodeTagParam(value: string) {
@@ -102,6 +87,9 @@ export default async function TagPage({ params }: TagPageProps) {
                   <CardHeader>
                     <div className="text-sm text-muted-foreground">
                       {getTypeLabel(card.type)}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      Сфера: {card.sphere}
                     </div>
 
                     {card.title && <CardTitle>{card.title}</CardTitle>}

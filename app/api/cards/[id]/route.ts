@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 
-import type { Card } from "@/lib/cards"
+import { normalizeCard, type Card } from "@/lib/cards"
 import { readCards, writeCards } from "@/lib/server/cards-store"
 
 export async function GET(
@@ -23,7 +23,7 @@ export async function PUT(
   context: { params: Promise<{ id: string }> }
 ) {
   const { id } = await context.params
-  const card = (await request.json()) as Card
+  const card = normalizeCard((await request.json()) as Card)
   const cards = await readCards()
 
   const existingIndex = cards.findIndex(item => item.id === id)

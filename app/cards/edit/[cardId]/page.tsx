@@ -4,7 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { BackButton } from "@/components/back-button";
-import { getCard, updateCard, type Card } from "@/lib/cards";
+import { DEFAULT_CARD_SPHERE, getCard, updateCard, type Card } from "@/lib/cards";
 
 export default function EditCardPage() {
   const params = useParams();
@@ -18,7 +18,9 @@ export default function EditCardPage() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [source, setSource] = useState("");
+  const [sphere, setSphere] = useState(DEFAULT_CARD_SPHERE);
   const [tags, setTags] = useState("");
+  const [type, setType] = useState("thought");
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -35,7 +37,9 @@ export default function EditCardPage() {
         setTitle(found.title || "");
         setContent(found.content || "");
         setSource(found.source || "");
+        setSphere(found.sphere || DEFAULT_CARD_SPHERE);
         setTags((found.tags || []).join(" "));
+        setType(found.type || "thought");
       }
 
       setLoaded(true);
@@ -48,12 +52,18 @@ export default function EditCardPage() {
     e.preventDefault();
 
     if (!card) return;
+    if (!sphere.trim()) {
+      alert("Укажи сферу карточки.");
+      return;
+    }
 
     const updatedCard: Card = {
       ...card,
       title,
       content,
       source,
+      type,
+      sphere: sphere.trim(),
       tags: tags
         .split(" ")
         .map(tag => tag.trim())
@@ -98,6 +108,21 @@ export default function EditCardPage() {
           <h1 className="text-2xl font-bold mb-6">Редактировать карточку</h1>
 
           <form onSubmit={handleSave} className="space-y-4">
+            <select
+              className="w-full border p-3 rounded"
+              value={type}
+              onChange={e => setType(e.target.value)}
+            >
+              <option value="thought">Мысль</option>
+              <option value="article">Статья</option>
+              <option value="quote">Цитата</option>
+              <option value="book">Книга</option>
+              <option value="music">Музыка</option>
+              <option value="idea">Идея</option>
+              <option value="recipe">Рецепт</option>
+              <option value="screenshot">Скриншот</option>
+            </select>
+
             <input
               className="w-full border p-3 rounded"
               value={title}
@@ -117,6 +142,14 @@ export default function EditCardPage() {
               value={source}
               onChange={e => setSource(e.target.value)}
               placeholder="Источник"
+            />
+
+            <input
+              className="w-full border p-3 rounded"
+              value={sphere}
+              onChange={e => setSphere(e.target.value)}
+              placeholder="Сфера"
+              required
             />
 
             <input
