@@ -4,7 +4,13 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { normalizeCard } from "@/lib/cards";
 
@@ -29,6 +35,10 @@ function getTypeLabel(type: string) {
     default:
       return "Карточка";
   }
+}
+
+function encodeSphereParam(sphere: string) {
+  return encodeURIComponent(sphere);
 }
 
 export default function CardsPage() {
@@ -78,28 +88,43 @@ export default function CardsPage() {
     });
   }, [normalizedCards, search, typeFilter]);
 
-  const groupedCards = useMemo(() => {
-    const groups = new Map<string, typeof filteredCards>();
+  const sphereFolders = useMemo(() => {
+    const groups = new Map<
+      string,
+      {
+        count: number;
+        previewTags: string[];
+      }
+    >();
 
     for (const card of filteredCards) {
-      const current = groups.get(card.sphere) ?? [];
-      current.push(card);
-      groups.set(card.sphere, current);
+      const current = groups.get(card.sphere) ?? { count: 0, previewTags: [] };
+      const mergedTags = Array.from(
+        new Set([...current.previewTags, ...card.tags])
+      ).slice(0, 3);
+
+      groups.set(card.sphere, {
+        count: current.count + 1,
+        previewTags: mergedTags,
+      });
     }
 
     return Array.from(groups.entries())
       .sort(([left], [right]) => left.localeCompare(right, "ru"))
-      .map(([sphere, sphereCards]) => ({
+      .map(([sphere, meta]) => ({
         sphere,
-        cards: sphereCards.sort((left, right) =>
-          left.title.localeCompare(right.title, "ru")
-        ),
+        count: meta.count,
+        previewTags: meta.previewTags,
       }));
+  }, [filteredCards]);
+
+  const recentCards = useMemo(() => {
+    return [...filteredCards].slice(-6).reverse();
   }, [filteredCards]);
 
   return (
     <main className="min-h-screen bg-muted/40 p-10">
-      <div className="max-w-5xl mx-auto">
+      <div className="mx-auto max-w-6xl">
         <Link
           href="/"
           className="inline-block text-sm text-muted-foreground hover:text-black mb-6"
@@ -109,14 +134,14 @@ export default function CardsPage() {
 
         <h1 className="text-3xl font-bold mb-2">База знаний</h1>
         <p className="text-sm text-muted-foreground mb-8">
-          Карточки сгруппированы по сферам, теги работают как дополнительная
-          навигация.
+          Сферы работают как папки. На главной показаны сами папки и последние
+          карточки.
         </p>
 
         <Card className="mb-8">
           <CardContent className="pt-6">
             <Input
-              placeholder="Поиск по названию, содержанию, сфере и тегам..."
+              placeholder="Поиск по карточкам, сферам и тегам..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="mb-4"
@@ -139,14 +164,131 @@ export default function CardsPage() {
                 <option value="screenshot">Скриншоты</option>
               </select>
 
-              <span>Сфер: {groupedCards.length}</span>
-              <span>Карточек: {filteredCards.length}</span>
+              <span>Сфер: {sphereFolders.length}</span>
+              <span>Найдено карточек: {filteredCards.length}</span>
             </div>
           </CardContent>
         </Card>
 
-        <div className="mb-10">
-          <h2 className="text-xl font-semibold mb-4">Теги</h2>
+        <section className="mb-10">
+          <div className="mb-4 flex items-end justify-between gap-4">
+            <div>
+              <h2 className="text-2xl font-semibold">Сферы</h2>
+              <p className="text-sm text-muted-foreground">
+                Открой папку, чтобы увидеть все карточки внутри.
+              </p>
+            </div>
+          </div>
+
+          {sphereFolders.length === 0 ? (
+            <Card>
+              <CardContent className="pt-6 text-muted-foreground">
+                По текущим фильтрам подходящих сфер нет.
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+              {sphereFolders.map((folder) => (
+                <Link
+                  key={folder.sphere}
+                  href={`/cards/spheres/${encodeSphereParam(folder.sphere)}`}
+                  className="block"
+                >
+                  <Card className="min-h-[200px] border bg-white/80 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg">
+                    <CardHeader className="gap-3">
+                      <div className="text-4xl leading-none">□</div>
+                      <CardTitle className="text-lg">{folder.sphere}</CardTitle>
+                      <CardDescription>
+                        Карточек в папке: {folder.count}
+                      </CardDescription>
+                    </CardHeader>
+
+                    <CardContent className="mt-auto">
+                      {folder.previewTags.length > 0 ? (
+                        <div className="flex flex-wrap gap-2">
+                          {folder.previewTags.map((tag) => (
+                            <Badge key={`${folder.sphere}-${tag}`} variant="secondary">
+                              #{tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-sm text-muted-foreground">
+                          В этой сфере пока нет тегов.
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="mb-10">
+          <div className="mb-4">
+            <h2 className="text-2xl font-semibold">Последнее</h2>
+            <p className="text-sm text-muted-foreground">
+              На главной остаются только свежие карточки, без полной ленты.
+            </p>
+          </div>
+
+          {recentCards.length === 0 ? (
+            <Card>
+              <CardContent className="pt-6 text-muted-foreground">
+                По текущим фильтрам свежих карточек нет.
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-4 lg:grid-cols-2">
+              {recentCards.map((card, index) => (
+                <Link
+                  key={`${card.id}-${index}`}
+                  href={`/cards/${card.id}`}
+                  className="block"
+                >
+                  <Card className="hover:shadow-md transition cursor-pointer">
+                    <CardHeader>
+                      <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                        <span>{getTypeLabel(card.type)}</span>
+                        <span>•</span>
+                        <span>{card.sphere}</span>
+                      </div>
+
+                      {card.title && <CardTitle>{card.title}</CardTitle>}
+                    </CardHeader>
+
+                    <CardContent>
+                      {card.content && (
+                        <div className="text-muted-foreground mb-3 line-clamp-4 whitespace-pre-wrap">
+                          {card.content}
+                        </div>
+                      )}
+
+                      {card.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-2">
+                          {card.tags.map((tag, tagIndex) => (
+                            <Badge
+                              key={`${card.id}-${tag}-${tagIndex}`}
+                              variant="secondary"
+                            >
+                              #{tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section>
+          <div className="mb-4">
+            <h2 className="text-xl font-semibold">Теги</h2>
+          </div>
 
           {allTags.length === 0 ? (
             <p className="text-sm text-muted-foreground">Тегов пока нет.</p>
@@ -162,73 +304,7 @@ export default function CardsPage() {
               ))}
             </div>
           )}
-        </div>
-
-        {groupedCards.length === 0 ? (
-          <Card>
-            <CardContent className="pt-6 text-muted-foreground">
-              Ничего не найдено по текущим фильтрам.
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-8">
-            {groupedCards.map(({ sphere, cards: sphereCards }) => (
-              <section key={sphere} className="space-y-4">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <h2 className="text-2xl font-semibold">{sphere}</h2>
-                    <p className="text-sm text-muted-foreground">
-                      Карточек в сфере: {sphereCards.length}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  {sphereCards.map((card, index) => (
-                    <Link
-                      key={`${card.id}-${index}`}
-                      href={`/cards/${card.id}`}
-                      className="block"
-                    >
-                      <Card className="hover:shadow-md transition cursor-pointer">
-                        <CardHeader>
-                          <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                            <span>{getTypeLabel(card.type)}</span>
-                            <span>•</span>
-                            <span>{card.sphere}</span>
-                          </div>
-
-                          {card.title && <CardTitle>{card.title}</CardTitle>}
-                        </CardHeader>
-
-                        <CardContent>
-                          {card.content && (
-                            <div className="text-muted-foreground mb-3 whitespace-pre-wrap">
-                              {card.content}
-                            </div>
-                          )}
-
-                          {card.tags.length > 0 && (
-                            <div className="flex flex-wrap gap-2">
-                              {card.tags.map((tag, tagIndex) => (
-                                <Badge
-                                  key={`${card.id}-${tag}-${tagIndex}`}
-                                  variant="secondary"
-                                >
-                                  #{tag}
-                                </Badge>
-                              ))}
-                            </div>
-                          )}
-                        </CardContent>
-                      </Card>
-                    </Link>
-                  ))}
-                </div>
-              </section>
-            ))}
-          </div>
-        )}
+        </section>
       </div>
     </main>
   );

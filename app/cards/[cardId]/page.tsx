@@ -31,6 +31,10 @@ function getTypeLabel(type: string) {
   }
 }
 
+function encodeSphereParam(sphere: string) {
+  return encodeURIComponent(sphere);
+}
+
 export default function CardPage() {
   const params = useParams();
   const router = useRouter();
@@ -130,7 +134,13 @@ export default function CardPage() {
           </div>
 
           <div className="text-sm text-gray-500 mb-4">
-            Сфера: {card.sphere}
+            Сфера:{" "}
+            <Link
+              href={`/cards/spheres/${encodeSphereParam(card.sphere)}`}
+              className="underline underline-offset-4"
+            >
+              {card.sphere}
+            </Link>
           </div>
 
           <h1 className="text-2xl font-bold mb-4">{card.title}</h1>
