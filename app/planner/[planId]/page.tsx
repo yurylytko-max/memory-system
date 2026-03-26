@@ -29,6 +29,9 @@ import {
   type PlanTask,
 } from "@/lib/plans";
 
+const DAILY_PLAN_FOLDER = "план на день";
+const DAILY_PLAN_ID_PREFIX = "daily-plan:";
+
 function formatPlanPeriod(plan: Pick<Plan, "periodStart" | "periodEnd">) {
   const formatter = new Intl.DateTimeFormat("ru-RU", {
     day: "numeric",
@@ -86,6 +89,58 @@ function getDeadlineSortValue(deadline?: string) {
   return deadline ? Date.parse(`${deadline}T00:00:00`) : Number.POSITIVE_INFINITY;
 }
 
+function formatDailyPlanName(date: string) {
+  return new Intl.DateTimeFormat("ru-RU", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  }).format(new Date(`${date}T00:00:00`));
+}
+
+function buildDailyPlanTask(task: PlanTask, sourcePlan: Plan): PlanTask {
+  return {
+    id: `${sourcePlan.id}:${task.id}`,
+    text: `${task.text} (${sourcePlan.name})`,
+    done: task.done,
+    deadline: task.deadline,
+    versions: [],
+  };
+}
+
+function buildDailyPlans(plans: Plan[]) {
+  const tasksByDeadline = new Map<string, Array<{ task: PlanTask; sourcePlan: Plan }>>();
+
+  for (const plan of plans) {
+    if (plan.id.startsWith(DAILY_PLAN_ID_PREFIX)) {
+      continue;
+    }
+
+    for (const task of plan.tasks) {
+      if (!task.deadline) {
+        continue;
+      }
+
+      const currentTasks = tasksByDeadline.get(task.deadline) ?? [];
+      currentTasks.push({ task, sourcePlan: plan });
+      tasksByDeadline.set(task.deadline, currentTasks);
+    }
+  }
+
+  return Array.from(tasksByDeadline.entries())
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([date, deadlineTasks]) => ({
+      id: `${DAILY_PLAN_ID_PREFIX}${date}`,
+      name: formatDailyPlanName(date),
+      folder: DAILY_PLAN_FOLDER,
+      folderOrder: -1,
+      periodStart: date,
+      periodEnd: date,
+      tasks: deadlineTasks.map(({ task, sourcePlan }) =>
+        buildDailyPlanTask(task, sourcePlan)
+      ),
+    }));
+}
+
 export default function PlanPage() {
   const params = useParams();
   const planId = params.planId as string;
@@ -103,9 +158,16 @@ export default function PlanPage() {
   useEffect(() => {
     async function loadPlans() {
       const parsed = await migrateLegacyPlansToServer();
-      const currentPlan = parsed.find((p) => p.id === planId) || null;
+      const generatedDailyPlans = buildDailyPlans(parsed);
+      const combinedPlans = [
+        ...parsed,
+        ...generatedDailyPlans.filter(
+          (generatedPlan) => !parsed.some((plan) => plan.id === generatedPlan.id)
+        ),
+      ];
+      const currentPlan = combinedPlans.find((p) => p.id === planId) || null;
 
-      setPlans(parsed);
+      setPlans(combinedPlans);
       setPlan(currentPlan);
       setPlanName(currentPlan?.name || "");
       setLoaded(true);
@@ -315,7 +377,24 @@ export default function PlanPage() {
   }
 
   if (!loaded) return null;
-  if (!plan) return null;
+
+  if (!plan) {
+    return (
+      <main className="min-h-screen bg-gray-100 p-10">
+        <Link href="/planner" className="text-sm text-gray-600">
+          ← Назад
+        </Link>
+
+        <div className="mt-8 max-w-xl rounded-xl bg-white p-6 shadow">
+          <h1 className="text-xl font-semibold">План не найден</h1>
+          <p className="mt-2 text-sm text-gray-600">
+            Этот план не удалось загрузить. Попробуйте вернуться в планировщик и
+            пересобрать дневные планы.
+          </p>
+        </div>
+      </main>
+    );
+  }
 
   const availableMoveTargets = plans.filter((p) => p.id !== planId);
   const periodLabel = formatPlanPeriod(plan);
