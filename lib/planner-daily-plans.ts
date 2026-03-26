@@ -29,6 +29,17 @@ function buildDailyTaskId(sourcePlan: Plan, task: PlanTask) {
   return `${DAILY_TASK_ID_PREFIX}${sourcePlan.id}:${task.id}`;
 }
 
+function isLegacyManagedDailyTaskId(taskId: string) {
+  return taskId.includes(":");
+}
+
+function isManagedDailyTask(task: PlanTask) {
+  return (
+    task.id.startsWith(DAILY_TASK_ID_PREFIX) ||
+    isLegacyManagedDailyTaskId(task.id)
+  );
+}
+
 export function buildDailyPlanTask(task: PlanTask, sourcePlan: Plan): PlanTask {
   return {
     id: buildDailyTaskId(sourcePlan, task),
@@ -77,6 +88,7 @@ export function mergeDailyPlans(plans: Plan[]) {
   const generatedDailyPlans = buildDailyPlans(plans);
   const plansById = new Map(plans.map((plan) => [plan.id, plan]));
   const mergedPlans = [...plans];
+  const generatedPlanIds = new Set(generatedDailyPlans.map((plan) => plan.id));
 
   for (const generatedPlan of generatedDailyPlans) {
     const existingPlan = plansById.get(generatedPlan.id);
@@ -88,7 +100,7 @@ export function mergeDailyPlans(plans: Plan[]) {
 
     const generatedTaskIds = new Set(generatedPlan.tasks.map((task) => task.id));
     const preservedManualTasks = existingPlan.tasks.filter(
-      (task) => !task.id.startsWith(DAILY_TASK_ID_PREFIX)
+      (task) => !isManagedDailyTask(task)
     );
 
     const mergedPlan: Plan = {
@@ -114,16 +126,21 @@ export function mergeDailyPlans(plans: Plan[]) {
     }
   }
 
-  return mergedPlans;
+  return mergedPlans.map((plan) => {
+    if (!isDailyPlan(plan) || generatedPlanIds.has(plan.id)) {
+      return plan;
+    }
+
+    return {
+      ...plan,
+      tasks: plan.tasks.filter((task) => !isManagedDailyTask(task)),
+    };
+  });
 }
 
 export function findDailyPlan(plans: Plan[], planId: string) {
   const normalizedPlanId = decodeURIComponent(planId);
-  const existingPlan = plans.find((plan) => plan.id === normalizedPlanId);
-
-  if (existingPlan) {
-    return existingPlan;
-  }
-
-  return buildDailyPlans(plans).find((plan) => plan.id === normalizedPlanId) ?? null;
+  return (
+    mergeDailyPlans(plans).find((plan) => plan.id === normalizedPlanId) ?? null
+  );
 }

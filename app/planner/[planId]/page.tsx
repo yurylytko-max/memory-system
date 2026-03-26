@@ -28,7 +28,7 @@ import {
   type Plan,
   type PlanTask,
 } from "@/lib/plans";
-import { findDailyPlan } from "@/lib/planner-daily-plans";
+import { findDailyPlan, isDailyPlanId, mergeDailyPlans } from "@/lib/planner-daily-plans";
 
 function formatPlanPeriod(plan: Pick<Plan, "periodStart" | "periodEnd">) {
   const formatter = new Intl.DateTimeFormat("ru-RU", {
@@ -104,10 +104,12 @@ export default function PlanPage() {
   useEffect(() => {
     async function loadPlans() {
       const parsed = await migrateLegacyPlansToServer();
-      const currentPlan =
-        parsed.find((plan) => plan.id === planId) ?? findDailyPlan(parsed, planId);
+      const resolvedPlans = isDailyPlanId(planId) ? mergeDailyPlans(parsed) : parsed;
+      const currentPlan = isDailyPlanId(planId)
+        ? findDailyPlan(parsed, planId)
+        : resolvedPlans.find((plan) => plan.id === planId) ?? null;
 
-      setPlans(parsed);
+      setPlans(resolvedPlans);
       setPlan(currentPlan);
       setPlanName(currentPlan?.name || "");
       setLoaded(true);
