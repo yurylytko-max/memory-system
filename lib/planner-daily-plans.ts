@@ -87,7 +87,7 @@ export function buildDailyPlans(plans: Plan[]) {
 export function mergeDailyPlans(plans: Plan[]) {
   const generatedDailyPlans = buildDailyPlans(plans);
   const plansById = new Map(plans.map((plan) => [plan.id, plan]));
-  const mergedPlans = [...plans];
+  const mergedPlans = plans.filter((plan) => !isDailyPlan(plan));
   const generatedPlanIds = new Set(generatedDailyPlans.map((plan) => plan.id));
 
   for (const generatedPlan of generatedDailyPlans) {
@@ -123,19 +123,15 @@ export function mergeDailyPlans(plans: Plan[]) {
 
     if (existingIndex !== -1) {
       mergedPlans[existingIndex] = mergedPlan;
+      continue;
     }
+
+    mergedPlans.push(mergedPlan);
   }
 
-  return mergedPlans.map((plan) => {
-    if (!isDailyPlan(plan) || generatedPlanIds.has(plan.id)) {
-      return plan;
-    }
-
-    return {
-      ...plan,
-      tasks: plan.tasks.filter((task) => !isManagedDailyTask(task)),
-    };
-  });
+  return mergedPlans.filter(
+    (plan) => !isDailyPlan(plan) || generatedPlanIds.has(plan.id)
+  );
 }
 
 export function findDailyPlan(plans: Plan[], planId: string) {
