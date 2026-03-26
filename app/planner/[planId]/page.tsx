@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import type { ChangeEvent } from "react";
 
 import Link from "next/link";
@@ -89,6 +89,7 @@ function getDeadlineSortValue(deadline?: string) {
 
 export default function PlanPage() {
   const params = useParams();
+  const router = useRouter();
   const planId = decodeURIComponent(params.planId as string);
 
   const [plans, setPlans] = useState<Plan[]>([]);
@@ -104,10 +105,20 @@ export default function PlanPage() {
   useEffect(() => {
     async function loadPlans() {
       const parsed = await migrateLegacyPlansToServer();
-      const resolvedPlans = isDailyPlanId(planId) ? mergeDailyPlans(parsed) : parsed;
-      const currentPlan = isDailyPlanId(planId)
+      const isDailyPlanRoute = isDailyPlanId(planId);
+      const resolvedPlans = isDailyPlanRoute ? mergeDailyPlans(parsed) : parsed;
+      const currentPlan = isDailyPlanRoute
         ? findDailyPlan(parsed, planId)
         : resolvedPlans.find((plan) => plan.id === planId) ?? null;
+
+      if (isDailyPlanRoute && JSON.stringify(parsed) !== JSON.stringify(resolvedPlans)) {
+        await savePlans(resolvedPlans);
+      }
+
+      if (isDailyPlanRoute && !currentPlan) {
+        router.replace("/planner");
+        return;
+      }
 
       setPlans(resolvedPlans);
       setPlan(currentPlan);
@@ -116,7 +127,7 @@ export default function PlanPage() {
     }
 
     void loadPlans();
-  }, [planId]);
+  }, [planId, router]);
 
   async function save(updated: Plan[]) {
     await savePlans(updated);
