@@ -34,9 +34,13 @@ import {
   deletePlan,
   migrateLegacyPlansToServer,
   savePlans,
+  type PlanTask,
   type Plan,
 } from "@/lib/plans";
 import { useIsMobile } from "@/hooks/use-mobile";
+
+const DAILY_PLAN_FOLDER = "план на день";
+const DAILY_PLAN_ID_PREFIX = "daily-plan:";
 
 function formatPlanPeriod(plan: Pick<Plan, "periodStart" | "periodEnd">) {
   const formatter = new Intl.DateTimeFormat("ru-RU", {
@@ -90,6 +94,58 @@ function getFolderOrderMap(plans: Plan[]) {
   return entries;
 }
 
+function formatDailyPlanName(date: string) {
+  return new Intl.DateTimeFormat("ru-RU", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  }).format(new Date(`${date}T00:00:00`));
+}
+
+function buildDailyPlanTask(task: PlanTask, sourcePlan: Plan): PlanTask {
+  return {
+    id: `${sourcePlan.id}:${task.id}`,
+    text: `${task.text} (${sourcePlan.name})`,
+    done: task.done,
+    deadline: task.deadline,
+    versions: [],
+  };
+}
+
+function buildDailyPlans(plans: Plan[]) {
+  const tasksByDeadline = new Map<string, Array<{ task: PlanTask; sourcePlan: Plan }>>();
+
+  for (const plan of plans) {
+    if (plan.id.startsWith(DAILY_PLAN_ID_PREFIX)) {
+      continue;
+    }
+
+    for (const task of plan.tasks) {
+      if (!task.deadline) {
+        continue;
+      }
+
+      const currentTasks = tasksByDeadline.get(task.deadline) ?? [];
+      currentTasks.push({ task, sourcePlan: plan });
+      tasksByDeadline.set(task.deadline, currentTasks);
+    }
+  }
+
+  return Array.from(tasksByDeadline.entries())
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([date, deadlineTasks]) => ({
+      id: `${DAILY_PLAN_ID_PREFIX}${date}`,
+      name: formatDailyPlanName(date),
+      folder: DAILY_PLAN_FOLDER,
+      folderOrder: -1,
+      periodStart: date,
+      periodEnd: date,
+      tasks: deadlineTasks.map(({ task, sourcePlan }) =>
+        buildDailyPlanTask(task, sourcePlan)
+      ),
+    }));
+}
+
 export default function Planner() {
   const isMobile = useIsMobile();
   const [plans, setPlans] = useState<Plan[]>([]);
@@ -100,6 +156,7 @@ export default function Planner() {
   const [editingName, setEditingName] = useState("");
   const [editingFolder, setEditingFolder] = useState("");
   const [editingRange, setEditingRange] = useState<DateRange | undefined>();
+  const [dailyPlanStatus, setDailyPlanStatus] = useState<string>("");
 
   useEffect(() => {
     async function loadPlans() {
@@ -235,6 +292,22 @@ export default function Planner() {
     await createOrUpdatePlans(updatedPlans);
   }
 
+  async function handleCollectDailyPlans() {
+    const generatedDailyPlans = buildDailyPlans(plans);
+    const preservedPlans = plans.filter(
+      (plan) => !plan.id.startsWith(DAILY_PLAN_ID_PREFIX)
+    );
+    const updatedPlans = [...preservedPlans, ...generatedDailyPlans];
+
+    await createOrUpdatePlans(updatedPlans);
+
+    setDailyPlanStatus(
+      generatedDailyPlans.length === 0
+        ? "Задач с дедлайнами пока нет."
+        : `Собрано дней: ${generatedDailyPlans.length}.`
+    );
+  }
+
   function handleFolderDragEnd(event: DragEndEvent) {
     const folderOrderMap = getFolderOrderMap(plans);
     const orderedFolders = Array.from(folderOrderMap.entries())
@@ -261,6 +334,10 @@ export default function Planner() {
   const folders = Array.from(folderOrderMap.entries())
     .sort((a, b) => a[1] - b[1] || a[0].localeCompare(b[0], "ru"))
     .map(([folder]) => folder);
+
+  if (!folders.includes(DAILY_PLAN_FOLDER)) {
+    folders.unshift(DAILY_PLAN_FOLDER);
+  }
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-muted/40 px-4 py-10 sm:px-6 lg:px-10">
@@ -317,6 +394,14 @@ export default function Planner() {
                     plans={plans.filter((p) => p.folder === folder)}
                     onEditPlan={openEditDialog}
                     onDeletePlan={handleDeletePlan}
+                    onCollectDailyPlans={
+                      folder === DAILY_PLAN_FOLDER
+                        ? handleCollectDailyPlans
+                        : undefined
+                    }
+                    dailyPlanStatus={
+                      folder === DAILY_PLAN_FOLDER ? dailyPlanStatus : undefined
+                    }
                   />
                 ))}
               </div>
@@ -427,11 +512,15 @@ function SortableFolderSection({
   plans,
   onEditPlan,
   onDeletePlan,
+  onCollectDailyPlans,
+  dailyPlanStatus,
 }: {
   folder: string;
   plans: Plan[];
   onEditPlan: (plan: Plan) => void;
   onDeletePlan: (id: string) => Promise<void>;
+  onCollectDailyPlans?: () => Promise<void>;
+  dailyPlanStatus?: string;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: folder });
@@ -454,18 +543,45 @@ function SortableFolderSection({
           {folder}
         </h2>
 
-        <button
-          type="button"
-          {...attributes}
-          {...listeners}
-          className="cursor-grab rounded border px-2 py-1 text-sm text-muted-foreground active:cursor-grabbing"
-          title="Перетащить папку"
-        >
-          ⋮⋮
-        </button>
+        <div className="flex items-center gap-2">
+          {onCollectDailyPlans ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                void onCollectDailyPlans();
+              }}
+            >
+              Собрать день
+            </Button>
+          ) : null}
+
+          <button
+            type="button"
+            {...attributes}
+            {...listeners}
+            className="cursor-grab rounded border px-2 py-1 text-sm text-muted-foreground active:cursor-grabbing"
+            title="Перетащить папку"
+          >
+            ⋮⋮
+          </button>
+        </div>
       </div>
 
+      {dailyPlanStatus ? (
+        <p className="mb-4 text-sm text-muted-foreground">
+          {dailyPlanStatus}
+        </p>
+      ) : null}
+
       <div className="space-y-4">
+        {plans.length === 0 && onCollectDailyPlans ? (
+          <div className="rounded-xl border border-dashed bg-muted/40 px-4 py-6 text-sm text-muted-foreground">
+            Здесь появятся планы по дням после сборки задач с дедлайнами.
+          </div>
+        ) : null}
+
         {plans.map((plan) => {
           const periodLabel = formatPlanPeriod(plan);
 
