@@ -28,9 +28,7 @@ import {
   type Plan,
   type PlanTask,
 } from "@/lib/plans";
-
-const DAILY_PLAN_FOLDER = "план на день";
-const DAILY_PLAN_ID_PREFIX = "daily-plan:";
+import { findDailyPlan } from "@/lib/planner-daily-plans";
 
 function formatPlanPeriod(plan: Pick<Plan, "periodStart" | "periodEnd">) {
   const formatter = new Intl.DateTimeFormat("ru-RU", {
@@ -89,61 +87,9 @@ function getDeadlineSortValue(deadline?: string) {
   return deadline ? Date.parse(`${deadline}T00:00:00`) : Number.POSITIVE_INFINITY;
 }
 
-function formatDailyPlanName(date: string) {
-  return new Intl.DateTimeFormat("ru-RU", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  }).format(new Date(`${date}T00:00:00`));
-}
-
-function buildDailyPlanTask(task: PlanTask, sourcePlan: Plan): PlanTask {
-  return {
-    id: `${sourcePlan.id}:${task.id}`,
-    text: `${task.text} (${sourcePlan.name})`,
-    done: task.done,
-    deadline: task.deadline,
-    versions: [],
-  };
-}
-
-function buildDailyPlans(plans: Plan[]) {
-  const tasksByDeadline = new Map<string, Array<{ task: PlanTask; sourcePlan: Plan }>>();
-
-  for (const plan of plans) {
-    if (plan.id.startsWith(DAILY_PLAN_ID_PREFIX)) {
-      continue;
-    }
-
-    for (const task of plan.tasks) {
-      if (!task.deadline) {
-        continue;
-      }
-
-      const currentTasks = tasksByDeadline.get(task.deadline) ?? [];
-      currentTasks.push({ task, sourcePlan: plan });
-      tasksByDeadline.set(task.deadline, currentTasks);
-    }
-  }
-
-  return Array.from(tasksByDeadline.entries())
-    .sort((a, b) => a[0].localeCompare(b[0]))
-    .map(([date, deadlineTasks]) => ({
-      id: `${DAILY_PLAN_ID_PREFIX}${date}`,
-      name: formatDailyPlanName(date),
-      folder: DAILY_PLAN_FOLDER,
-      folderOrder: -1,
-      periodStart: date,
-      periodEnd: date,
-      tasks: deadlineTasks.map(({ task, sourcePlan }) =>
-        buildDailyPlanTask(task, sourcePlan)
-      ),
-    }));
-}
-
 export default function PlanPage() {
   const params = useParams();
-  const planId = params.planId as string;
+  const planId = decodeURIComponent(params.planId as string);
 
   const [plans, setPlans] = useState<Plan[]>([]);
   const [plan, setPlan] = useState<Plan | null>(null);
@@ -158,16 +104,10 @@ export default function PlanPage() {
   useEffect(() => {
     async function loadPlans() {
       const parsed = await migrateLegacyPlansToServer();
-      const generatedDailyPlans = buildDailyPlans(parsed);
-      const combinedPlans = [
-        ...parsed,
-        ...generatedDailyPlans.filter(
-          (generatedPlan) => !parsed.some((plan) => plan.id === generatedPlan.id)
-        ),
-      ];
-      const currentPlan = combinedPlans.find((p) => p.id === planId) || null;
+      const currentPlan =
+        parsed.find((plan) => plan.id === planId) ?? findDailyPlan(parsed, planId);
 
-      setPlans(combinedPlans);
+      setPlans(parsed);
       setPlan(currentPlan);
       setPlanName(currentPlan?.name || "");
       setLoaded(true);

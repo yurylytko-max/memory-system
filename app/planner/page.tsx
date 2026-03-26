@@ -34,13 +34,13 @@ import {
   deletePlan,
   migrateLegacyPlansToServer,
   savePlans,
-  type PlanTask,
   type Plan,
 } from "@/lib/plans";
+import {
+  DAILY_PLAN_FOLDER,
+  mergeDailyPlans,
+} from "@/lib/planner-daily-plans";
 import { useIsMobile } from "@/hooks/use-mobile";
-
-const DAILY_PLAN_FOLDER = "план на день";
-const DAILY_PLAN_ID_PREFIX = "daily-plan:";
 
 function formatPlanPeriod(plan: Pick<Plan, "periodStart" | "periodEnd">) {
   const formatter = new Intl.DateTimeFormat("ru-RU", {
@@ -92,58 +92,6 @@ function getFolderOrderMap(plans: Plan[]) {
   }
 
   return entries;
-}
-
-function formatDailyPlanName(date: string) {
-  return new Intl.DateTimeFormat("ru-RU", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  }).format(new Date(`${date}T00:00:00`));
-}
-
-function buildDailyPlanTask(task: PlanTask, sourcePlan: Plan): PlanTask {
-  return {
-    id: `${sourcePlan.id}:${task.id}`,
-    text: `${task.text} (${sourcePlan.name})`,
-    done: task.done,
-    deadline: task.deadline,
-    versions: [],
-  };
-}
-
-function buildDailyPlans(plans: Plan[]) {
-  const tasksByDeadline = new Map<string, Array<{ task: PlanTask; sourcePlan: Plan }>>();
-
-  for (const plan of plans) {
-    if (plan.id.startsWith(DAILY_PLAN_ID_PREFIX)) {
-      continue;
-    }
-
-    for (const task of plan.tasks) {
-      if (!task.deadline) {
-        continue;
-      }
-
-      const currentTasks = tasksByDeadline.get(task.deadline) ?? [];
-      currentTasks.push({ task, sourcePlan: plan });
-      tasksByDeadline.set(task.deadline, currentTasks);
-    }
-  }
-
-  return Array.from(tasksByDeadline.entries())
-    .sort((a, b) => a[0].localeCompare(b[0]))
-    .map(([date, deadlineTasks]) => ({
-      id: `${DAILY_PLAN_ID_PREFIX}${date}`,
-      name: formatDailyPlanName(date),
-      folder: DAILY_PLAN_FOLDER,
-      folderOrder: -1,
-      periodStart: date,
-      periodEnd: date,
-      tasks: deadlineTasks.map(({ task, sourcePlan }) =>
-        buildDailyPlanTask(task, sourcePlan)
-      ),
-    }));
 }
 
 export default function Planner() {
@@ -293,18 +241,17 @@ export default function Planner() {
   }
 
   async function handleCollectDailyPlans() {
-    const generatedDailyPlans = buildDailyPlans(plans);
-    const preservedPlans = plans.filter(
-      (plan) => !plan.id.startsWith(DAILY_PLAN_ID_PREFIX)
-    );
-    const updatedPlans = [...preservedPlans, ...generatedDailyPlans];
+    const updatedPlans = mergeDailyPlans(plans);
+    const dailyPlansCount = updatedPlans.filter(
+      (plan) => plan.folder === DAILY_PLAN_FOLDER
+    ).length;
 
     await createOrUpdatePlans(updatedPlans);
 
     setDailyPlanStatus(
-      generatedDailyPlans.length === 0
+      dailyPlansCount === 0
         ? "Задач с дедлайнами пока нет."
-        : `Собрано дней: ${generatedDailyPlans.length}.`
+        : `Собрано дней: ${dailyPlansCount}.`
     );
   }
 
