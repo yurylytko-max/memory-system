@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import StudyLibrary from "@/components/study/study-library";
 
 export default function StudyPage() {
-  redirect("/texts");
+  return <StudyLibrary />;
 }

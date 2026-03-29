@@ -1,0 +1,9 @@
+.git
+.next
+node_modules
+exports
+imports
+Lithuania-2026-short.pdf
+*.traineddata
+tsconfig.tsbuildinfo
+.DS_Store

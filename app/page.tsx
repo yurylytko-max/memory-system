@@ -41,7 +41,7 @@ export default function Home() {
 
         <Card
           title="Учебники 2.0"
-          href="/texts"
+          href="/study"
         />
       </div>
     </main>
