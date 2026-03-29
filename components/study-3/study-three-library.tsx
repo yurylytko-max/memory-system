@@ -52,7 +52,7 @@ export default function StudyThreeLibrary() {
     setError("");
 
     try {
-      const chunkSize = 512 * 1024;
+      const chunkSize = 128 * 1024;
       const totalChunks = Math.max(1, Math.ceil(file.size / chunkSize));
 
       setUploadProgress(5);

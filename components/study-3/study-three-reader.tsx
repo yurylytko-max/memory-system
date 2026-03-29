@@ -273,14 +273,57 @@ export default function StudyThreeReader({ bookId }: { bookId: string }) {
     setError("");
 
     try {
+      let payload: Record<string, unknown> = {
+        pageNumber,
+      };
+
+      if (book.mime_type === "application/pdf" && fileUrl) {
+        setStatus("Собираем изображение PDF-страницы...");
+        const pdfjs = await import(
+          /* webpackIgnore: true */ "https://cdn.jsdelivr.net/npm/pdfjs-dist@5.5.207/build/pdf.mjs"
+        );
+        pdfjs.GlobalWorkerOptions.workerSrc =
+          "https://cdn.jsdelivr.net/npm/pdfjs-dist@5.5.207/build/pdf.worker.min.mjs";
+
+        const pdfBuffer = await fetch(fileUrl).then((response) => response.arrayBuffer());
+        const pdfDocument = await pdfjs.getDocument({ data: pdfBuffer }).promise;
+        const page = await pdfDocument.getPage(pageNumber);
+        const viewport = page.getViewport({ scale: 2 });
+        const canvas = document.createElement("canvas");
+        const context = canvas.getContext("2d");
+
+        if (!context) {
+          throw new Error("Не удалось подготовить PDF-страницу.");
+        }
+
+        canvas.width = Math.ceil(viewport.width);
+        canvas.height = Math.ceil(viewport.height);
+
+        await page.render({
+          canvasContext: context,
+          viewport,
+        }).promise;
+
+        const dataUrl = canvas.toDataURL("image/png");
+        const imageBase64 = dataUrl.split(",")[1] ?? "";
+
+        if (!imageBase64) {
+          throw new Error("Не удалось извлечь изображение из PDF.");
+        }
+
+        payload = {
+          pageNumber,
+          imageBase64,
+          imageMimeType: "image/png",
+        };
+      }
+
       const response = await fetch(`/api/study-3/books/${book.id}/html`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          pageNumber,
-        }),
+        body: JSON.stringify(payload),
       });
       const raw = await response.text();
       const data = raw.trim() ? JSON.parse(raw) : {};

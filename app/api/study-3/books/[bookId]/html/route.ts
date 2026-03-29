@@ -125,27 +125,32 @@ export async function POST(
     return NextResponse.json({ error: "Учебник не найден." }, { status: 404 });
   }
 
-  if (!book.mime_type.startsWith("image/")) {
+  const body = (await request.json().catch(() => ({}))) as {
+    pageNumber?: number;
+    imageBase64?: string;
+    imageMimeType?: string;
+  };
+
+  if (!book.mime_type.startsWith("image/") && !body.imageBase64) {
     return NextResponse.json(
-      { error: "HTML-построение сейчас поддержано для изображений страниц." },
+      { error: "Для PDF сначала нужно собрать изображение страницы." },
       { status: 400 }
     );
   }
 
-  const file = await readStudyThreeBookFile(bookId);
+  const file = body.imageBase64 ? null : await readStudyThreeBookFile(bookId);
 
-  if (!file) {
+  if (!body.imageBase64 && !file) {
     return NextResponse.json({ error: "Файл учебника не найден." }, { status: 404 });
   }
 
-  const body = (await request.json().catch(() => ({}))) as {
-    pageNumber?: number;
-  };
-
   try {
     const html = await callGemini({
-      mimeType: book.mime_type,
-      base64: file.toString("base64"),
+      mimeType:
+        typeof body.imageMimeType === "string" && body.imageMimeType.trim().length > 0
+          ? body.imageMimeType
+          : book.mime_type,
+      base64: body.imageBase64 || file!.toString("base64"),
       bookTitle: book.title,
       pageNumber: Math.max(1, Number(body.pageNumber) || 1),
     });
