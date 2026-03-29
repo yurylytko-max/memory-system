@@ -38,45 +38,94 @@ export default function StudyThreeLibrary() {
     setError("");
 
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("title", title.trim());
+      const chunkSize = 512 * 1024;
+      const totalChunks = Math.max(1, Math.ceil(file.size / chunkSize));
 
-      const data = await new Promise<any>((resolve, reject) => {
-        const request = new XMLHttpRequest();
+      setUploadProgress(5);
+      setUploadStatus("Создаём сессию загрузки...");
 
-        request.open("POST", "/api/study-3/books");
-        request.responseType = "json";
-
-        request.upload.onprogress = (event) => {
-          if (!event.lengthComputable) {
-            return;
-          }
-
-          const nextProgress = Math.min(92, Math.max(8, Math.round((event.loaded / event.total) * 100)));
-          setUploadProgress(nextProgress);
-          setUploadStatus(`Загружаем файл: ${nextProgress}%`);
-        };
-
-        request.onload = () => {
-          const responseData = request.response ?? {};
-
-          if (request.status >= 200 && request.status < 300) {
-            setUploadProgress(100);
-            setUploadStatus("Файл загружен.");
-            resolve(responseData);
-            return;
-          }
-
-          reject(new Error(responseData.error ?? "Не удалось загрузить учебник."));
-        };
-
-        request.onerror = () => {
-          reject(new Error("Сеть прервала загрузку файла."));
-        };
-
-        request.send(formData);
+      const startResponse = await fetch("/api/study-3/books/upload", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          action: "start",
+          title: title.trim(),
+          fileName: file.name,
+          mimeType: file.type || "application/octet-stream",
+          totalChunks,
+        }),
       });
+      const startData = await startResponse.json();
+
+      if (!startResponse.ok || typeof startData.uploadId !== "string") {
+        throw new Error(startData.error ?? "Не удалось начать загрузку.");
+      }
+
+      const uploadId = startData.uploadId;
+
+      for (let index = 0; index < totalChunks; index += 1) {
+        const start = index * chunkSize;
+        const end = Math.min(file.size, start + chunkSize);
+        const chunk = file.slice(start, end);
+        const arrayBuffer = await chunk.arrayBuffer();
+        const bytes = new Uint8Array(arrayBuffer);
+        let binary = "";
+
+        for (let offset = 0; offset < bytes.length; offset += 1) {
+          binary += String.fromCharCode(bytes[offset]!);
+        }
+
+        const base64 = btoa(binary);
+
+        const chunkResponse = await fetch("/api/study-3/books/upload", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            action: "chunk",
+            uploadId,
+            index,
+            base64,
+          }),
+        });
+        const chunkData = await chunkResponse.json();
+
+        if (!chunkResponse.ok) {
+          throw new Error(chunkData.error ?? "Не удалось передать часть файла.");
+        }
+
+        const nextProgress = Math.min(
+          94,
+          10 + Math.round(((index + 1) / totalChunks) * 84)
+        );
+        setUploadProgress(nextProgress);
+        setUploadStatus(`Загружаем файл: ${index + 1} из ${totalChunks}`);
+      }
+
+      setUploadProgress(97);
+      setUploadStatus("Собираем файл на сервере...");
+
+      const finishResponse = await fetch("/api/study-3/books/upload", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          action: "finish",
+          uploadId,
+        }),
+      });
+      const data = await finishResponse.json();
+
+      if (!finishResponse.ok) {
+        throw new Error(data.error ?? "Не удалось завершить загрузку.");
+      }
+
+      setUploadProgress(100);
+      setUploadStatus("Файл загружен.");
 
       setTitle("");
       setFile(null);
