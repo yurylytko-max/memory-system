@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
 
 import type { StudyThreeBook } from "@/lib/study-3";
+import { listLocalStudyThreeBooks, saveLocalStudyThreeBook } from "@/lib/study-3-local";
 
 async function readJsonSafely(response: Response) {
   const raw = await response.text();
@@ -35,7 +36,9 @@ export default function StudyThreeLibrary() {
   async function loadBooks() {
     const response = await fetch("/api/study-3/books", { cache: "no-store" });
     const data = await readJsonSafely(response);
-    setBooks(Array.isArray(data.books) ? data.books : []);
+    const remoteBooks = Array.isArray(data.books) ? data.books : [];
+    const localBooks = typeof window === "undefined" ? [] : listLocalStudyThreeBooks();
+    setBooks([...localBooks, ...remoteBooks]);
   }
 
   async function handleUpload(event: FormEvent<HTMLFormElement>) {
@@ -52,6 +55,37 @@ export default function StudyThreeLibrary() {
     setError("");
 
     try {
+      if (file.type === "application/pdf") {
+        setUploadProgress(10);
+        setUploadStatus("Читаем PDF в браузере...");
+        const bytes = await file.arrayBuffer();
+        const { PDFDocument } = await import("pdf-lib");
+        const document = await PDFDocument.load(bytes);
+        const pageCount = Math.max(1, document.getPageCount());
+        const nextTitle = title.trim() || file.name.replace(/\.[^.]+$/, "") || "Учебник";
+
+        setUploadProgress(70);
+        setUploadStatus("Сохраняем PDF локально...");
+        await saveLocalStudyThreeBook({
+          title: nextTitle,
+          file,
+          pageCount,
+        });
+
+        setUploadProgress(100);
+        setUploadStatus("PDF добавлен в библиотеку.");
+        setTitle("");
+        setFile(null);
+        const input = event.currentTarget.querySelector<HTMLInputElement>('input[type="file"]');
+
+        if (input) {
+          input.value = "";
+        }
+
+        await loadBooks();
+        return;
+      }
+
       const chunkSize = 128 * 1024;
       const totalChunks = Math.max(1, Math.ceil(file.size / chunkSize));
 

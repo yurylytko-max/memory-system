@@ -121,17 +121,23 @@ export async function POST(
   const { bookId } = await context.params;
   const book = await readStudyThreeBook(bookId);
 
-  if (!book) {
-    return NextResponse.json({ error: "Учебник не найден." }, { status: 404 });
-  }
-
   const body = (await request.json().catch(() => ({}))) as {
     pageNumber?: number;
     imageBase64?: string;
     imageMimeType?: string;
+    bookTitle?: string;
   };
 
-  if (!book.mime_type.startsWith("image/") && !body.imageBase64) {
+  if (!book && !body.imageBase64) {
+    return NextResponse.json({ error: "Учебник не найден." }, { status: 404 });
+  }
+
+  const bookTitle =
+    typeof body.bookTitle === "string" && body.bookTitle.trim().length > 0
+      ? body.bookTitle.trim()
+      : book?.title ?? "Учебник";
+
+  if (!body.imageBase64 && book && !book.mime_type.startsWith("image/")) {
     return NextResponse.json(
       { error: "Для PDF сначала нужно собрать изображение страницы." },
       { status: 400 }
@@ -149,9 +155,9 @@ export async function POST(
       mimeType:
         typeof body.imageMimeType === "string" && body.imageMimeType.trim().length > 0
           ? body.imageMimeType
-          : book.mime_type,
+          : book?.mime_type ?? "image/png",
       base64: body.imageBase64 || file!.toString("base64"),
-      bookTitle: book.title,
+      bookTitle,
       pageNumber: Math.max(1, Number(body.pageNumber) || 1),
     });
 

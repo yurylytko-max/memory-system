@@ -5,6 +5,11 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 
 import type { Card } from "@/lib/cards";
 import { clampSelectionText, type StudyThreeBook } from "@/lib/study-3";
+import {
+  isLocalStudyThreeBookId,
+  readLocalStudyThreeBook,
+  readLocalStudyThreeFile,
+} from "@/lib/study-3-local";
 
 type SelectionState = {
   text: string;
@@ -31,6 +36,19 @@ export default function StudyThreeReader({ bookId }: { bookId: string }) {
 
   useEffect(() => {
     void (async () => {
+      if (isLocalStudyThreeBookId(bookId)) {
+        const localBook = readLocalStudyThreeBook(bookId);
+
+        if (!localBook) {
+          setError("Локальный учебник не найден.");
+          return;
+        }
+
+        setBook(localBook);
+        setStatus("Готово к чтению.");
+        return;
+      }
+
       const response = await fetch(`/api/study-3/books/${bookId}`, { cache: "no-store" });
       const data = await response.json();
 
@@ -57,15 +75,27 @@ export default function StudyThreeReader({ bookId }: { bookId: string }) {
       setHtmlContent("");
       setContentMode("original");
 
-      const response = await fetch(`/api/study-3/books/${book.id}/file`, { cache: "no-store" });
+      let blob: Blob | null = null;
 
-      if (!response.ok) {
-        const data = await response.json();
-        setError(data.error ?? "Не удалось получить файл учебника.");
-        return;
+      if (isLocalStudyThreeBookId(book.id)) {
+        blob = await readLocalStudyThreeFile(book.id);
+
+        if (!blob) {
+          setError("Не удалось получить локальный файл учебника.");
+          return;
+        }
+      } else {
+        const response = await fetch(`/api/study-3/books/${book.id}/file`, { cache: "no-store" });
+
+        if (!response.ok) {
+          const data = await response.json();
+          setError(data.error ?? "Не удалось получить файл учебника.");
+          return;
+        }
+
+        blob = await response.blob();
       }
 
-      const blob = await response.blob();
       const nextUrl = URL.createObjectURL(blob);
       setFileUrl((current) => {
         if (current) {
@@ -323,7 +353,10 @@ export default function StudyThreeReader({ bookId }: { bookId: string }) {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          ...payload,
+          bookTitle: book.title,
+        }),
       });
       const raw = await response.text();
       const data = raw.trim() ? JSON.parse(raw) : {};
