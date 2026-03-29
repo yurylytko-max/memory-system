@@ -30,7 +30,14 @@ async function callGemini(prompt: string) {
     throw new Error("Gemini не ответил.");
   }
 
-  const envelope = JSON.parse(raw);
+  let envelope: any = null;
+
+  try {
+    envelope = JSON.parse(raw);
+  } catch {
+    console.error("STUDY-3 EXPLAIN INVALID GEMINI ENVELOPE:", raw);
+    throw new Error("Gemini вернул некорректный ответ.");
+  }
   const text =
     envelope?.candidates?.[0]?.content?.parts
       ?.map((part: { text?: string }) => part.text ?? "")
@@ -43,7 +50,12 @@ async function callGemini(prompt: string) {
     throw new Error("Gemini не вернул JSON.");
   }
 
-  return JSON.parse(jsonText);
+  try {
+    return JSON.parse(jsonText);
+  } catch {
+    console.error("STUDY-3 EXPLAIN INVALID JSON:", jsonText);
+    throw new Error("Gemini вернул невалидный JSON.");
+  }
 }
 
 export async function POST(request: Request) {
@@ -78,10 +90,18 @@ export async function POST(request: Request) {
 Контекст: ${context}
 `.trim());
 
-    return NextResponse.json({
-      explanation:
-        typeof parsed?.explanation === "string" ? parsed.explanation.trim() : "",
-    });
+    const explanation =
+      typeof parsed?.explanation === "string"
+        ? parsed.explanation.trim()
+        : typeof parsed === "string"
+          ? parsed.trim()
+          : "";
+
+    if (!explanation) {
+      throw new Error("Gemini не вернул объяснение.");
+    }
+
+    return NextResponse.json({ explanation });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Не удалось получить объяснение." },

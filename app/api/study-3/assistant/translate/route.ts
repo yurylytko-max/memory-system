@@ -56,7 +56,12 @@ async function callGemini(prompt: string) {
     throw new Error("Gemini не вернул JSON.");
   }
 
-  return JSON.parse(jsonText);
+  try {
+    return JSON.parse(jsonText);
+  } catch {
+    console.error("STUDY-3 TRANSLATE INVALID JSON:", jsonText);
+    throw new Error("Gemini вернул невалидный JSON.");
+  }
 }
 
 export async function POST(request: Request) {
@@ -91,10 +96,18 @@ export async function POST(request: Request) {
 Контекст: ${context}
 `.trim());
 
-    return NextResponse.json({
-      translation:
-        typeof parsed?.translation === "string" ? parsed.translation.trim() : "",
-    });
+    const translation =
+      typeof parsed?.translation === "string"
+        ? parsed.translation.trim()
+        : typeof parsed === "string"
+          ? parsed.trim()
+          : "";
+
+    if (!translation) {
+      throw new Error("Gemini не вернул перевод.");
+    }
+
+    return NextResponse.json({ translation });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Не удалось получить перевод." },

@@ -18,6 +18,18 @@ type SelectionState = {
   explanation: string;
 };
 
+async function readJsonSafely(response: Response) {
+  const raw = await response.text();
+
+  try {
+    return raw.trim() ? JSON.parse(raw) : {};
+  } catch {
+    return {
+      error: raw.trim() || "Сервер вернул некорректный ответ.",
+    };
+  }
+}
+
 export default function StudyThreeReader({ bookId }: { bookId: string }) {
   const [book, setBook] = useState<StudyThreeBook | null>(null);
   const [pageNumber, setPageNumber] = useState(1);
@@ -50,7 +62,7 @@ export default function StudyThreeReader({ bookId }: { bookId: string }) {
       }
 
       const response = await fetch(`/api/study-3/books/${bookId}`, { cache: "no-store" });
-      const data = await response.json();
+      const data = await readJsonSafely(response);
 
       if (!response.ok) {
         setError(data.error ?? "Не удалось загрузить учебник.");
@@ -88,7 +100,7 @@ export default function StudyThreeReader({ bookId }: { bookId: string }) {
         const response = await fetch(`/api/study-3/books/${book.id}/file`, { cache: "no-store" });
 
         if (!response.ok) {
-          const data = await response.json();
+          const data = await readJsonSafely(response);
           setError(data.error ?? "Не удалось получить файл учебника.");
           return;
         }
@@ -180,7 +192,7 @@ export default function StudyThreeReader({ bookId }: { bookId: string }) {
         bookTitle: book.title,
       }),
     });
-    const data = await response.json();
+    const data = await readJsonSafely(response);
 
     if (!response.ok) {
       setError(data.error ?? "Не удалось получить перевод.");
@@ -230,7 +242,7 @@ export default function StudyThreeReader({ bookId }: { bookId: string }) {
         bookTitle: book.title,
       }),
     });
-    const data = await response.json();
+    const data = await readJsonSafely(response);
     setIsExplaining(false);
 
     if (!response.ok) {
@@ -300,7 +312,7 @@ export default function StudyThreeReader({ bookId }: { bookId: string }) {
         bookTitle: book.title,
       }),
     });
-    const data = await response.json();
+    const data = await readJsonSafely(response);
 
     if (!response.ok) {
       setError(data.error ?? "Ассистент не ответил.");
