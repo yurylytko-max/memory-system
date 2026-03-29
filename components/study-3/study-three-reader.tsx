@@ -195,6 +195,22 @@ export default function StudyThreeReader({ bookId }: { bookId: string }) {
     });
   }
 
+  function handleHtmlSelection() {
+    if (contentMode !== "html") {
+      return;
+    }
+
+    const nextSelection = window.getSelection();
+    const selectedText = clampSelectionText(nextSelection?.toString() ?? "");
+
+    if (!selectedText) {
+      return;
+    }
+
+    void analyzeSelection(selectedText);
+    nextSelection?.removeAllRanges();
+  }
+
   async function handleExplain() {
     if (!selection || !book) {
       return;
@@ -488,6 +504,7 @@ export default function StudyThreeReader({ bookId }: { bookId: string }) {
                 <div className="rounded-[1.75rem] border border-slate-200 bg-[#fffdf7] p-6">
                   <div
                     className="prose prose-slate max-w-none"
+                    onMouseUp={handleHtmlSelection}
                     dangerouslySetInnerHTML={{ __html: htmlContent }}
                   />
                 </div>
