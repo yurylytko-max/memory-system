@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { GlobalWorkerOptions, getDocument } from "pdfjs-dist/build/pdf.mjs";
+import { GlobalWorkerOptions, getDocument } from "pdfjs-dist/build/pdf";
 
 import StudyPageRenderer from "@/components/study/study-page-renderer";
 import type { StudyBook, StudyPageDocument } from "@/lib/study";

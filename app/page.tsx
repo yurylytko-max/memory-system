@@ -36,7 +36,7 @@ export default function Home() {
 
         <Card
           title="Тексты"
-          href="/texts"
+          href="/study"
         />
 
         <Card
