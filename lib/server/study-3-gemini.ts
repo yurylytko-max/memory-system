@@ -31,7 +31,13 @@ function toGeminiError(status: number) {
   return "Gemini не ответил.";
 }
 
-export async function callStudyThreeGeminiJson(prompt: string, logPrefix: string) {
+async function callGeminiWithRetry(
+  body: Record<string, unknown>,
+  logPrefix: string,
+  options?: {
+    emptyTextMessage?: string;
+  }
+) {
   const apiKey = getGeminiApiKey();
   const maxAttempts = 3;
 
@@ -42,13 +48,7 @@ export async function callStudyThreeGeminiJson(prompt: string, logPrefix: string
         "Content-Type": "application/json",
         "x-goog-api-key": apiKey,
       },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.1,
-          responseMimeType: "application/json",
-        },
-      }),
+      body: JSON.stringify(body),
     });
 
     const raw = await response.text();
@@ -97,22 +97,66 @@ export async function callStudyThreeGeminiJson(prompt: string, logPrefix: string
         continue;
       }
 
-      throw new Error("Gemini не вернул содержательный ответ.");
+      throw new Error(options?.emptyTextMessage ?? "Gemini не вернул содержательный ответ.");
     }
 
-    try {
-      return JSON.parse(text);
-    } catch {
-      console.error(`${logPrefix} INVALID JSON TEXT:`, text);
-
-      if (attempt < maxAttempts) {
-        await sleep(500 * attempt);
-        continue;
-      }
-
-      throw new Error("Gemini вернул невалидный JSON.");
-    }
+    return text;
   }
 
   throw new Error("Gemini не ответил.");
+}
+
+export async function callStudyThreeGeminiJson(prompt: string, logPrefix: string) {
+  const text = await callGeminiWithRetry(
+    {
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: {
+        temperature: 0.1,
+        responseMimeType: "application/json",
+      },
+    },
+    logPrefix
+  );
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    console.error(`${logPrefix} INVALID JSON TEXT:`, text);
+
+    throw new Error("Gemini вернул невалидный JSON.");
+  }
+}
+
+export async function callStudyThreeGeminiHtml(params: {
+  mimeType: string;
+  base64: string;
+  prompt: string;
+  logPrefix: string;
+}) {
+  return callGeminiWithRetry(
+    {
+      contents: [
+        {
+          parts: [
+            {
+              inline_data: {
+                mime_type: params.mimeType,
+                data: params.base64,
+              },
+            },
+            {
+              text: params.prompt,
+            },
+          ],
+        },
+      ],
+      generationConfig: {
+        temperature: 0.1,
+      },
+    },
+    params.logPrefix,
+    {
+      emptyTextMessage: "Gemini не вернул HTML.",
+    }
+  );
 }
