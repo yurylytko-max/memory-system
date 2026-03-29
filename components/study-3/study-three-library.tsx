@@ -11,6 +11,8 @@ export default function StudyThreeLibrary() {
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState("");
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadStatus, setUploadStatus] = useState("");
 
   useEffect(() => {
     void loadBooks();
@@ -31,6 +33,8 @@ export default function StudyThreeLibrary() {
     }
 
     setIsUploading(true);
+    setUploadProgress(3);
+    setUploadStatus("Подготавливаем файл...");
     setError("");
 
     try {
@@ -38,16 +42,41 @@ export default function StudyThreeLibrary() {
       formData.append("file", file);
       formData.append("title", title.trim());
 
-      const response = await fetch("/api/study-3/books", {
-        method: "POST",
-        body: formData,
-      });
-      const data = await response.json();
+      const data = await new Promise<any>((resolve, reject) => {
+        const request = new XMLHttpRequest();
 
-      if (!response.ok) {
-        setError(data.error ?? "Не удалось загрузить учебник.");
-        return;
-      }
+        request.open("POST", "/api/study-3/books");
+        request.responseType = "json";
+
+        request.upload.onprogress = (event) => {
+          if (!event.lengthComputable) {
+            return;
+          }
+
+          const nextProgress = Math.min(92, Math.max(8, Math.round((event.loaded / event.total) * 100)));
+          setUploadProgress(nextProgress);
+          setUploadStatus(`Загружаем файл: ${nextProgress}%`);
+        };
+
+        request.onload = () => {
+          const responseData = request.response ?? {};
+
+          if (request.status >= 200 && request.status < 300) {
+            setUploadProgress(100);
+            setUploadStatus("Файл загружен.");
+            resolve(responseData);
+            return;
+          }
+
+          reject(new Error(responseData.error ?? "Не удалось загрузить учебник."));
+        };
+
+        request.onerror = () => {
+          reject(new Error("Сеть прервала загрузку файла."));
+        };
+
+        request.send(formData);
+      });
 
       setTitle("");
       setFile(null);
@@ -58,8 +87,20 @@ export default function StudyThreeLibrary() {
       }
 
       await loadBooks();
+      setUploadStatus("Учебник добавлен в библиотеку.");
+    } catch (uploadError) {
+      setError(
+        uploadError instanceof Error
+          ? uploadError.message
+          : "Не удалось загрузить учебник."
+      );
+      setUploadStatus("Загрузка не удалась.");
     } finally {
       setIsUploading(false);
+      window.setTimeout(() => {
+        setUploadProgress(0);
+        setUploadStatus("");
+      }, 1200);
     }
   }
 
@@ -118,6 +159,21 @@ export default function StudyThreeLibrary() {
               </label>
 
               {error ? <div className="text-sm text-red-600">{error}</div> : null}
+
+              {isUploading || uploadProgress > 0 ? (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs text-slate-600">
+                    <span>{uploadStatus || "Загрузка..."}</span>
+                    <span>{uploadProgress}%</span>
+                  </div>
+                  <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+                    <div
+                      className="h-full rounded-full bg-slate-900 transition-all"
+                      style={{ width: `${uploadProgress}%` }}
+                    />
+                  </div>
+                </div>
+              ) : null}
 
               <button
                 type="submit"
