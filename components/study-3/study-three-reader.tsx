@@ -44,6 +44,7 @@ export default function StudyThreeReader({ bookId }: { bookId: string }) {
   const [fileUrl, setFileUrl] = useState("");
   const [pageText, setPageText] = useState("");
   const [htmlContent, setHtmlContent] = useState("");
+  const [htmlByPage, setHtmlByPage] = useState<Record<number, string>>({});
   const [isBuildingHtml, setIsBuildingHtml] = useState(false);
   const [contentMode, setContentMode] = useState<"original" | "html">("original");
   const lastSelectionRequestRef = useRef("");
@@ -87,6 +88,7 @@ export default function StudyThreeReader({ bookId }: { bookId: string }) {
       setAnswer("");
       setQuestion("");
       setHtmlContent("");
+      setHtmlByPage({});
       setContentMode("original");
       lastSelectionRequestRef.current = "";
 
@@ -145,6 +147,11 @@ export default function StudyThreeReader({ bookId }: { bookId: string }) {
       }
     };
   }, [fileUrl]);
+
+  useEffect(() => {
+    const cachedHtml = htmlByPage[pageNumber] ?? "";
+    setHtmlContent(cachedHtml);
+  }, [htmlByPage, pageNumber]);
 
   function buildContext(selectedText: string) {
     const normalized = clampSelectionText(selectedText);
@@ -338,6 +345,16 @@ export default function StudyThreeReader({ bookId }: { bookId: string }) {
       return;
     }
 
+    const cachedHtml = htmlByPage[pageNumber];
+
+    if (cachedHtml) {
+      setHtmlContent(cachedHtml);
+      setContentMode("html");
+      setStatus("HTML страницы уже готов.");
+      setError("");
+      return;
+    }
+
     setIsBuildingHtml(true);
     setError("");
 
@@ -390,7 +407,13 @@ export default function StudyThreeReader({ bookId }: { bookId: string }) {
         throw new Error(data.error ?? "Не удалось построить HTML страницы.");
       }
 
-      setHtmlContent(typeof data.html === "string" ? data.html : "");
+      const nextHtml = typeof data.html === "string" ? data.html : "";
+
+      setHtmlByPage((current) => ({
+        ...current,
+        [pageNumber]: nextHtml,
+      }));
+      setHtmlContent(nextHtml);
       setContentMode("html");
       setStatus("HTML страницы готов.");
     } catch (htmlError) {
