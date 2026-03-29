@@ -38,6 +38,11 @@ export default function Home() {
           title="Тексты"
           href="/texts"
         />
+
+        <Card
+          title="Учебники 3.0"
+          href="/study-3"
+        />
       </div>
     </main>
   );
