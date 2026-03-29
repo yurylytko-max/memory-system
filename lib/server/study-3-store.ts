@@ -170,6 +170,29 @@ export async function readStudyThreeBookFile(bookId: string) {
     return null;
   }
 
+  if (book.storage === "blob" && book.file_url) {
+    try {
+      const response = await fetch(book.file_url, { cache: "no-store" });
+
+      if (response.ok) {
+        const arrayBuffer = await response.arrayBuffer();
+        return Buffer.from(arrayBuffer);
+      }
+
+      console.error("Study 3 blob fetch failed:", {
+        bookId: book.id,
+        status: response.status,
+        fileUrl: book.file_url,
+      });
+    } catch (error) {
+      console.error("Study 3 blob fetch error:", {
+        bookId: book.id,
+        fileUrl: book.file_url,
+        error,
+      });
+    }
+  }
+
   try {
     const client = await getClient();
 
