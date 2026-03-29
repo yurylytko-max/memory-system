@@ -308,43 +308,29 @@ export default function StudyThreeReader({ bookId }: { bookId: string }) {
       };
 
       if (book.mime_type === "application/pdf" && fileUrl) {
-        setStatus("Собираем изображение PDF-страницы...");
-        const pdfjs = await import(
-          /* webpackIgnore: true */ "https://cdn.jsdelivr.net/npm/pdfjs-dist@5.5.207/build/pdf.mjs"
-        );
-        pdfjs.GlobalWorkerOptions.workerSrc =
-          "https://cdn.jsdelivr.net/npm/pdfjs-dist@5.5.207/build/pdf.worker.min.mjs";
-
+        setStatus("Подготавливаем PDF-страницу для Gemini...");
         const pdfBuffer = await fetch(fileUrl).then((response) => response.arrayBuffer());
-        const pdfDocument = await pdfjs.getDocument({ data: pdfBuffer }).promise;
-        const page = await pdfDocument.getPage(pageNumber);
-        const viewport = page.getViewport({ scale: 2 });
-        const canvas = document.createElement("canvas");
-        const context = canvas.getContext("2d");
+        const { PDFDocument } = await import("pdf-lib");
+        const sourceDocument = await PDFDocument.load(pdfBuffer);
+        const totalPages = sourceDocument.getPageCount();
+        const pageIndex = Math.max(0, Math.min(totalPages - 1, pageNumber - 1));
+        const singlePageDocument = await PDFDocument.create();
+        const [page] = await singlePageDocument.copyPages(sourceDocument, [pageIndex]);
+        singlePageDocument.addPage(page);
 
-        if (!context) {
-          throw new Error("Не удалось подготовить PDF-страницу.");
+        const pageBytes = await singlePageDocument.save();
+        let binary = "";
+
+        for (const byte of pageBytes) {
+          binary += String.fromCharCode(byte);
         }
 
-        canvas.width = Math.ceil(viewport.width);
-        canvas.height = Math.ceil(viewport.height);
-
-        await page.render({
-          canvasContext: context,
-          viewport,
-        }).promise;
-
-        const dataUrl = canvas.toDataURL("image/png");
-        const imageBase64 = dataUrl.split(",")[1] ?? "";
-
-        if (!imageBase64) {
-          throw new Error("Не удалось извлечь изображение из PDF.");
-        }
+        const fileBase64 = btoa(binary);
 
         payload = {
           pageNumber,
-          imageBase64,
-          imageMimeType: "image/png",
+          fileBase64,
+          fileMimeType: "application/pdf",
         };
       }
 

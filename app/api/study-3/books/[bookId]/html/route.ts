@@ -125,10 +125,18 @@ export async function POST(
     pageNumber?: number;
     imageBase64?: string;
     imageMimeType?: string;
+    fileBase64?: string;
+    fileMimeType?: string;
     bookTitle?: string;
   };
 
-  if (!book && !body.imageBase64) {
+  const inlineBase64 = body.imageBase64 || body.fileBase64 || "";
+  const inlineMimeType =
+    (typeof body.imageMimeType === "string" && body.imageMimeType.trim()) ||
+    (typeof body.fileMimeType === "string" && body.fileMimeType.trim()) ||
+    "";
+
+  if (!book && !inlineBase64) {
     return NextResponse.json({ error: "Учебник не найден." }, { status: 404 });
   }
 
@@ -137,26 +145,26 @@ export async function POST(
       ? body.bookTitle.trim()
       : book?.title ?? "Учебник";
 
-  if (!body.imageBase64 && book && !book.mime_type.startsWith("image/")) {
+  if (!inlineBase64 && book && !book.mime_type.startsWith("image/")) {
     return NextResponse.json(
-      { error: "Для PDF сначала нужно собрать изображение страницы." },
+      { error: "Для PDF сначала нужно собрать страницу для Gemini." },
       { status: 400 }
     );
   }
 
-  const file = body.imageBase64 ? null : await readStudyThreeBookFile(bookId);
+  const file = inlineBase64 ? null : await readStudyThreeBookFile(bookId);
 
-  if (!body.imageBase64 && !file) {
+  if (!inlineBase64 && !file) {
     return NextResponse.json({ error: "Файл учебника не найден." }, { status: 404 });
   }
 
   try {
     const html = await callGemini({
       mimeType:
-        typeof body.imageMimeType === "string" && body.imageMimeType.trim().length > 0
-          ? body.imageMimeType
+        inlineMimeType.length > 0
+          ? inlineMimeType
           : book?.mime_type ?? "image/png",
-      base64: body.imageBase64 || file!.toString("base64"),
+      base64: inlineBase64 || file!.toString("base64"),
       bookTitle,
       pageNumber: Math.max(1, Number(body.pageNumber) || 1),
     });
