@@ -62,19 +62,11 @@ export default function TopNav() {
           </Link>
 
           <Link
-            href="/study"
+            href="/texts"
             prefetch={false}
             className="text-sm text-muted-foreground hover:text-black"
           >
             Тексты
-          </Link>
-
-          <Link
-            href="/study"
-            prefetch={false}
-            className="text-sm text-muted-foreground hover:text-black"
-          >
-            Учебники 2.0
           </Link>
 
         </div>

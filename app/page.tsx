@@ -36,12 +36,7 @@ export default function Home() {
 
         <Card
           title="Тексты"
-          href="/study"
-        />
-
-        <Card
-          title="Учебники 2.0"
-          href="/study"
+          href="/texts"
         />
       </div>
     </main>
