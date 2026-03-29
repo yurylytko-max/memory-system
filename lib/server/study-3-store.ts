@@ -215,6 +215,28 @@ async function writeUploadMeta(session: StudyThreeUploadSession) {
   await writeFile(join(uploadDir, "meta.json"), JSON.stringify(session), "utf8");
 }
 
+async function clearStudyThreeUploadSessions() {
+  try {
+    const client = await getClient();
+
+    if (client) {
+      const keys = await client.keys("study3_upload_*");
+
+      if (keys.length > 0) {
+        await client.del(keys);
+      }
+    }
+  } catch {
+    // Ignore Redis cleanup issues.
+  }
+
+  try {
+    await rm(UPLOADS_DIR, { recursive: true, force: true });
+  } catch {
+    // Ignore filesystem cleanup issues.
+  }
+}
+
 async function readUploadMeta(uploadId: string): Promise<StudyThreeUploadSession | null> {
   try {
     const client = await getClient();
@@ -246,6 +268,8 @@ export async function createStudyThreeUploadSession(params: {
   mimeType: string;
   totalChunks: number;
 }) {
+  await clearStudyThreeUploadSessions();
+
   const session: StudyThreeUploadSession = {
     uploadId: `study3-upload-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     title: params.title,
