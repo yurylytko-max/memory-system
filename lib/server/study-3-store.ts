@@ -46,8 +46,8 @@ function getUploadMetaKey(uploadId: string) {
   return `study3_upload_meta:${uploadId}`;
 }
 
-function getUploadChunkKey(uploadId: string, index: number) {
-  return `study3_upload_chunk:${uploadId}:${index}`;
+function getUploadChunksKey(uploadId: string) {
+  return `study3_upload_chunks:${uploadId}`;
 }
 
 function getUploadDir(uploadId: string) {
@@ -304,7 +304,8 @@ export async function appendStudyThreeUploadChunk(params: {
     const client = await getClient();
 
     if (client) {
-      await client.set(getUploadChunkKey(params.uploadId, params.index), params.base64);
+      const binaryChunk = Buffer.from(params.base64, "base64").toString("latin1");
+      await client.hSet(getUploadChunksKey(params.uploadId), String(params.index), binaryChunk);
       return;
     }
   } catch (error) {
@@ -317,13 +318,18 @@ export async function appendStudyThreeUploadChunk(params: {
   await writeFile(join(uploadDir, `chunk-${params.index}.txt`), params.base64, "utf8");
 }
 
-async function readStudyThreeUploadChunk(uploadId: string, index: number) {
+async function readStudyThreeUploadChunkBuffer(uploadId: string, index: number) {
   try {
     const client = await getClient();
 
     if (client) {
-      const raw = await client.get(getUploadChunkKey(uploadId, index));
-      return raw ?? null;
+      const raw = await client.hGet(getUploadChunksKey(uploadId), String(index));
+
+      if (!raw) {
+        return null;
+      }
+
+      return Buffer.from(raw, "latin1");
     }
   } catch (error) {
     logStudyThreeFallback(`read upload chunk ${index} from redis`, error);
@@ -331,7 +337,8 @@ async function readStudyThreeUploadChunk(uploadId: string, index: number) {
   }
 
   try {
-    return await readFile(join(getUploadDir(uploadId), `chunk-${index}.txt`), "utf8");
+    const raw = await readFile(join(getUploadDir(uploadId), `chunk-${index}.txt`), "utf8");
+    return Buffer.from(raw, "base64");
   } catch {
     return null;
   }
@@ -347,13 +354,13 @@ export async function finalizeStudyThreeUpload(uploadId: string) {
   const buffers: Buffer[] = [];
 
   for (let index = 0; index < session.totalChunks; index += 1) {
-    const chunk = await readStudyThreeUploadChunk(uploadId, index);
+    const chunk = await readStudyThreeUploadChunkBuffer(uploadId, index);
 
     if (!chunk) {
       throw new Error("Не хватает части загруженного файла.");
     }
 
-    buffers.push(Buffer.from(chunk, "base64"));
+    buffers.push(chunk);
   }
 
   const book = await createStudyThreeBook({
@@ -373,11 +380,7 @@ async function deleteStudyThreeUploadSession(uploadId: string, totalChunks: numb
     const client = await getClient();
 
     if (client) {
-      const keys = [getUploadMetaKey(uploadId)];
-
-      for (let index = 0; index < totalChunks; index += 1) {
-        keys.push(getUploadChunkKey(uploadId, index));
-      }
+      const keys = [getUploadMetaKey(uploadId), getUploadChunksKey(uploadId)];
 
       if (keys.length > 0) {
         await client.del(keys);
