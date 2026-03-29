@@ -1,6 +1,7 @@
 import "server-only";
 
 import { mkdir, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 
 import { PDFDocument } from "pdf-lib";
@@ -12,7 +13,8 @@ import {
   type StudyThreeBook,
 } from "@/lib/study-3";
 
-const ROOT = join(process.cwd(), ".data", "study-3");
+const RUNTIME_ROOT = process.env.VERCEL ? join(tmpdir(), "memory-system") : process.cwd();
+const ROOT = join(RUNTIME_ROOT, ".data", "study-3");
 const BOOKS_FILE = join(ROOT, "books.json");
 const BOOKS_DIR = join(ROOT, "books");
 const BOOKS_KEY = "study3_books_db";
@@ -26,6 +28,10 @@ declare global {
 
 async function ensureDir(path: string) {
   await mkdir(path, { recursive: true });
+}
+
+function logStudyThreeFallback(reason: string, error: unknown) {
+  console.error(`Study 3 fallback (${reason}):`, error);
 }
 
 function getRedisUrl() {
@@ -113,7 +119,8 @@ async function readBooksFile() {
     }
 
     return books;
-  } catch {
+  } catch (error) {
+    logStudyThreeFallback("read books from redis", error);
     return await readFallbackBooksFile();
   }
 }
@@ -129,7 +136,8 @@ async function writeBooksFile(books: StudyThreeBook[]) {
     }
 
     await client.set(BOOKS_KEY, JSON.stringify(normalized));
-  } catch {
+  } catch (error) {
+    logStudyThreeFallback("write books to redis", error);
     await writeFallbackBooksFile(books);
   }
 }
@@ -168,7 +176,8 @@ export async function readStudyThreeBookFile(bookId: string) {
         return Buffer.from(encoded, "base64");
       }
     }
-  } catch {
+  } catch (error) {
+    logStudyThreeFallback("read book file from redis", error);
     // Fall through to filesystem fallback.
   }
 
@@ -206,7 +215,8 @@ async function writeUploadMeta(session: StudyThreeUploadSession) {
       await client.set(getUploadMetaKey(session.uploadId), JSON.stringify(session));
       return;
     }
-  } catch {
+  } catch (error) {
+    logStudyThreeFallback("write upload meta to redis", error);
     // Fall back to filesystem.
   }
 
@@ -226,7 +236,8 @@ async function clearStudyThreeUploadSessions() {
         await client.del(keys);
       }
     }
-  } catch {
+  } catch (error) {
+    logStudyThreeFallback("clear upload sessions in redis", error);
     // Ignore Redis cleanup issues.
   }
 
@@ -250,7 +261,8 @@ async function readUploadMeta(uploadId: string): Promise<StudyThreeUploadSession
 
       return JSON.parse(raw) as StudyThreeUploadSession;
     }
-  } catch {
+  } catch (error) {
+    logStudyThreeFallback("read upload meta from redis", error);
     // Fall back to filesystem.
   }
 
@@ -295,7 +307,8 @@ export async function appendStudyThreeUploadChunk(params: {
       await client.set(getUploadChunkKey(params.uploadId, params.index), params.base64);
       return;
     }
-  } catch {
+  } catch (error) {
+    logStudyThreeFallback(`write upload chunk ${params.index} to redis`, error);
     // Fall back to filesystem.
   }
 
@@ -312,7 +325,8 @@ async function readStudyThreeUploadChunk(uploadId: string, index: number) {
       const raw = await client.get(getUploadChunkKey(uploadId, index));
       return raw ?? null;
     }
-  } catch {
+  } catch (error) {
+    logStudyThreeFallback(`read upload chunk ${index} from redis`, error);
     // Fall back to filesystem.
   }
 
@@ -370,7 +384,8 @@ async function deleteStudyThreeUploadSession(uploadId: string, totalChunks: numb
       }
       return;
     }
-  } catch {
+  } catch (error) {
+    logStudyThreeFallback("delete upload session from redis", error);
     // Fall back to filesystem.
   }
 
@@ -414,7 +429,8 @@ export async function createStudyThreeBook(params: {
       await ensureDir(getBookDir(book.id));
       await writeFile(getBookFilePath(book.id, book.file_name), params.buffer);
     }
-  } catch {
+  } catch (error) {
+    logStudyThreeFallback("write study 3 book file to redis", error);
     await ensureDir(getBookDir(book.id));
     await writeFile(getBookFilePath(book.id, book.file_name), params.buffer);
   }
@@ -437,7 +453,8 @@ export async function studyThreeBookExists(bookId: string) {
     if (client) {
       return (await client.exists(getBookFileKey(book.id))) > 0;
     }
-  } catch {
+  } catch (error) {
+    logStudyThreeFallback("check study 3 book in redis", error);
     // Fall through to filesystem fallback.
   }
 
