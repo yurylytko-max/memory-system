@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 
 import type { Card } from "@/lib/cards";
 import { clampSelectionText, type StudyThreeBook } from "@/lib/study-3";
@@ -11,16 +11,6 @@ type SelectionState = {
   context: string;
   translation: string;
   explanation: string;
-};
-
-type TextLayerItem = {
-  id: string;
-  text: string;
-  left: number;
-  top: number;
-  width: number;
-  fontSize: number;
-  angle: number;
 };
 
 export default function StudyThreeReader({ bookId }: { bookId: string }) {
@@ -34,15 +24,7 @@ export default function StudyThreeReader({ bookId }: { bookId: string }) {
   const [manualText, setManualText] = useState("");
   const [isExplaining, setIsExplaining] = useState(false);
   const [fileUrl, setFileUrl] = useState("");
-  const [pdfReady, setPdfReady] = useState(false);
-  const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
-  const [textLayer, setTextLayer] = useState<TextLayerItem[]>([]);
   const [pageText, setPageText] = useState("");
-
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const textLayerRef = useRef<HTMLDivElement | null>(null);
-  const pdfDocumentRef = useRef<any>(null);
-  const pdfjsRef = useRef<any>(null);
 
   useEffect(() => {
     void (async () => {
@@ -88,16 +70,10 @@ export default function StudyThreeReader({ bookId }: { bookId: string }) {
       });
 
       if (book.mime_type === "application/pdf") {
-        setStatus("Подключаем PDF viewer...");
-        const pdfjs = await import("pdfjs-dist");
-        pdfjs.GlobalWorkerOptions.workerSrc =
-          "https://unpkg.com/pdfjs-dist@5.5.207/build/pdf.worker.min.mjs";
-        pdfjsRef.current = pdfjs;
-        const buffer = await blob.arrayBuffer();
-        pdfDocumentRef.current = await pdfjs.getDocument({ data: buffer }).promise;
-        setPdfReady(true);
+        setPageText("");
+        setStatus("PDF готов. Откройте страницу и вставьте нужный фрагмент в поле справа.");
       } else {
-        setPdfReady(false);
+        setPageText("");
         setStatus("Изображение готово.");
       }
     })();
@@ -111,67 +87,6 @@ export default function StudyThreeReader({ bookId }: { bookId: string }) {
       });
     };
   }, [book]);
-
-  useEffect(() => {
-    if (!book || book.mime_type !== "application/pdf" || !pdfReady) {
-      return;
-    }
-
-    void (async () => {
-      const pdfjs = pdfjsRef.current;
-      const pdfDocument = pdfDocumentRef.current;
-      const canvas = canvasRef.current;
-
-      if (!pdfjs || !pdfDocument || !canvas) {
-        return;
-      }
-
-      setStatus("Рендерим страницу...");
-
-      const page = await pdfDocument.getPage(pageNumber);
-      const viewport = page.getViewport({ scale: 1.5 });
-      const context = canvas.getContext("2d");
-
-      if (!context) {
-        setError("Не удалось создать canvas.");
-        return;
-      }
-
-      canvas.width = Math.ceil(viewport.width);
-      canvas.height = Math.ceil(viewport.height);
-
-      await page.render({
-        canvasContext: context,
-        viewport,
-      }).promise;
-
-      const textContent = await page.getTextContent();
-      const items = (textContent.items ?? []).filter((item: any) => item.str?.trim());
-      const flattenedText = items.map((item: any) => item.str).join(" ").replace(/\s+/g, " ").trim();
-
-      const positioned = items.map((item: any, index: number) => {
-        const tx = pdfjs.Util.transform(viewport.transform, item.transform);
-        const angle = Math.atan2(tx[1], tx[0]);
-        const fontSize = Math.max(10, Math.hypot(tx[2], tx[3]));
-        const width = Math.max(item.width * viewport.scale, item.str.length * fontSize * 0.45);
-
-        return {
-          id: `text-${index}`,
-          text: item.str,
-          left: tx[4],
-          top: tx[5] - fontSize,
-          width,
-          fontSize,
-          angle,
-        } satisfies TextLayerItem;
-      });
-
-      setViewportSize({ width: viewport.width, height: viewport.height });
-      setTextLayer(positioned);
-      setPageText(flattenedText);
-      setStatus("Можно выделять текст на странице.");
-    })();
-  }, [book, pageNumber, pdfReady]);
 
   useEffect(() => {
     return () => {
@@ -245,30 +160,6 @@ export default function StudyThreeReader({ bookId }: { bookId: string }) {
     });
   }
 
-  function handleTextMouseUp() {
-    const selectionObject = window.getSelection();
-    const root = textLayerRef.current;
-
-    if (!selectionObject || selectionObject.isCollapsed || !root) {
-      return;
-    }
-
-    const anchor = selectionObject.anchorNode;
-    const focus = selectionObject.focusNode;
-
-    if ((anchor && !root.contains(anchor)) || (focus && !root.contains(focus))) {
-      return;
-    }
-
-    const text = clampSelectionText(selectionObject.toString());
-
-    if (!text) {
-      return;
-    }
-
-    void analyzeSelection(text);
-  }
-
   async function handleExplain() {
     if (!selection || !book) {
       return;
@@ -338,7 +229,7 @@ export default function StudyThreeReader({ bookId }: { bookId: string }) {
     setStatus("Карточка сохранена в Cards.");
   }
 
-  async function handleAsk(event: React.FormEvent<HTMLFormElement>) {
+  async function handleAsk(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (!question.trim() || !book) {
@@ -453,37 +344,37 @@ export default function StudyThreeReader({ bookId }: { bookId: string }) {
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
           <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
             {book?.mime_type === "application/pdf" ? (
-              <div className="overflow-auto rounded-[1.75rem] border border-slate-200 bg-slate-50 p-4">
-                <div
-                  className="relative mx-auto bg-white shadow"
-                  style={{
-                    width: viewportSize.width || 900,
-                    minHeight: viewportSize.height || 1100,
-                  }}
-                >
-                  <canvas ref={canvasRef} className="block" />
+              <div className="space-y-5">
+                <div className="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-slate-50">
+                  <iframe
+                    key={`${fileUrl}-${pageNumber}`}
+                    src={`${fileUrl}#page=${pageNumber}&view=FitH`}
+                    title={book?.title ?? "Учебник"}
+                    className="h-[78vh] w-full bg-white"
+                  />
+                </div>
 
-                  <div
-                    ref={textLayerRef}
-                    onMouseUp={handleTextMouseUp}
-                    className="absolute inset-0 select-text"
-                  >
-                    {textLayer.map((item) => (
-                      <span
-                        key={item.id}
-                        className="absolute whitespace-pre text-transparent [text-shadow:0_0_0_rgba(0,0,0,0.01)]"
-                        style={{
-                          left: item.left,
-                          top: item.top,
-                          width: item.width,
-                          fontSize: item.fontSize,
-                          transform: `rotate(${item.angle}rad)`,
-                          transformOrigin: "left top",
-                        }}
-                      >
-                        {item.text}
-                      </span>
-                    ))}
+                <div className="rounded-[1.5rem] border border-slate-200 bg-[#fffdf7] p-4">
+                  <div className="text-sm font-medium text-slate-900">
+                    Скопируйте нужный фрагмент со страницы и вставьте сюда
+                  </div>
+                  <p className="mt-2 text-sm text-slate-600">
+                    Gemini получает только этот короткий фрагмент, а не всю страницу.
+                  </p>
+                  <div className="mt-3 flex flex-col gap-3 md:flex-row">
+                    <input
+                      value={manualText}
+                      onChange={(event) => setManualText(event.target.value)}
+                      placeholder="Например: Guten Tag, ich heiße Lara."
+                      className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-slate-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => void analyzeSelection(manualText)}
+                      className="rounded-2xl bg-slate-950 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
+                    >
+                      Разобрать фразу
+                    </button>
                   </div>
                 </div>
               </div>

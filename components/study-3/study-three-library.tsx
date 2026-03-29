@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 
 import type { StudyThreeBook } from "@/lib/study-3";
 
@@ -22,7 +22,7 @@ export default function StudyThreeLibrary() {
     setBooks(Array.isArray(data.books) ? data.books : []);
   }
 
-  async function handleUpload(event: React.FormEvent<HTMLFormElement>) {
+  async function handleUpload(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (!file) {
