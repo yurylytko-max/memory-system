@@ -40,8 +40,8 @@ export default function Home() {
         />
 
         <Card
-          title="Учебники"
-          href="/study"
+          title="Учебники 2.0"
+          href="/texts"
         />
       </div>
     </main>
