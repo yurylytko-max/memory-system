@@ -483,16 +483,20 @@ export default function StudyThreeReader({ bookId }: { bookId: string }) {
               </button>
             </div>
 
-            {contentMode === "html" && htmlContent ? (
-              <div className="rounded-[1.75rem] border border-slate-200 bg-[#fffdf7] p-6">
-                <div
-                  className="prose prose-slate max-w-none"
-                  dangerouslySetInnerHTML={{ __html: htmlContent }}
-                />
-              </div>
-            ) : null}
-
-            {contentMode === "original" && book?.mime_type === "application/pdf" ? (
+            {contentMode === "html" ? (
+              htmlContent ? (
+                <div className="rounded-[1.75rem] border border-slate-200 bg-[#fffdf7] p-6">
+                  <div
+                    className="prose prose-slate max-w-none"
+                    dangerouslySetInnerHTML={{ __html: htmlContent }}
+                  />
+                </div>
+              ) : (
+                <div className="flex min-h-[55vh] items-center justify-center rounded-[1.75rem] border border-dashed border-slate-300 bg-slate-50 text-center text-sm text-slate-500">
+                  HTML страницы ещё не построен.
+                </div>
+              )
+            ) : contentMode === "original" && book?.mime_type === "application/pdf" ? (
               <div className="space-y-5">
                 <div className="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-slate-50">
                   <iframe
