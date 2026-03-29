@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 
 import type { Card } from "@/lib/cards";
 import { clampSelectionText, type StudyThreeBook } from "@/lib/study-3";
@@ -40,11 +40,13 @@ export default function StudyThreeReader({ bookId }: { bookId: string }) {
   const [answer, setAnswer] = useState("");
   const [manualText, setManualText] = useState("");
   const [isExplaining, setIsExplaining] = useState(false);
+  const [isTranslating, setIsTranslating] = useState(false);
   const [fileUrl, setFileUrl] = useState("");
   const [pageText, setPageText] = useState("");
   const [htmlContent, setHtmlContent] = useState("");
   const [isBuildingHtml, setIsBuildingHtml] = useState(false);
   const [contentMode, setContentMode] = useState<"original" | "html">("original");
+  const lastSelectionRequestRef = useRef("");
 
   useEffect(() => {
     void (async () => {
@@ -86,6 +88,7 @@ export default function StudyThreeReader({ bookId }: { bookId: string }) {
       setQuestion("");
       setHtmlContent("");
       setContentMode("original");
+      lastSelectionRequestRef.current = "";
 
       let blob: Blob | null = null;
 
@@ -166,11 +169,16 @@ export default function StudyThreeReader({ bookId }: { bookId: string }) {
   async function analyzeSelection(nextText: string) {
     const text = clampSelectionText(nextText);
 
-    if (!text || !book) {
+    if (!text || !book || isTranslating) {
+      return;
+    }
+
+    if (text === lastSelectionRequestRef.current) {
       return;
     }
 
     const context = buildContext(text);
+    lastSelectionRequestRef.current = text;
     setSelection({
       text,
       context,
@@ -179,6 +187,7 @@ export default function StudyThreeReader({ bookId }: { bookId: string }) {
     });
     setAnswer("");
     setError("");
+    setIsTranslating(true);
 
     const response = await fetch("/api/study-3/assistant/translate", {
       method: "POST",
@@ -193,8 +202,10 @@ export default function StudyThreeReader({ bookId }: { bookId: string }) {
       }),
     });
     const data = await readJsonSafely(response);
+    setIsTranslating(false);
 
     if (!response.ok) {
+      lastSelectionRequestRef.current = "";
       setError(data.error ?? "Не удалось получить перевод.");
       return;
     }
@@ -215,7 +226,7 @@ export default function StudyThreeReader({ bookId }: { bookId: string }) {
     const nextSelection = window.getSelection();
     const selectedText = clampSelectionText(nextSelection?.toString() ?? "");
 
-    if (!selectedText) {
+    if (!selectedText || selectedText === selection?.text) {
       return;
     }
 
