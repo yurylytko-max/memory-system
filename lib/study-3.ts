@@ -4,6 +4,8 @@ export type StudyThreeBook = {
   file_name: string;
   mime_type: string;
   page_count: number;
+  file_url: string;
+  storage: "blob" | "local";
   created_at: string;
   updated_at: string;
 };
@@ -38,6 +40,8 @@ export function normalizeStudyThreeBook(
     file_name: asString(value.file_name) || "file",
     mime_type: asString(value.mime_type) || "application/octet-stream",
     page_count: Math.max(1, Number(value.page_count) || 1),
+    file_url: asString(value.file_url),
+    storage: value.storage === "local" ? "local" : "blob",
     created_at: asString(value.created_at) || now,
     updated_at: asString(value.updated_at) || now,
   };

@@ -16,6 +16,10 @@ export async function GET(
     return NextResponse.json({ error: "Учебник не найден." }, { status: 404 });
   }
 
+  if (book.storage === "blob" && book.file_url) {
+    return NextResponse.redirect(book.file_url, 302);
+  }
+
   const file = await readStudyThreeBookFile(bookId);
 
   if (!file) {

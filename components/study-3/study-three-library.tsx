@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
+import { upload } from "@vercel/blob/client";
 
 import type { StudyThreeBook } from "@/lib/study-3";
-import { listLocalStudyThreeBooks, saveLocalStudyThreeBook } from "@/lib/study-3-local";
+import { listLocalStudyThreeBooks } from "@/lib/study-3-local";
 
 async function readJsonSafely(response: Response) {
   const raw = await response.text();
@@ -43,6 +44,7 @@ export default function StudyThreeLibrary() {
 
   async function handleUpload(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const form = event.currentTarget;
 
     if (!file) {
       setError("Сначала выберите PDF или изображение.");
@@ -55,121 +57,49 @@ export default function StudyThreeLibrary() {
     setError("");
 
     try {
+      setUploadProgress(10);
+      setUploadStatus("Загружаем файл в Blob...");
+
+      const blobResult = await upload(file.name, file, {
+        access: "public",
+        handleUploadUrl: "/api/study-3/blob",
+        onUploadProgress: (progress) => {
+          setUploadProgress(Math.max(10, Math.min(92, Math.round(progress))));
+          setUploadStatus(`Загружаем файл: ${Math.round(progress)}%`);
+        },
+      });
+
+      setUploadProgress(95);
+      setUploadStatus("Сохраняем учебник в библиотеке...");
+
+      let pageCount = 1;
+
       if (file.type === "application/pdf") {
-        setUploadProgress(10);
-        setUploadStatus("Читаем PDF в браузере...");
         const bytes = await file.arrayBuffer();
         const { PDFDocument } = await import("pdf-lib");
         const document = await PDFDocument.load(bytes);
-        const pageCount = Math.max(1, document.getPageCount());
-        const nextTitle = title.trim() || file.name.replace(/\.[^.]+$/, "") || "Учебник";
-
-        setUploadProgress(70);
-        setUploadStatus("Сохраняем PDF локально...");
-        await saveLocalStudyThreeBook({
-          title: nextTitle,
-          file,
-          pageCount,
-        });
-
-        setUploadProgress(100);
-        setUploadStatus("PDF добавлен в библиотеку.");
-        setTitle("");
-        setFile(null);
-        const input = event.currentTarget.querySelector<HTMLInputElement>('input[type="file"]');
-
-        if (input) {
-          input.value = "";
-        }
-
-        await loadBooks();
-        return;
+        pageCount = Math.max(1, document.getPageCount());
       }
 
-      const chunkSize = 128 * 1024;
-      const totalChunks = Math.max(1, Math.ceil(file.size / chunkSize));
+      const nextTitle = title.trim() || file.name.replace(/\.[^.]+$/, "") || "Учебник";
 
-      setUploadProgress(5);
-      setUploadStatus("Создаём сессию загрузки...");
-
-      const startResponse = await fetch("/api/study-3/books/upload", {
+      const finishResponse = await fetch("/api/study-3/books", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          action: "start",
-          title: title.trim(),
+          title: nextTitle,
           fileName: file.name,
           mimeType: file.type || "application/octet-stream",
-          totalChunks,
-        }),
-      });
-      const startData = await readJsonSafely(startResponse);
-
-      if (!startResponse.ok || typeof startData.uploadId !== "string") {
-        throw new Error(startData.error ?? "Не удалось начать загрузку.");
-      }
-
-      const uploadId = startData.uploadId;
-
-      for (let index = 0; index < totalChunks; index += 1) {
-        const start = index * chunkSize;
-        const end = Math.min(file.size, start + chunkSize);
-        const chunk = file.slice(start, end);
-        const arrayBuffer = await chunk.arrayBuffer();
-        const bytes = new Uint8Array(arrayBuffer);
-        let binary = "";
-
-        for (let offset = 0; offset < bytes.length; offset += 1) {
-          binary += String.fromCharCode(bytes[offset]!);
-        }
-
-        const base64 = btoa(binary);
-
-        const chunkResponse = await fetch("/api/study-3/books/upload", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            action: "chunk",
-            uploadId,
-            index,
-            base64,
-          }),
-        });
-        const chunkData = await readJsonSafely(chunkResponse);
-
-        if (!chunkResponse.ok) {
-          throw new Error(chunkData.error ?? "Не удалось передать часть файла.");
-        }
-
-        const nextProgress = Math.min(
-          94,
-          10 + Math.round(((index + 1) / totalChunks) * 84)
-        );
-        setUploadProgress(nextProgress);
-        setUploadStatus(`Загружаем файл: ${index + 1} из ${totalChunks}`);
-      }
-
-      setUploadProgress(97);
-      setUploadStatus("Собираем файл на сервере...");
-
-      const finishResponse = await fetch("/api/study-3/books/upload", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          action: "finish",
-          uploadId,
+          pageCount,
+          fileUrl: blobResult.url,
         }),
       });
       const data = await readJsonSafely(finishResponse);
 
       if (!finishResponse.ok) {
-        throw new Error(data.error ?? "Не удалось завершить загрузку.");
+        throw new Error(data.error ?? "Не удалось сохранить учебник.");
       }
 
       setUploadProgress(100);
@@ -177,7 +107,7 @@ export default function StudyThreeLibrary() {
 
       setTitle("");
       setFile(null);
-      const input = event.currentTarget.querySelector<HTMLInputElement>('input[type="file"]');
+      const input = form?.querySelector<HTMLInputElement>('input[type="file"]');
 
       if (input) {
         input.value = "";

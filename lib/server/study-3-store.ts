@@ -447,6 +447,8 @@ export async function createStudyThreeBook(params: {
     file_name: params.fileName,
     mime_type: params.mimeType,
     page_count: pageCount,
+    file_url: "",
+    storage: "blob",
     created_at: now,
     updated_at: now,
   });
@@ -465,6 +467,32 @@ export async function createStudyThreeBook(params: {
     await ensureDir(getBookDir(book.id));
     await writeFile(getBookFilePath(book.id, book.file_name), params.buffer);
   }
+
+  await writeBooksFile([...books, book]);
+
+  return book;
+}
+
+export async function createStudyThreeBlobBook(params: {
+  title: string;
+  fileName: string;
+  mimeType: string;
+  pageCount: number;
+  fileUrl: string;
+}) {
+  const books = await readBooksFile();
+  const now = new Date().toISOString();
+  const book = normalizeStudyThreeBook({
+    id: `study3-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    title: params.title,
+    file_name: params.fileName,
+    mime_type: params.mimeType,
+    page_count: Math.max(1, params.pageCount),
+    file_url: params.fileUrl,
+    storage: "blob",
+    created_at: now,
+    updated_at: now,
+  });
 
   await writeBooksFile([...books, book]);
 

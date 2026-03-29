@@ -86,6 +86,8 @@ export async function saveLocalStudyThreeBook(params: {
     file_name: params.file.name,
     mime_type: params.file.type || "application/octet-stream",
     page_count: Math.max(1, params.pageCount),
+    file_url: "",
+    storage: "local",
     created_at: now,
     updated_at: now,
   });
