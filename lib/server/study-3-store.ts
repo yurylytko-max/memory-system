@@ -38,6 +38,10 @@ function getRedisUrl() {
   return process.env.REDIS_URL;
 }
 
+function isServerlessRuntime() {
+  return Boolean(process.env.VERCEL);
+}
+
 function getBookFileKey(bookId: string) {
   return `study3_book_file:${bookId}`;
 }
@@ -217,7 +221,13 @@ async function writeUploadMeta(session: StudyThreeUploadSession) {
     }
   } catch (error) {
     logStudyThreeFallback("write upload meta to redis", error);
-    // Fall back to filesystem.
+    if (isServerlessRuntime()) {
+      throw error instanceof Error ? error : new Error("Не удалось сохранить upload meta в Redis.");
+    }
+  }
+
+  if (isServerlessRuntime()) {
+    throw new Error("Upload meta требует Redis в production.");
   }
 
   const uploadDir = getUploadDir(session.uploadId);
@@ -263,7 +273,13 @@ async function readUploadMeta(uploadId: string): Promise<StudyThreeUploadSession
     }
   } catch (error) {
     logStudyThreeFallback("read upload meta from redis", error);
-    // Fall back to filesystem.
+    if (isServerlessRuntime()) {
+      throw error instanceof Error ? error : new Error("Не удалось прочитать upload meta из Redis.");
+    }
+  }
+
+  if (isServerlessRuntime()) {
+    return null;
   }
 
   try {
@@ -310,7 +326,13 @@ export async function appendStudyThreeUploadChunk(params: {
     }
   } catch (error) {
     logStudyThreeFallback(`write upload chunk ${params.index} to redis`, error);
-    // Fall back to filesystem.
+    if (isServerlessRuntime()) {
+      throw error instanceof Error ? error : new Error(`Не удалось записать chunk ${params.index} в Redis.`);
+    }
+  }
+
+  if (isServerlessRuntime()) {
+    throw new Error(`Chunk ${params.index} требует Redis в production.`);
   }
 
   const uploadDir = getUploadDir(params.uploadId);
@@ -333,7 +355,13 @@ async function readStudyThreeUploadChunkBuffer(uploadId: string, index: number) 
     }
   } catch (error) {
     logStudyThreeFallback(`read upload chunk ${index} from redis`, error);
-    // Fall back to filesystem.
+    if (isServerlessRuntime()) {
+      throw error instanceof Error ? error : new Error(`Не удалось прочитать chunk ${index} из Redis.`);
+    }
+  }
+
+  if (isServerlessRuntime()) {
+    return null;
   }
 
   try {
