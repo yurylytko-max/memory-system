@@ -25,6 +25,9 @@ export default function StudyThreeReader({ bookId }: { bookId: string }) {
   const [isExplaining, setIsExplaining] = useState(false);
   const [fileUrl, setFileUrl] = useState("");
   const [pageText, setPageText] = useState("");
+  const [htmlContent, setHtmlContent] = useState("");
+  const [isBuildingHtml, setIsBuildingHtml] = useState(false);
+  const [contentMode, setContentMode] = useState<"original" | "html">("original");
 
   useEffect(() => {
     void (async () => {
@@ -51,6 +54,8 @@ export default function StudyThreeReader({ bookId }: { bookId: string }) {
       setSelection(null);
       setAnswer("");
       setQuestion("");
+      setHtmlContent("");
+      setContentMode("original");
 
       const response = await fetch(`/api/study-3/books/${book.id}/file`, { cache: "no-store" });
 
@@ -259,6 +264,45 @@ export default function StudyThreeReader({ bookId }: { bookId: string }) {
     setAnswer(data.answer ?? "");
   }
 
+  async function handleBuildHtml() {
+    if (!book) {
+      return;
+    }
+
+    setIsBuildingHtml(true);
+    setError("");
+
+    try {
+      const response = await fetch(`/api/study-3/books/${book.id}/html`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          pageNumber,
+        }),
+      });
+      const raw = await response.text();
+      const data = raw.trim() ? JSON.parse(raw) : {};
+
+      if (!response.ok) {
+        throw new Error(data.error ?? "Не удалось построить HTML страницы.");
+      }
+
+      setHtmlContent(typeof data.html === "string" ? data.html : "");
+      setContentMode("html");
+      setStatus("HTML страницы готов.");
+    } catch (htmlError) {
+      setError(
+        htmlError instanceof Error
+          ? htmlError.message
+          : "Не удалось построить HTML страницы."
+      );
+    } finally {
+      setIsBuildingHtml(false);
+    }
+  }
+
   const progressLabel = useMemo(() => {
     if (!book) {
       return "0 / 0";
@@ -303,6 +347,14 @@ export default function StudyThreeReader({ bookId }: { bookId: string }) {
             <div className="flex items-center gap-3">
               <button
                 type="button"
+                disabled={!book || isBuildingHtml}
+                onClick={() => void handleBuildHtml()}
+                className="rounded-full bg-slate-950 px-4 py-2 text-sm text-white transition hover:bg-slate-800 disabled:opacity-60"
+              >
+                {isBuildingHtml ? "Строим HTML..." : "Построить HTML"}
+              </button>
+              <button
+                type="button"
                 disabled={!book || pageNumber <= 1}
                 onClick={() => setPageNumber((current) => Math.max(1, current - 1))}
                 className="rounded-full border border-slate-300 px-4 py-2 text-sm text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
@@ -343,7 +395,42 @@ export default function StudyThreeReader({ bookId }: { bookId: string }) {
 
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
           <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
-            {book?.mime_type === "application/pdf" ? (
+            <div className="mb-5 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setContentMode("original")}
+                className={`rounded-full px-4 py-2 text-sm transition ${
+                  contentMode === "original"
+                    ? "bg-slate-950 text-white"
+                    : "border border-slate-300 text-slate-700 hover:bg-slate-50"
+                }`}
+              >
+                Оригинал
+              </button>
+              <button
+                type="button"
+                disabled={!htmlContent}
+                onClick={() => setContentMode("html")}
+                className={`rounded-full px-4 py-2 text-sm transition ${
+                  contentMode === "html"
+                    ? "bg-slate-950 text-white"
+                    : "border border-slate-300 text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                }`}
+              >
+                HTML
+              </button>
+            </div>
+
+            {contentMode === "html" && htmlContent ? (
+              <div className="rounded-[1.75rem] border border-slate-200 bg-[#fffdf7] p-6">
+                <div
+                  className="prose prose-slate max-w-none"
+                  dangerouslySetInnerHTML={{ __html: htmlContent }}
+                />
+              </div>
+            ) : null}
+
+            {contentMode === "original" && book?.mime_type === "application/pdf" ? (
               <div className="space-y-5">
                 <div className="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-slate-50">
                   <iframe
@@ -378,7 +465,7 @@ export default function StudyThreeReader({ bookId }: { bookId: string }) {
                   </div>
                 </div>
               </div>
-            ) : fileUrl ? (
+            ) : contentMode === "original" && fileUrl ? (
               <div className="space-y-5">
                 <div className="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-slate-50">
                   <img src={fileUrl} alt={book?.title ?? "Учебник"} className="w-full object-contain" />

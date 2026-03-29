@@ -5,6 +5,20 @@ import { useEffect, useState, type FormEvent } from "react";
 
 import type { StudyThreeBook } from "@/lib/study-3";
 
+async function readJsonSafely(response: Response) {
+  const raw = await response.text();
+
+  if (!raw.trim()) {
+    return {};
+  }
+
+  try {
+    return JSON.parse(raw);
+  } catch {
+    throw new Error(raw.trim() || "Сервер вернул некорректный ответ.");
+  }
+}
+
 export default function StudyThreeLibrary() {
   const [books, setBooks] = useState<StudyThreeBook[]>([]);
   const [title, setTitle] = useState("");
@@ -20,7 +34,7 @@ export default function StudyThreeLibrary() {
 
   async function loadBooks() {
     const response = await fetch("/api/study-3/books", { cache: "no-store" });
-    const data = await response.json();
+    const data = await readJsonSafely(response);
     setBooks(Array.isArray(data.books) ? data.books : []);
   }
 
@@ -57,7 +71,7 @@ export default function StudyThreeLibrary() {
           totalChunks,
         }),
       });
-      const startData = await startResponse.json();
+      const startData = await readJsonSafely(startResponse);
 
       if (!startResponse.ok || typeof startData.uploadId !== "string") {
         throw new Error(startData.error ?? "Не удалось начать загрузку.");
@@ -91,7 +105,7 @@ export default function StudyThreeLibrary() {
             base64,
           }),
         });
-        const chunkData = await chunkResponse.json();
+        const chunkData = await readJsonSafely(chunkResponse);
 
         if (!chunkResponse.ok) {
           throw new Error(chunkData.error ?? "Не удалось передать часть файла.");
@@ -118,7 +132,7 @@ export default function StudyThreeLibrary() {
           uploadId,
         }),
       });
-      const data = await finishResponse.json();
+      const data = await readJsonSafely(finishResponse);
 
       if (!finishResponse.ok) {
         throw new Error(data.error ?? "Не удалось завершить загрузку.");

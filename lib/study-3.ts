@@ -15,6 +15,10 @@ export type StudyThreeAssistantSelection = {
   bookTitle?: string;
 };
 
+export type StudyThreeHtmlPage = {
+  html: string;
+};
+
 function asString(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
 }
@@ -62,4 +66,17 @@ export function extractJsonObject(raw: string) {
 
 export function clampSelectionText(text: string) {
   return text.replace(/\s+/g, " ").trim().slice(0, 300);
+}
+
+export function extractHtmlFragment(raw: string) {
+  const fenced = raw.match(/```(?:html)?\s*([\s\S]*?)```/i);
+  const candidate = (fenced?.[1] ?? raw).trim();
+  const firstTag = candidate.indexOf("<");
+  const lastTag = candidate.lastIndexOf(">");
+
+  if (firstTag === -1 || lastTag === -1 || lastTag <= firstTag) {
+    return "";
+  }
+
+  return candidate.slice(firstTag, lastTag + 1).trim();
 }
