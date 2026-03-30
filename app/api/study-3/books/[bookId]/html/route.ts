@@ -5,6 +5,8 @@ import { callStudyThreeGeminiHtml } from "@/lib/server/study-3-gemini";
 import {
   readStudyThreeBook,
   readStudyThreeBookFile,
+  readStudyThreeBookHtml,
+  writeStudyThreeBookHtml,
 } from "@/lib/server/study-3-store";
 
 export async function POST(
@@ -37,6 +39,15 @@ export async function POST(
     typeof body.bookTitle === "string" && body.bookTitle.trim().length > 0
       ? body.bookTitle.trim()
       : book?.title ?? "Учебник";
+  const pageNumber = Math.max(1, Number(body.pageNumber) || 1);
+
+  if (book) {
+    const cachedHtml = await readStudyThreeBookHtml(bookId, pageNumber);
+
+    if (cachedHtml) {
+      return NextResponse.json({ html: cachedHtml, cached: true });
+    }
+  }
 
   if (!inlineBase64 && book && !book.mime_type.startsWith("image/")) {
     return NextResponse.json(
@@ -94,7 +105,7 @@ No JSON.
 No comments.
 
 Book: ${bookTitle}
-Page: ${Math.max(1, Number(body.pageNumber) || 1)}
+Page: ${pageNumber}
       `.trim(),
     });
     const html = extractHtmlFragment(rawHtml);
@@ -102,6 +113,14 @@ Page: ${Math.max(1, Number(body.pageNumber) || 1)}
     if (!html) {
       console.error("STUDY-3 BUILD HTML NOT FOUND:", rawHtml);
       throw new Error("Gemini не вернул HTML.");
+    }
+
+    if (book) {
+      await writeStudyThreeBookHtml({
+        bookId,
+        pageNumber,
+        html,
+      });
     }
 
     return NextResponse.json({ html });

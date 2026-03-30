@@ -46,6 +46,10 @@ function getBookFileKey(bookId: string) {
   return `study3_book_file:${bookId}`;
 }
 
+function getBookHtmlKey(bookId: string, pageNumber: number) {
+  return `study3_book_html:${bookId}:${pageNumber}`;
+}
+
 function getUploadMetaKey(uploadId: string) {
   return `study3_upload_meta:${uploadId}`;
 }
@@ -214,6 +218,47 @@ export async function readStudyThreeBookFile(bookId: string) {
   } catch {
     return null;
   }
+}
+
+export async function readStudyThreeBookHtml(bookId: string, pageNumber: number) {
+  try {
+    const client = await getClient();
+
+    if (client) {
+      const html = await client.get(getBookHtmlKey(bookId, pageNumber));
+      return typeof html === "string" ? html : "";
+    }
+  } catch (error) {
+    logStudyThreeFallback("read book html from redis", error);
+  }
+
+  try {
+    const filePath = join(getBookDir(bookId), `page-${pageNumber}.html`);
+    return await readFile(filePath, "utf8");
+  } catch {
+    return "";
+  }
+}
+
+export async function writeStudyThreeBookHtml(params: {
+  bookId: string;
+  pageNumber: number;
+  html: string;
+}) {
+  try {
+    const client = await getClient();
+
+    if (client) {
+      await client.set(getBookHtmlKey(params.bookId, params.pageNumber), params.html);
+      return;
+    }
+  } catch (error) {
+    logStudyThreeFallback("write book html to redis", error);
+  }
+
+  const bookDir = getBookDir(params.bookId);
+  await ensureDir(bookDir);
+  await writeFile(join(bookDir, `page-${params.pageNumber}.html`), params.html, "utf8");
 }
 
 async function resolvePageCount(mimeType: string, buffer: Buffer) {
