@@ -4,6 +4,7 @@ export type PlanTask = {
   done: boolean;
   deadline?: string;
   versions: string[];
+  subtasks: PlanTask[];
 };
 
 export type Plan = {
@@ -33,6 +34,9 @@ function normalizeTask(task: Partial<PlanTask>): PlanTask {
     done: Boolean(task.done),
     deadline: task.deadline,
     versions: Array.isArray(task.versions) ? task.versions : [],
+    subtasks: Array.isArray(task.subtasks)
+      ? task.subtasks.map((subtask) => normalizeTask(subtask))
+      : [],
   };
 }
 

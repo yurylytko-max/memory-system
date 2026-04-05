@@ -1,24 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useParams, useRouter } from "next/navigation";
 import type { ChangeEvent } from "react";
-
 import Link from "next/link";
 import {
   DndContext,
   closestCenter,
-  DragEndEvent,
+  type DragEndEvent,
 } from "@dnd-kit/core";
-
 import {
   SortableContext,
-  verticalListSortingStrategy,
-  useSortable,
   arrayMove,
+  useSortable,
+  verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-
 import { CSS } from "@dnd-kit/utilities";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import PlannerNotificationsButton from "@/components/planner-notifications-button";
@@ -32,8 +30,21 @@ import {
   findDailyPlan,
   isDailyPlanId,
   mergeDailyPlans,
+  parseManagedDailyTaskId,
   synchronizeDailyPlanSources,
 } from "@/lib/planner-daily-plans";
+
+type TaskPath = number[];
+
+function createTask(text: string): PlanTask {
+  return {
+    id: crypto.randomUUID(),
+    text,
+    done: false,
+    versions: [],
+    subtasks: [],
+  };
+}
 
 function formatPlanPeriod(plan: Pick<Plan, "periodStart" | "periodEnd">) {
   const formatter = new Intl.DateTimeFormat("ru-RU", {
@@ -89,7 +100,96 @@ function getTaskDeadlineTone(deadline?: string, done?: boolean) {
 }
 
 function getDeadlineSortValue(deadline?: string) {
-  return deadline ? Date.parse(`${deadline}T00:00:00`) : Number.POSITIVE_INFINITY;
+  return deadline
+    ? Date.parse(`${deadline}T00:00:00`)
+    : Number.POSITIVE_INFINITY;
+}
+
+function pathToKey(path: TaskPath) {
+  return path.join("-");
+}
+
+function getTaskAtPath(tasks: PlanTask[], path: TaskPath): PlanTask | null {
+  let currentTasks = tasks;
+  let currentTask: PlanTask | null = null;
+
+  for (const index of path) {
+    currentTask = currentTasks[index] ?? null;
+
+    if (!currentTask) {
+      return null;
+    }
+
+    currentTasks = currentTask.subtasks;
+  }
+
+  return currentTask;
+}
+
+function updateTaskAtPath(
+  tasks: PlanTask[],
+  path: TaskPath,
+  updater: (task: PlanTask) => PlanTask
+): PlanTask[] {
+  const [currentIndex, ...rest] = path;
+
+  return tasks.map((task, index) => {
+    if (index !== currentIndex) {
+      return task;
+    }
+
+    if (rest.length === 0) {
+      return updater(task);
+    }
+
+    return {
+      ...task,
+      subtasks: updateTaskAtPath(task.subtasks, rest, updater),
+    };
+  });
+}
+
+function removeTaskAtPath(tasks: PlanTask[], path: TaskPath): PlanTask[] {
+  const [currentIndex, ...rest] = path;
+
+  if (rest.length === 0) {
+    return tasks.filter((_, index) => index !== currentIndex);
+  }
+
+  return tasks.map((task, index) => {
+    if (index !== currentIndex) {
+      return task;
+    }
+
+    return {
+      ...task,
+      subtasks: removeTaskAtPath(task.subtasks, rest),
+    };
+  });
+}
+
+function taskMatchesSearch(task: PlanTask, search: string) {
+  const normalizedSearch = search.trim().toLowerCase();
+
+  if (!normalizedSearch) {
+    return true;
+  }
+
+  if (task.text.toLowerCase().includes(normalizedSearch)) {
+    return true;
+  }
+
+  return task.subtasks.some((subtask) => taskMatchesSearch(subtask, normalizedSearch));
+}
+
+function getSourcePlanName(taskId: string, plans: Plan[]) {
+  const reference = parseManagedDailyTaskId(taskId);
+
+  if (!reference) {
+    return null;
+  }
+
+  return plans.find((plan) => plan.id === reference.sourcePlanId)?.name ?? null;
 }
 
 export default function PlanPage() {
@@ -99,12 +199,13 @@ export default function PlanPage() {
 
   const [plans, setPlans] = useState<Plan[]>([]);
   const [plan, setPlan] = useState<Plan | null>(null);
-
   const [input, setInput] = useState("");
   const [search, setSearch] = useState("");
   const [planName, setPlanName] = useState("");
-  const [activeTask, setActiveTask] = useState<number | null>(null);
+  const [activeTaskKey, setActiveTaskKey] = useState<string | null>(null);
   const [moveTaskIndex, setMoveTaskIndex] = useState<number | null>(null);
+  const [subtaskDraftForKey, setSubtaskDraftForKey] = useState<string | null>(null);
+  const [subtaskDraftValue, setSubtaskDraftValue] = useState("");
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -114,7 +215,7 @@ export default function PlanPage() {
       const resolvedPlans = isDailyPlanRoute ? mergeDailyPlans(parsed) : parsed;
       const currentPlan = isDailyPlanRoute
         ? findDailyPlan(parsed, planId)
-        : resolvedPlans.find((plan) => plan.id === planId) ?? null;
+        : resolvedPlans.find((item) => item.id === planId) ?? null;
 
       if (isDailyPlanRoute && JSON.stringify(parsed) !== JSON.stringify(resolvedPlans)) {
         await savePlans(resolvedPlans);
@@ -143,15 +244,33 @@ export default function PlanPage() {
     await savePlans(nextPlans);
     setPlans(nextPlans);
 
-    const found = nextPlans.find((p) => p.id === planId) || null;
+    const found = nextPlans.find((item) => item.id === planId) || null;
     setPlan(found);
     setPlanName(found?.name || "");
   }
 
+  function updatePlanTasks(updater: (tasks: PlanTask[]) => PlanTask[]) {
+    const updated = plans.map((item) => {
+      if (item.id !== planId) {
+        return item;
+      }
+
+      return {
+        ...item,
+        tasks: updater(item.tasks),
+      };
+    });
+
+    void save(updated);
+  }
+
   function renamePlan() {
-    if (!plan) return;
+    if (!plan) {
+      return;
+    }
 
     const trimmedName = planName.trim();
+
     if (!trimmedName) {
       setPlanName(plan.name);
       return;
@@ -161,158 +280,176 @@ export default function PlanPage() {
       return;
     }
 
-    const updated = plans.map((p) =>
-      p.id === planId ? { ...p, name: trimmedName } : p
+    const updated = plans.map((item) =>
+      item.id === planId ? { ...item, name: trimmedName } : item
     );
 
     void save(updated);
   }
 
   function addTasks() {
-    if (!input.trim() || !plan) return;
+    if (!input.trim()) {
+      return;
+    }
 
-    const lines = input
+    const newTasks = input
       .split("\n")
-      .map((l) => l.trim())
-      .filter(Boolean);
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map(createTask);
 
-    const newTasks: PlanTask[] = lines.map((text) => ({
-      id: crypto.randomUUID(),
-      text,
-      done: false,
-      versions: [],
-    }));
-
-    const updated = plans.map((p) =>
-      p.id === planId ? { ...p, tasks: [...p.tasks, ...newTasks] } : p
-    );
-
-    void save(updated);
+    updatePlanTasks((tasks) => [...tasks, ...newTasks]);
     setInput("");
   }
 
-  function toggleTask(i: number) {
-    if (!plan) return;
-
-    const updated = plans.map((p) => {
-      if (p.id !== planId) return p;
-
-      const tasks = [...p.tasks];
-      tasks[i] = { ...tasks[i], done: !tasks[i].done };
-
-      return { ...p, tasks };
-    });
-
-    void save(updated);
+  function toggleTask(path: TaskPath) {
+    updatePlanTasks((tasks) =>
+      updateTaskAtPath(tasks, path, (task) => ({ ...task, done: !task.done }))
+    );
   }
 
-  function deleteTask(i: number) {
-    if (!plan) return;
+  function deleteTask(path: TaskPath) {
+    setActiveTaskKey((current) => (current === pathToKey(path) ? null : current));
+    setSubtaskDraftForKey((current) =>
+      current === pathToKey(path) ? null : current
+    );
 
-    const updated = plans.map((p) => {
-      if (p.id !== planId) return p;
-      return { ...p, tasks: p.tasks.filter((_, index) => index !== i) };
-    });
+    if (path.length === 1) {
+      setMoveTaskIndex((current) => (current === path[0] ? null : current));
+    }
 
-    setActiveTask(null);
-    setMoveTaskIndex(null);
-    void save(updated);
+    updatePlanTasks((tasks) => removeTaskAtPath(tasks, path));
   }
 
-  function editTask(i: number) {
-    if (!plan) return;
+  function editTask(path: TaskPath) {
+    if (!plan) {
+      return;
+    }
 
-    const text = prompt("Edit task", plan.tasks[i].text);
-    if (!text || !text.trim()) return;
+    const currentTask = getTaskAtPath(plan.tasks, path);
 
-    const updated = plans.map((p) => {
-      if (p.id !== planId) return p;
+    if (!currentTask) {
+      return;
+    }
 
-      const tasks = [...p.tasks];
-      tasks[i] = {
-        ...tasks[i],
-        versions: [...tasks[i].versions, tasks[i].text],
+    const text = prompt("Edit task", currentTask.text);
+
+    if (!text || !text.trim()) {
+      return;
+    }
+
+    updatePlanTasks((tasks) =>
+      updateTaskAtPath(tasks, path, (task) => ({
+        ...task,
+        versions: [...task.versions, task.text],
         text: text.trim(),
-      };
-
-      return { ...p, tasks };
-    });
-
-    void save(updated);
+      }))
+    );
   }
 
-  function showHistory(i: number) {
-    if (!plan) return;
-    alert(plan.tasks[i].versions.join("\n") || "No history");
+  function showHistory(path: TaskPath) {
+    if (!plan) {
+      return;
+    }
+
+    const currentTask = getTaskAtPath(plan.tasks, path);
+
+    if (!currentTask) {
+      return;
+    }
+
+    alert(currentTask.versions.join("\n") || "No history");
   }
 
-  function updateTaskDeadline(i: number, deadline?: string) {
-    if (!plan) return;
-
-    const updated = plans.map((p) => {
-      if (p.id !== planId) return p;
-
-      const tasks = [...p.tasks];
-      tasks[i] = {
-        ...tasks[i],
+  function updateTaskDeadline(path: TaskPath, deadline?: string) {
+    updatePlanTasks((tasks) =>
+      updateTaskAtPath(tasks, path, (task) => ({
+        ...task,
         deadline,
-      };
+      }))
+    );
+  }
 
-      return { ...p, tasks };
-    });
+  function openSubtaskDraft(path: TaskPath) {
+    const key = pathToKey(path);
+    setSubtaskDraftForKey((current) => (current === key ? null : key));
+    setSubtaskDraftValue("");
+  }
 
-    void save(updated);
+  function addSubtasks(path: TaskPath) {
+    if (!subtaskDraftValue.trim()) {
+      return;
+    }
+
+    const nextSubtasks = subtaskDraftValue
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map(createTask);
+
+    updatePlanTasks((tasks) =>
+      updateTaskAtPath(tasks, path, (task) => ({
+        ...task,
+        subtasks: [...task.subtasks, ...nextSubtasks],
+      }))
+    );
+
+    setSubtaskDraftForKey(null);
+    setSubtaskDraftValue("");
   }
 
   function moveTo(targetId: string) {
-    if (moveTaskIndex === null || !plan) return;
+    if (moveTaskIndex === null || !plan) {
+      return;
+    }
 
     const task = plan.tasks[moveTaskIndex];
 
-    const updated = plans.map((p) => {
-      if (p.id === planId) {
+    const updated = plans.map((item) => {
+      if (item.id === planId) {
         return {
-          ...p,
-          tasks: p.tasks.filter((_, i) => i !== moveTaskIndex),
+          ...item,
+          tasks: item.tasks.filter((_, index) => index !== moveTaskIndex),
         };
       }
 
-      if (p.id === targetId) {
+      if (item.id === targetId) {
         return {
-          ...p,
-          tasks: [...p.tasks, task],
+          ...item,
+          tasks: [...item.tasks, task],
         };
       }
 
-      return p;
+      return item;
     });
 
     setMoveTaskIndex(null);
-    setActiveTask(null);
+    setActiveTaskKey(null);
     void save(updated);
   }
 
   function handleDragEnd(event: DragEndEvent) {
-    if (!plan) return;
+    if (!plan) {
+      return;
+    }
 
     const { active, over } = event;
-    if (!over) return;
-    if (active.id === over.id) return;
+
+    if (!over || active.id === over.id) {
+      return;
+    }
 
     const oldIndex = Number(active.id);
     const newIndex = Number(over.id);
-
     const reordered = arrayMove(plan.tasks, oldIndex, newIndex);
 
-    const updated = plans.map((p) =>
-      p.id === planId ? { ...p, tasks: reordered } : p
-    );
-
-    void save(updated);
+    updatePlanTasks(() => reordered);
   }
 
   function sortTasksByDeadline() {
-    if (!plan) return;
+    if (!plan) {
+      return;
+    }
 
     const reordered = [...plan.tasks]
       .map((task, index) => ({ task, index }))
@@ -332,14 +469,38 @@ export default function PlanPage() {
       })
       .map(({ task }) => task);
 
-    const updated = plans.map((p) =>
-      p.id === planId ? { ...p, tasks: reordered } : p
-    );
-
-    void save(updated);
+    updatePlanTasks(() => reordered);
   }
 
-  if (!loaded) return null;
+  function sortSubtasksByDeadline(path: TaskPath) {
+    updatePlanTasks((tasks) =>
+      updateTaskAtPath(tasks, path, (task) => ({
+        ...task,
+        subtasks: [...task.subtasks]
+          .map((subtask, index) => ({ subtask, index }))
+          .sort((a, b) => {
+            if (a.subtask.done !== b.subtask.done) {
+              return Number(a.subtask.done) - Number(b.subtask.done);
+            }
+
+            const deadlineDiff =
+              getDeadlineSortValue(a.subtask.deadline) -
+              getDeadlineSortValue(b.subtask.deadline);
+
+            if (deadlineDiff !== 0) {
+              return deadlineDiff;
+            }
+
+            return a.index - b.index;
+          })
+          .map(({ subtask }) => subtask),
+      }))
+    );
+  }
+
+  if (!loaded) {
+    return null;
+  }
 
   if (!plan) {
     return (
@@ -359,14 +520,11 @@ export default function PlanPage() {
     );
   }
 
-  const availableMoveTargets = plans.filter((p) => p.id !== planId);
+  const availableMoveTargets = plans.filter((item) => item.id !== planId);
   const periodLabel = formatPlanPeriod(plan);
-
   const indexedTasks = plan.tasks
     .map((task, originalIndex) => ({ task, originalIndex }))
-    .filter(({ task }) =>
-      task.text.toLowerCase().includes(search.toLowerCase())
-    );
+    .filter(({ task }) => taskMatchesSearch(task, search));
 
   return (
     <main className="min-h-screen bg-gray-100 p-10">
@@ -377,11 +535,11 @@ export default function PlanPage() {
       <div className="mb-6 flex max-w-xl flex-col gap-3 sm:flex-row sm:items-center">
         <Input
           value={planName}
-          onChange={(e) => setPlanName(e.target.value)}
+          onChange={(event) => setPlanName(event.target.value)}
           onBlur={renamePlan}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
               renamePlan();
             }
           }}
@@ -399,9 +557,7 @@ export default function PlanPage() {
       </div>
 
       {periodLabel ? (
-        <p className="mb-4 text-sm text-gray-600">
-          Период плана: {periodLabel}
-        </p>
+        <p className="mb-4 text-sm text-gray-600">Период плана: {periodLabel}</p>
       ) : null}
 
       <div className="mb-3">
@@ -414,37 +570,49 @@ export default function PlanPage() {
         <input
           placeholder="Search"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(event) => setSearch(event.target.value)}
           className="w-64 rounded border px-3 py-2"
         />
       </div>
 
-      <div className="bg-white p-6 rounded-xl shadow max-w-xl">
+      <div className="max-w-xl rounded-xl bg-white p-6 shadow">
         <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext
             items={indexedTasks.map(({ originalIndex }) => originalIndex)}
             strategy={verticalListSortingStrategy}
           >
-            <div className="space-y-4 mb-6">
+            <div className="mb-6 space-y-4">
               {indexedTasks.map(({ task, originalIndex }) => (
-                <SortableTask
-                  key={originalIndex}
+                <SortableTaskTreeItem
+                  key={task.id}
                   id={originalIndex}
                   task={task}
-                  active={activeTask === originalIndex}
-                  open={() =>
-                    setActiveTask(activeTask === originalIndex ? null : originalIndex)
-                  }
-                  toggle={() => toggleTask(originalIndex)}
-                  edit={() => editTask(originalIndex)}
-                  history={() => showHistory(originalIndex)}
-                  move={() => setMoveTaskIndex(originalIndex)}
+                  path={[originalIndex]}
+                  level={0}
+                  activeTaskKey={activeTaskKey}
+                  setActiveTaskKey={setActiveTaskKey}
+                  editTask={editTask}
+                  showHistory={showHistory}
+                  toggleTask={toggleTask}
+                  deleteTask={deleteTask}
+                  setMoveTaskIndex={setMoveTaskIndex}
                   moveOpen={moveTaskIndex === originalIndex}
                   moveTargets={availableMoveTargets}
-                  moveTo={(targetId) => moveTo(targetId)}
-                  setDeadline={(deadline) => updateTaskDeadline(originalIndex, deadline)}
+                  moveTo={moveTo}
+                  setDeadline={updateTaskDeadline}
                   cancelMove={() => setMoveTaskIndex(null)}
-                  deleteTask={() => deleteTask(originalIndex)}
+                  subtaskDraftForKey={subtaskDraftForKey}
+                  subtaskDraftValue={subtaskDraftValue}
+                  setSubtaskDraftValue={setSubtaskDraftValue}
+                  openSubtaskDraft={openSubtaskDraft}
+                  addSubtasks={addSubtasks}
+                  sortSubtasksByDeadline={sortSubtasksByDeadline}
+                  closeSubtaskDraft={() => {
+                    setSubtaskDraftForKey(null);
+                    setSubtaskDraftValue("");
+                  }}
+                  search={search}
+                  sourcePlanName={getSourcePlanName(task.id, plans)}
                 />
               ))}
             </div>
@@ -453,14 +621,14 @@ export default function PlanPage() {
 
         <textarea
           value={input}
-          onChange={(e) => setInput(e.target.value)}
+          onChange={(event) => setInput(event.target.value)}
           placeholder="Вставьте список задач"
-          className="border rounded px-3 py-2 w-full h-28 mb-3"
+          className="mb-3 h-28 w-full rounded border px-3 py-2"
         />
 
         <button
           onClick={addTasks}
-          className="bg-black text-white px-4 py-2 rounded"
+          className="rounded bg-black px-4 py-2 text-white"
         >
           Добавить
         </button>
@@ -469,37 +637,10 @@ export default function PlanPage() {
   );
 }
 
-function SortableTask({
+function SortableTaskTreeItem({
   id,
-  task,
-  toggle,
-  active,
-  open,
-  edit,
-  history,
-  deleteTask,
-  move,
-  moveOpen,
-  moveTargets,
-  moveTo,
-  setDeadline,
-  cancelMove,
-}: {
-  id: number;
-  task: PlanTask;
-  toggle: () => void;
-  active: boolean;
-  open: () => void;
-  edit: () => void;
-  history: () => void;
-  deleteTask: () => void;
-  move: () => void;
-  moveOpen: boolean;
-  moveTargets: Array<{ id: string; name: string }>;
-  moveTo: (targetId: string) => void;
-  setDeadline: (deadline?: string) => void;
-  cancelMove: () => void;
-}) {
+  ...props
+}: TaskTreeItemProps & { id: number }) {
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({ id });
 
@@ -510,127 +651,293 @@ function SortableTask({
 
   return (
     <div ref={setNodeRef} style={style}>
-      <div className="flex items-center gap-3">
+      <TaskTreeItem
+        {...props}
+        dragHandle={(
+          <button
+            type="button"
+            {...attributes}
+            {...listeners}
+            className="cursor-grab px-2 text-gray-400 active:cursor-grabbing"
+            title="Drag"
+          >
+            ⋮⋮
+          </button>
+        )}
+      />
+    </div>
+  );
+}
+
+type TaskTreeItemProps = {
+  task: PlanTask;
+  path: TaskPath;
+  level: number;
+  activeTaskKey: string | null;
+  setActiveTaskKey: (key: string | null) => void;
+  editTask: (path: TaskPath) => void;
+  showHistory: (path: TaskPath) => void;
+  toggleTask: (path: TaskPath) => void;
+  deleteTask: (path: TaskPath) => void;
+  setMoveTaskIndex: (index: number | null) => void;
+  moveOpen: boolean;
+  moveTargets: Array<{ id: string; name: string }>;
+  moveTo: (targetId: string) => void;
+  setDeadline: (path: TaskPath, deadline?: string) => void;
+  cancelMove: () => void;
+  subtaskDraftForKey: string | null;
+  subtaskDraftValue: string;
+  setSubtaskDraftValue: (value: string) => void;
+  openSubtaskDraft: (path: TaskPath) => void;
+  addSubtasks: (path: TaskPath) => void;
+  sortSubtasksByDeadline: (path: TaskPath) => void;
+  closeSubtaskDraft: () => void;
+  search: string;
+  sourcePlanName?: string | null;
+  dragHandle?: ReactNode;
+};
+
+function TaskTreeItem({
+  task,
+  path,
+  level,
+  activeTaskKey,
+  setActiveTaskKey,
+  editTask,
+  showHistory,
+  toggleTask,
+  deleteTask,
+  setMoveTaskIndex,
+  moveOpen,
+  moveTargets,
+  moveTo,
+  setDeadline,
+  cancelMove,
+  subtaskDraftForKey,
+  subtaskDraftValue,
+  setSubtaskDraftValue,
+  openSubtaskDraft,
+  addSubtasks,
+  sortSubtasksByDeadline,
+  closeSubtaskDraft,
+  search,
+  sourcePlanName,
+  dragHandle,
+}: TaskTreeItemProps) {
+  const taskKey = pathToKey(path);
+  const isActive = activeTaskKey === taskKey;
+  const isSubtaskDraftOpen = subtaskDraftForKey === taskKey;
+  const shouldShowTask = taskMatchesSearch(task, search);
+
+  if (!shouldShowTask) {
+    return null;
+  }
+
+  return (
+    <div className={level > 0 ? "border-l border-gray-200 pl-4" : ""}>
+      <div className="flex items-start gap-3">
         <button
           type="button"
-          onClick={toggle}
-          className={`w-5 h-5 rounded-full border shrink-0 ${
+          onClick={() => toggleTask(path)}
+          className={`mt-1 h-5 w-5 shrink-0 rounded-full border ${
             task.done ? "bg-black" : ""
           }`}
         />
 
-        <button
-          type="button"
-          onClick={open}
-          className="text-left flex-1"
-        >
-          <span className={task.done ? "line-through text-gray-400" : ""}>
-            {task.text}
-          </span>
+        <div className="min-w-0 flex-1">
+          <button
+            type="button"
+            onClick={() => setActiveTaskKey(isActive ? null : taskKey)}
+            className="w-full text-left"
+          >
+            <span className={task.done ? "line-through text-gray-400" : ""}>
+              {task.text}
+            </span>
 
-          {task.deadline ? (
-            <div className={`mt-1 text-xs ${getTaskDeadlineTone(task.deadline, task.done)}`}>
-              Дедлайн: {formatTaskDeadline(task.deadline)}
-            </div>
-          ) : null}
-        </button>
-
-        <button
-          type="button"
-          {...attributes}
-          {...listeners}
-          className="text-gray-400 px-2 cursor-grab active:cursor-grabbing"
-          title="Drag"
-        >
-          ⋮⋮
-        </button>
-      </div>
-
-      {active && (
-        <div className="ml-8 mt-2">
-          <div className="flex gap-4 text-sm">
-            <button type="button" onClick={edit}>
-              Edit
-            </button>
-
-            <button type="button" onClick={history}>
-              History
-            </button>
-
-            <button type="button" onClick={move}>
-              Move
-            </button>
-
-            <button type="button" onClick={deleteTask} className="text-red-500">
-              Delete
-            </button>
-          </div>
-
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <input
-              type="date"
-              value={task.deadline || ""}
-              onChange={(event: ChangeEvent<HTMLInputElement>) => {
-                const nextValue = event.target.value || undefined;
-                setDeadline(nextValue);
-              }}
-              className="rounded border px-3 py-1.5 text-sm"
-            />
+            {sourcePlanName ? (
+              <div className="mt-1 text-xs text-gray-500">
+                Из плана: {sourcePlanName}
+              </div>
+            ) : null}
 
             {task.deadline ? (
-              <button
-                type="button"
-                onClick={() => setDeadline(undefined)}
-                className="text-sm text-gray-600"
+              <div
+                className={`mt-1 text-xs ${getTaskDeadlineTone(task.deadline, task.done)}`}
               >
-                Снять дедлайн
-              </button>
+                Дедлайн: {formatTaskDeadline(task.deadline)}
+              </div>
             ) : null}
-          </div>
+          </button>
 
-          {moveOpen && (
-            <div className="mt-3 rounded-lg border bg-gray-50 p-3">
-              <div className="mb-2 text-sm font-medium text-gray-700">Move to:</div>
+          {isActive ? (
+            <div className="mt-2">
+              <div className="flex flex-wrap gap-4 text-sm">
+                <button type="button" onClick={() => editTask(path)}>
+                  Edit
+                </button>
 
-              {moveTargets.length === 0 ? (
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-sm text-gray-500">
-                    Нет других планов, куда можно перенести задачу.
-                  </p>
+                <button type="button" onClick={() => showHistory(path)}>
+                  History
+                </button>
+
+                <button type="button" onClick={() => openSubtaskDraft(path)}>
+                  Добавить подзадачи
+                </button>
+
+                {task.subtasks.length > 1 ? (
+                  <button type="button" onClick={() => sortSubtasksByDeadline(path)}>
+                    Сортировать подзадачи по дедлайну
+                  </button>
+                ) : null}
+
+                {level === 0 ? (
+                  <button type="button" onClick={() => setMoveTaskIndex(path[0])}>
+                    Move
+                  </button>
+                ) : null}
+
+                <button
+                  type="button"
+                  onClick={() => deleteTask(path)}
+                  className="text-red-500"
+                >
+                  Delete
+                </button>
+              </div>
+
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <input
+                  type="date"
+                  value={task.deadline || ""}
+                  onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                    const nextValue = event.target.value || undefined;
+                    setDeadline(path, nextValue);
+                  }}
+                  className="rounded border px-3 py-1.5 text-sm"
+                />
+
+                {task.deadline ? (
                   <button
                     type="button"
-                    onClick={cancelMove}
+                    onClick={() => setDeadline(path, undefined)}
                     className="text-sm text-gray-600"
                   >
-                    Close
+                    Снять дедлайн
                   </button>
-                </div>
-              ) : (
-                <div className="flex flex-wrap gap-2">
-                  {moveTargets.map((plan) => (
-                    <button
-                      key={plan.id}
-                      type="button"
-                      onClick={() => moveTo(plan.id)}
-                      className="rounded bg-gray-200 px-3 py-1 text-sm transition hover:bg-gray-300"
-                    >
-                      {plan.name}
-                    </button>
-                  ))}
+                ) : null}
+              </div>
 
-                  <button
-                    type="button"
-                    onClick={cancelMove}
-                    className="rounded border px-3 py-1 text-sm text-gray-600 transition hover:bg-white"
-                  >
-                    Cancel
-                  </button>
+              {isSubtaskDraftOpen ? (
+                <div className="mt-3 rounded-lg border bg-gray-50 p-3">
+                  <textarea
+                    value={subtaskDraftValue}
+                    onChange={(event) => setSubtaskDraftValue(event.target.value)}
+                    placeholder="Впишите подзадачи, каждую с новой строки"
+                    className="h-24 w-full rounded border px-3 py-2 text-sm"
+                  />
+
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => addSubtasks(path)}
+                      className="rounded bg-black px-3 py-1.5 text-sm text-white"
+                    >
+                      Сохранить подзадачи
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={closeSubtaskDraft}
+                      className="rounded border px-3 py-1.5 text-sm text-gray-600"
+                    >
+                      Cancel
+                    </button>
+                  </div>
                 </div>
-              )}
+              ) : null}
+
+              {level === 0 && moveOpen ? (
+                <div className="mt-3 rounded-lg border bg-gray-50 p-3">
+                  <div className="mb-2 text-sm font-medium text-gray-700">
+                    Move to:
+                  </div>
+
+                  {moveTargets.length === 0 ? (
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-sm text-gray-500">
+                        Нет других планов, куда можно перенести задачу.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={cancelMove}
+                        className="text-sm text-gray-600"
+                      >
+                        Close
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {moveTargets.map((plan) => (
+                        <button
+                          key={plan.id}
+                          type="button"
+                          onClick={() => moveTo(plan.id)}
+                          className="rounded bg-gray-200 px-3 py-1 text-sm transition hover:bg-gray-300"
+                        >
+                          {plan.name}
+                        </button>
+                      ))}
+
+                      <button
+                        type="button"
+                        onClick={cancelMove}
+                        className="rounded border px-3 py-1 text-sm text-gray-600 transition hover:bg-white"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : null}
             </div>
-          )}
+          ) : null}
+
+          {task.subtasks.length > 0 ? (
+            <div className="mt-3 space-y-3">
+              {task.subtasks.map((subtask, index) => (
+                <TaskTreeItem
+                  key={subtask.id}
+                  task={subtask}
+                  path={[...path, index]}
+                  level={level + 1}
+                  activeTaskKey={activeTaskKey}
+                  setActiveTaskKey={setActiveTaskKey}
+                  editTask={editTask}
+                  showHistory={showHistory}
+                  toggleTask={toggleTask}
+                  deleteTask={deleteTask}
+                  setMoveTaskIndex={setMoveTaskIndex}
+                  moveOpen={false}
+                  moveTargets={moveTargets}
+                  moveTo={moveTo}
+                  setDeadline={setDeadline}
+                  cancelMove={cancelMove}
+                  subtaskDraftForKey={subtaskDraftForKey}
+                  subtaskDraftValue={subtaskDraftValue}
+                  setSubtaskDraftValue={setSubtaskDraftValue}
+                  openSubtaskDraft={openSubtaskDraft}
+                  addSubtasks={addSubtasks}
+                  sortSubtasksByDeadline={sortSubtasksByDeadline}
+                  closeSubtaskDraft={closeSubtaskDraft}
+                  search={search}
+                />
+              ))}
+            </div>
+          ) : null}
         </div>
-      )}
+
+        {dragHandle}
+      </div>
     </div>
   );
 }

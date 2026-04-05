@@ -9,6 +9,14 @@ type DailyTaskSource = {
   sourcePlan: Plan;
 };
 
+function cloneTaskTree(task: PlanTask): PlanTask {
+  return {
+    ...task,
+    versions: [...task.versions],
+    subtasks: task.subtasks.map(cloneTaskTree),
+  };
+}
+
 export function isDailyPlanId(planId: string) {
   return planId.startsWith(DAILY_PLAN_ID_PREFIX);
 }
@@ -82,10 +90,11 @@ function isManagedDailyTask(task: PlanTask) {
 export function buildDailyPlanTask(task: PlanTask, sourcePlan: Plan): PlanTask {
   return {
     id: buildDailyTaskId(sourcePlan, task),
-    text: `${task.text} (${sourcePlan.name})`,
+    text: task.text,
     done: task.done,
     deadline: task.deadline,
-    versions: [],
+    versions: [...task.versions],
+    subtasks: task.subtasks.map(cloneTaskTree),
   };
 }
 
@@ -189,7 +198,7 @@ export function synchronizeDailyPlanSources(plans: Plan[]) {
       continue;
     }
 
-    const managedTasks = new Map<string, Pick<PlanTask, "done">>();
+    const managedTasks = new Map<string, PlanTask>();
 
     for (const task of dailyPlan.tasks) {
       const reference = parseManagedDailyTaskId(task.id);
@@ -200,7 +209,7 @@ export function synchronizeDailyPlanSources(plans: Plan[]) {
 
       managedTasks.set(
         buildManagedTaskReferenceKey(reference.sourcePlanId, reference.sourceTaskId),
-        { done: task.done }
+        task
       );
     }
 
@@ -225,7 +234,11 @@ export function synchronizeDailyPlanSources(plans: Plan[]) {
         return [
           {
             ...task,
+            text: managedTask.text,
             done: managedTask.done,
+            deadline: managedTask.deadline,
+            versions: [...managedTask.versions],
+            subtasks: managedTask.subtasks.map(cloneTaskTree),
           },
         ];
       });
