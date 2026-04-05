@@ -140,3 +140,14 @@
 - Зачем:
   - синхронизировать локальную и удалённую линии разработки, не переписывая remote history.
 - Статус: `accepted`
+
+## 2026-04-05 - Agent Docs Bootstrap and Git Workflow Stabilized
+
+- Что изменилось:
+  - добавлена папка `docs/` с единым стартовым prompt, картой проекта, coding rules, current state, changelog, roadmap и open issues;
+  - локальный `main` заново выровнен с актуальным `origin/main`;
+  - broken refs вида `main 2` удалены.
+- Зачем:
+  - дать следующим ИИ-агентам устойчивую стартовую точку;
+  - вернуть локальному git workflow предсказуемость для обычных `pull` и `push`.
+- Статус: `accepted`
