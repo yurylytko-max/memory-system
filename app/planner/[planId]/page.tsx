@@ -28,7 +28,12 @@ import {
   type Plan,
   type PlanTask,
 } from "@/lib/plans";
-import { findDailyPlan, isDailyPlanId, mergeDailyPlans } from "@/lib/planner-daily-plans";
+import {
+  findDailyPlan,
+  isDailyPlanId,
+  mergeDailyPlans,
+  synchronizeDailyPlanSources,
+} from "@/lib/planner-daily-plans";
 
 function formatPlanPeriod(plan: Pick<Plan, "periodStart" | "periodEnd">) {
   const formatter = new Intl.DateTimeFormat("ru-RU", {
@@ -130,10 +135,15 @@ export default function PlanPage() {
   }, [planId, router]);
 
   async function save(updated: Plan[]) {
-    await savePlans(updated);
-    setPlans(updated);
+    const isDailyPlanRoute = isDailyPlanId(planId);
+    const nextPlans = isDailyPlanRoute
+      ? mergeDailyPlans(synchronizeDailyPlanSources(updated))
+      : updated;
 
-    const found = updated.find((p) => p.id === planId) || null;
+    await savePlans(nextPlans);
+    setPlans(nextPlans);
+
+    const found = nextPlans.find((p) => p.id === planId) || null;
     setPlan(found);
     setPlanName(found?.name || "");
   }

@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { normalizeCard, type Card as MemoryCard } from "@/lib/cards";
+import { normalizeCard } from "@/lib/cards";
 import { readCards } from "@/lib/server/cards-store";
 
 type TagPageProps = {

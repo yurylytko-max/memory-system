@@ -29,10 +29,10 @@ export default function DocumentPage() {
 
   const id = params.id;
   const insertCard = search.get("insertCard");
+  const initialDoc = getDocument(id);
 
-  const [title, setTitle] = useState("");
-  const [tag, setTag] = useState("");
-  const [loaded, setLoaded] = useState(false);
+  const [title, setTitle] = useState(() => initialDoc?.title ?? "");
+  const [tag, setTag] = useState(() => initialDoc?.tag ?? "");
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -57,14 +57,10 @@ export default function DocumentPage() {
     const doc = getDocument(id);
 
     if (!doc) {
-      setLoaded(true);
       return;
     }
 
-    setTitle(doc.title ?? "");
-    setTag(doc.tag ?? "");
     editor.commands.setContent(doc.content ?? "");
-    setLoaded(true);
   }, [editor, id]);
 
   function save() {
@@ -126,7 +122,6 @@ export default function DocumentPage() {
 
   useEffect(() => {
     if (!editor) return;
-    if (!loaded) return;
     if (!insertCard) return;
 
     const raw = sessionStorage.getItem(PENDING_CARD_LINK_KEY);
@@ -180,9 +175,9 @@ export default function DocumentPage() {
       sessionStorage.removeItem(PENDING_CARD_LINK_KEY);
       router.replace(`/editor/${id}`);
     }
-  }, [editor, loaded, insertCard, id, router, title, tag]);
+  }, [editor, insertCard, id, router, title, tag]);
 
-  if (!editor || !loaded) return null;
+  if (!editor) return null;
 
   const btn = (active: boolean) =>
     `px-3 py-1 border rounded text-sm ${
@@ -282,7 +277,7 @@ export default function DocumentPage() {
             onClick={() => editor.chain().focus().toggleBlockquote().run()}
             className={btn(editor.isActive("blockquote"))}
           >
-            "
+            &quot;
           </button>
 
           <button

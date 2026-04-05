@@ -7,48 +7,72 @@ export async function GET(
   _request: Request,
   context: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await context.params
-  const cards = await readCards()
-  const card = cards.find(item => item.id === id)
+  try {
+    const { id } = await context.params
+    const cards = await readCards()
+    const card = cards.find(item => item.id === id)
 
-  if (!card) {
-    return NextResponse.json({ error: "Card not found" }, { status: 404 })
+    if (!card) {
+      return NextResponse.json({ error: "Card not found" }, { status: 404 })
+    }
+
+    return NextResponse.json(card)
+  } catch (error) {
+    console.error("GET /api/cards/[id] failed:", error)
+    return NextResponse.json(
+      { error: "Cards storage unavailable" },
+      { status: 503 }
+    )
   }
-
-  return NextResponse.json(card)
 }
 
 export async function PUT(
   request: Request,
   context: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await context.params
-  const card = normalizeCard((await request.json()) as Card)
-  const cards = await readCards()
+  try {
+    const { id } = await context.params
+    const card = normalizeCard((await request.json()) as Card)
+    const cards = await readCards()
 
-  const existingIndex = cards.findIndex(item => item.id === id)
+    const existingIndex = cards.findIndex(item => item.id === id)
 
-  if (existingIndex === -1) {
-    return NextResponse.json({ error: "Card not found" }, { status: 404 })
+    if (existingIndex === -1) {
+      return NextResponse.json({ error: "Card not found" }, { status: 404 })
+    }
+
+    const updated = [...cards]
+    updated[existingIndex] = card
+
+    await writeCards(updated)
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error("PUT /api/cards/[id] failed:", error)
+    return NextResponse.json(
+      { error: "Cards storage unavailable" },
+      { status: 503 }
+    )
   }
-
-  const updated = [...cards]
-  updated[existingIndex] = card
-
-  await writeCards(updated)
-
-  return NextResponse.json({ success: true })
 }
 
 export async function DELETE(
   _request: Request,
   context: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await context.params
-  const cards = await readCards()
-  const updated = cards.filter(card => card.id !== id)
+  try {
+    const { id } = await context.params
+    const cards = await readCards()
+    const updated = cards.filter(card => card.id !== id)
 
-  await writeCards(updated)
+    await writeCards(updated)
 
-  return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error("DELETE /api/cards/[id] failed:", error)
+    return NextResponse.json(
+      { error: "Cards storage unavailable" },
+      { status: 503 }
+    )
+  }
 }

@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
 
         const stream = streamText({
           experimental_transform: markdownJoinerTransform(),
-          model: gatewayProvider(model || 'openai/gpt-4o-mini'),
+          model: gatewayProvider(model || 'google/gemini-2.5-flash'),
           // Not used
           prompt: '',
           tools: {
@@ -132,7 +132,7 @@ export async function POST(req: NextRequest) {
                   editType === 'selection'
                     ? //The selection task is more challenging, so we chose to use Gemini 2.5 Flash.
                       gatewayProvider(model || 'google/gemini-2.5-flash')
-                    : gatewayProvider(model || 'openai/gpt-4o-mini'),
+                    : gatewayProvider(model || 'google/gemini-2.5-flash'),
                 messages: [
                   {
                     content: editPrompt,
@@ -157,7 +157,7 @@ export async function POST(req: NextRequest) {
                     role: 'user',
                   },
                 ],
-                model: gatewayProvider(model || 'openai/gpt-4o-mini'),
+                model: gatewayProvider(model || 'google/gemini-2.5-flash'),
               };
             }
           },

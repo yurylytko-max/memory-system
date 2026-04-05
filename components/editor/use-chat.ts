@@ -48,7 +48,27 @@ export type MessageDataPart = {
 
 export type Chat = UseChatHelpers<ChatMessage>;
 
-export type ChatMessage = UIMessage<{}, MessageDataPart>;
+export type ChatMessage = UIMessage<Record<string, never>, MessageDataPart>;
+
+type ChatRequestBody = {
+  ctx?: {
+    children?: Array<Record<string, unknown>>;
+    selection?: {
+      anchor?: {
+        path?: number[];
+      };
+      focus?: {
+        path?: number[];
+      };
+    };
+  };
+  messages: Array<{
+    parts: Array<{
+      type?: string;
+      text?: string;
+    }>;
+  }>;
+};
 
 export const useChat = () => {
   const editor = useEditorRef();
@@ -87,10 +107,10 @@ export const useChat = () => {
           let sample: 'comment' | 'markdown' | 'mdx' | 'table' | null = null;
 
           try {
-            const body = JSON.parse(init?.body as string);
+            const body = JSON.parse(init?.body as string) as ChatRequestBody;
             const content = body.messages
               .at(-1)
-              .parts.find((p: any) => p.type === 'text')?.text;
+              ?.parts.find((part) => part.type === 'text')?.text;
 
             if (content.includes('Generate a markdown sample')) {
               sample = 'markdown';
@@ -252,13 +272,13 @@ export const useChat = () => {
     ...options,
   });
 
-  const chat = {
+  const chat: Chat & { _abortFakeStream: () => void } = {
     ...baseChat,
     _abortFakeStream,
   };
 
   React.useEffect(() => {
-    editor.setOption(AIChatPlugin, 'chat', chat as any);
+    editor.setOption(AIChatPlugin, 'chat', chat);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chat.status, chat.messages, chat.error]);
 
@@ -366,7 +386,7 @@ const fakeStreamText = ({
 
         controller.enqueue(
           encoder.encode(
-            `data: {"type":"text-start","id":"${messageId}","providerMetadata":{"openai":{"itemId":"${messageId}"}}}\n\n`
+            `data: {"type":"text-start","id":"${messageId}","providerMetadata":{"google":{"itemId":"${messageId}"}}}\n\n`
           )
         );
         await new Promise((resolve) => setTimeout(resolve, 10));

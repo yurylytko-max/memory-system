@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 
@@ -595,10 +596,17 @@ export default function StudyThreeReader({ bookId }: { bookId: string }) {
                 </div>
               </div>
             ) : contentMode === "original" && fileUrl ? (
-              <div className="space-y-5">
-                <div className="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-slate-50">
-                  <img src={fileUrl} alt={book?.title ?? "Учебник"} className="w-full object-contain" />
-                </div>
+                <div className="space-y-5">
+                  <div className="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-slate-50">
+                    <Image
+                      src={fileUrl}
+                      alt={book?.title ?? "Учебник"}
+                      width={1600}
+                      height={2200}
+                      unoptimized
+                      className="h-auto w-full object-contain"
+                    />
+                  </div>
 
                 <div className="rounded-[1.5rem] border border-slate-200 bg-[#fffdf7] p-4">
                   <div className="text-sm font-medium text-slate-900">

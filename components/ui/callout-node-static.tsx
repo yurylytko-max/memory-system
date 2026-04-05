@@ -11,11 +11,16 @@ export function CalloutElementStatic({
   className,
   ...props
 }: SlateElementProps) {
+  const element = props.element as {
+    backgroundColor?: string;
+    icon?: React.ReactNode;
+  };
+
   return (
     <SlateElement
       className={cn('my-1 flex rounded-sm bg-muted p-4 pl-3', className)}
       style={{
-        backgroundColor: props.element.backgroundColor as any,
+        backgroundColor: element.backgroundColor,
       }}
       {...props}
     >
@@ -28,7 +33,7 @@ export function CalloutElementStatic({
           }}
         >
           <span data-plate-prevent-deserialization>
-            {(props.element.icon as any) || '💡'}
+            {element.icon || '💡'}
           </span>
         </div>
         <div className="w-full">{children}</div>
@@ -41,9 +46,12 @@ export function CalloutElementStatic({
  * DOCX-compatible callout component using table layout for side-by-side icon and content.
  */
 export function CalloutElementDocx({ children, ...props }: SlateElementProps) {
-  const backgroundColor =
-    (props.element.backgroundColor as string) || '#f4f4f5';
-  const icon = (props.element.icon as string) || '💡';
+  const element = props.element as {
+    backgroundColor?: string;
+    icon?: string;
+  };
+  const backgroundColor = element.backgroundColor || '#f4f4f5';
+  const icon = element.icon || '💡';
 
   return (
     <SlateElement {...props}>

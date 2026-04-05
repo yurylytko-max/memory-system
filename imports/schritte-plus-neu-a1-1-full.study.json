@@ -1,0 +1,1496 @@
+{
+  "version": 2,
+  "textbook": {
+    "id": "schritte-plus-neu-a1-1-full",
+    "title": "Schritte plus Neu A1.1",
+    "languageCode": "de",
+    "baseLanguageCode": "ru",
+    "level": "A1.1",
+    "series": "Schritte plus Neu",
+    "notes": "Полный импорт для всего курса A1.1. Уроки 1-2 детализированы сильнее; уроки 3-7 собраны по оглавлению, стартовым страницам и страницам Grammatik und Kommunikation.",
+    "lessons": [
+      {
+        "id": "lektion-1",
+        "order": 1,
+        "title": "Lektion 1",
+        "topic": "Begruessung, Name, Herkunft, Sprache, Adresse",
+        "notes": "Вводный урок про знакомство, имя, страну, язык и базовые данные.",
+        "lessonGlossary": [
+          {
+            "id": "l1-a-guten-tag",
+            "de": "Guten Tag",
+            "ru": "Добрый день",
+            "lessonId": "lektion-1",
+            "blockId": "l1-block-a",
+            "sectionType": "dialogue",
+            "tags": ["greeting"],
+            "cardModes": ["de_to_ru", "ru_to_de"]
+          },
+          {
+            "id": "l1-a-hallo",
+            "de": "Hallo",
+            "ru": "Привет",
+            "lessonId": "lektion-1",
+            "blockId": "l1-block-a",
+            "sectionType": "dialogue",
+            "tags": ["greeting"],
+            "cardModes": ["de_to_ru", "ru_to_de"]
+          },
+          {
+            "id": "l1-a-auf-wiedersehen",
+            "de": "Auf Wiedersehen",
+            "ru": "До свидания",
+            "lessonId": "lektion-1",
+            "blockId": "l1-block-a",
+            "sectionType": "dialogue",
+            "tags": ["farewell"],
+            "cardModes": ["de_to_ru", "ru_to_de"]
+          },
+          {
+            "id": "l1-b-name",
+            "de": "der Name",
+            "ru": "имя",
+            "article": "der",
+            "lessonId": "lektion-1",
+            "blockId": "l1-block-b",
+            "sectionType": "dialogue",
+            "tags": ["identity"],
+            "cardModes": ["de_to_ru", "ru_to_de"]
+          },
+          {
+            "id": "l1-c-polen",
+            "de": "Polen",
+            "ru": "Польша",
+            "lessonId": "lektion-1",
+            "blockId": "l1-block-c",
+            "sectionType": "reading",
+            "tags": ["country"],
+            "cardModes": ["de_to_ru", "ru_to_de"]
+          },
+          {
+            "id": "l1-c-deutsch",
+            "de": "Deutsch",
+            "ru": "немецкий язык",
+            "lessonId": "lektion-1",
+            "blockId": "l1-block-c",
+            "sectionType": "reading",
+            "tags": ["language"],
+            "cardModes": ["de_to_ru", "ru_to_de"]
+          },
+          {
+            "id": "l1-e-stadt",
+            "de": "die Stadt",
+            "ru": "город",
+            "article": "die",
+            "lessonId": "lektion-1",
+            "blockId": "l1-block-e",
+            "sectionType": "forms",
+            "tags": ["address"],
+            "cardModes": ["de_to_ru", "ru_to_de"]
+          }
+        ],
+        "blocks": [
+          {
+            "id": "l1-block-a",
+            "code": "A",
+            "title": "Guten Tag",
+            "goal": "Научиться здороваться и прощаться в типовых ситуациях.",
+            "sceneType": "dialogue",
+            "intro": "Базовые формулы приветствия и прощания.",
+            "corePhrases": ["Guten Tag.", "Hallo.", "Auf Wiedersehen.", "Tschuess."],
+            "content": {
+              "dialogues": [
+                {
+                  "id": "l1-a-dialogue-1",
+                  "title": "У входа",
+                  "type": "dialogue",
+                  "lines": [
+                    { "speaker": "A", "text": "Guten Tag." },
+                    { "speaker": "B", "text": "Hallo." }
+                  ],
+                  "translationRu": [
+                    { "speaker": "A", "text": "Добрый день." },
+                    { "speaker": "B", "text": "Привет." }
+                  ]
+                }
+              ],
+              "readings": [],
+              "explainer": "На старте важно отличить нейтральное приветствие и формулы прощания."
+            },
+            "grammarPoints": [],
+            "vocabulary": ["l1-a-guten-tag", "l1-a-hallo", "l1-a-auf-wiedersehen"],
+            "tasks": [
+              {
+                "id": "l1-a-task-1",
+                "type": "matching",
+                "skill": "recognition",
+                "instruction": "Соотнесите немецкую реплику и перевод.",
+                "leftItems": [
+                  { "id": "left-1", "text": "Guten Tag." },
+                  { "id": "left-2", "text": "Auf Wiedersehen." }
+                ],
+                "rightItems": [
+                  { "id": "right-1", "text": "До свидания." },
+                  { "id": "right-2", "text": "Добрый день." }
+                ],
+                "correctPairs": [
+                  ["left-1", "right-2"],
+                  ["left-2", "right-1"]
+                ],
+                "explanation": "Guten Tag — приветствие, Auf Wiedersehen — прощание."
+              }
+            ]
+          },
+          {
+            "id": "l1-block-b",
+            "code": "B",
+            "title": "Ich heisse Lara Nowak",
+            "goal": "Научиться спрашивать имя и представляться.",
+            "sceneType": "dialogue",
+            "intro": "Блок про формулы знакомства и представления.",
+            "corePhrases": ["Wie heissen Sie?", "Ich heisse ...", "Mein Name ist ..."],
+            "content": {
+              "dialogues": [
+                {
+                  "id": "l1-b-dialogue-1",
+                  "title": "Первое знакомство",
+                  "type": "dialogue",
+                  "lines": [
+                    { "speaker": "A", "text": "Guten Tag. Mein Name ist Richard Yulu." },
+                    { "speaker": "B", "text": "Wie heissen Sie?" },
+                    { "speaker": "A", "text": "Ich heisse Lara Nowak." }
+                  ],
+                  "translationRu": [
+                    { "speaker": "A", "text": "Добрый день. Меня зовут Рихард Юлу." },
+                    { "speaker": "B", "text": "Как вас зовут?" },
+                    { "speaker": "A", "text": "Меня зовут Лара Новак." }
+                  ]
+                }
+              ],
+              "readings": [],
+              "explainer": "Вежливая форма строится через Sie. Ответ можно дать двумя моделями."
+            },
+            "grammarPoints": [
+              {
+                "id": "l1-b-grammar-1",
+                "title": "Wie heissen Sie? / Ich heisse ...",
+                "summary": "Как спросить имя и назвать своё имя.",
+                "explanation": "В официальной ситуации используем Wie heissen Sie? Ответ: Ich heisse ... или Mein Name ist ...",
+                "pattern": "Wie heissen Sie? -> Ich heisse Lara. / Mein Name ist Lara Nowak.",
+                "examples": [
+                  "Wie heissen Sie? - Ich heisse Richard Yulu.",
+                  "Mein Name ist Walter Baumann."
+                ],
+                "pitfalls": ["Не путать Sie и du."],
+                "linkedTaskIds": ["l1-b-task-1", "l1-b-task-2"]
+              }
+            ],
+            "vocabulary": ["l1-b-name"],
+            "tasks": [
+              {
+                "id": "l1-b-task-1",
+                "type": "fill_in_blank",
+                "skill": "guided_production",
+                "instruction": "Впишите правильный глагол.",
+                "prompt": "Wie ___ Sie?",
+                "acceptedAnswers": ["heissen", "heißen"],
+                "normalizedAcceptedAnswers": ["heissen"],
+                "explanation": "В этой формуле знакомства нужен глагол heissen/heißen."
+              },
+              {
+                "id": "l1-b-task-2",
+                "type": "single_choice",
+                "skill": "recognition",
+                "instruction": "Выберите корректный ответ.",
+                "prompt": "Wie heissen Sie?",
+                "options": [
+                  { "id": "a", "text": "Ich heisse Lara.", "isCorrect": true },
+                  { "id": "b", "text": "Ich komme aus Polen." },
+                  { "id": "c", "text": "Ich spreche Deutsch." }
+                ],
+                "explanation": "Вопрос про имя требует ответа с heissen или Mein Name ist ..."
+              }
+            ]
+          },
+          {
+            "id": "l1-block-c",
+            "code": "C",
+            "title": "Ich komme aus Polen",
+            "goal": "Научиться говорить, откуда человек и на каком языке он говорит.",
+            "sceneType": "reading",
+            "intro": "Блок про страну происхождения, язык и различие du/Sie.",
+            "corePhrases": ["Woher kommen Sie?", "Ich komme aus ...", "Ich spreche ..."],
+            "content": {
+              "dialogues": [],
+              "readings": [
+                {
+                  "id": "l1-c-reading-1",
+                  "title": "Мини-текст о происхождении",
+                  "type": "reading",
+                  "text": "Guten Tag. Ich heisse Klara Schneider. Ich komme aus Polen. Ich spreche Polnisch und Deutsch.",
+                  "translationRu": "Добрый день. Меня зовут Клара Шнайдер. Я приехала из Польши. Я говорю по-польски и по-немецки.",
+                  "comprehensionFocus": ["имя", "страна", "язык"]
+                }
+              ],
+              "explainer": "После aus идёт страна или место происхождения. Для языка используется Ich spreche ..."
+            },
+            "grammarPoints": [
+              {
+                "id": "l1-c-grammar-1",
+                "title": "Woher kommen Sie? / Ich komme aus ...",
+                "summary": "Как спросить о происхождении.",
+                "explanation": "Вежливый вопрос строится через Woher kommen Sie?, разговорный — Woher kommst du?",
+                "pattern": "Woher kommen Sie? -> Ich komme aus Polen.",
+                "examples": ["Woher kommen Sie? - Aus Polen.", "Was sprechen Sie? - Deutsch."],
+                "pitfalls": ["После aus нужен пункт происхождения, а не язык."]
+              }
+            ],
+            "vocabulary": ["l1-c-polen", "l1-c-deutsch"],
+            "tasks": [
+              {
+                "id": "l1-c-task-1",
+                "type": "single_choice",
+                "skill": "recognition",
+                "instruction": "Выберите правильный ответ на вопрос о происхождении.",
+                "prompt": "Woher kommen Sie?",
+                "options": [
+                  { "id": "a", "text": "Aus Polen.", "isCorrect": true },
+                  { "id": "b", "text": "Ich spreche Polen." },
+                  { "id": "c", "text": "Mein Name ist Polen." }
+                ],
+                "explanation": "На вопрос Woher ... отвечаем через aus + страна."
+              },
+              {
+                "id": "l1-c-task-2",
+                "type": "guided_writing",
+                "skill": "free_production",
+                "instruction": "Напишите 3 короткие фразы о себе по модели.",
+                "template": ["Ich heisse ...", "Ich komme aus ...", "Ich spreche ..."],
+                "requiredPhrases": ["ich heisse", "ich komme aus", "ich spreche"],
+                "sampleAnswer": "Ich heisse Anna. Ich komme aus Litauen. Ich spreche Litauisch und ein bisschen Deutsch.",
+                "explanation": "Проверка смотрит, есть ли в ответе все три смысловых блока."
+              }
+            ]
+          },
+          {
+            "id": "l1-block-d",
+            "code": "D",
+            "title": "Buchstaben",
+            "goal": "Повторить алфавит и уметь продиктовать имя по буквам.",
+            "sceneType": "phonetics",
+            "intro": "Блок про алфавит, произношение букв и spelling.",
+            "corePhrases": ["Wie bitte?", "Buchstabieren Sie bitte.", "Ich buchstabiere ..."],
+            "content": {
+              "dialogues": [],
+              "readings": [
+                {
+                  "id": "l1-d-reading-1",
+                  "title": "Алфавит и буквы",
+                  "type": "reading",
+                  "text": "Aa, Bb, Cc ... Zz. Umlaute: Ää, Öö, Üü. Dazu kommt ß.",
+                  "translationRu": "Aa, Bb, Cc ... Zz. Умлауты: Ää, Öö, Üü. Также есть ß.",
+                  "comprehensionFocus": ["алфавит", "умлауты", "буквование"]
+                }
+              ],
+              "explainer": "Блок нужен для уверенного spelling по буквам."
+            },
+            "grammarPoints": [],
+            "vocabulary": [],
+            "tasks": [
+              {
+                "id": "l1-d-task-1",
+                "type": "ordering",
+                "skill": "guided_production",
+                "instruction": "Соберите фразу.",
+                "tokens": ["Buchstabieren", "Sie", "bitte"],
+                "correctOrder": ["Buchstabieren", "Sie", "bitte"],
+                "explanation": "Это стандартная вежливая просьба продиктовать слово по буквам."
+              }
+            ]
+          },
+          {
+            "id": "l1-block-e",
+            "code": "E",
+            "title": "Adresse",
+            "goal": "Научиться читать и заполнять простые формы с именем и адресом.",
+            "sceneType": "forms",
+            "intro": "Блок про визитки, страну, город и формуляр.",
+            "corePhrases": ["Vorname", "Familienname", "Stadt", "Land"],
+            "content": {
+              "dialogues": [],
+              "readings": [
+                {
+                  "id": "l1-e-reading-1",
+                  "title": "Визитка",
+                  "type": "reading",
+                  "text": "Lorenzo Menardi, Merzstrasse 18, 10453 Berlin",
+                  "translationRu": "Лоренцо Менарди, Мерцштрассе 18, 10453 Берлин",
+                  "comprehensionFocus": ["имя", "улица", "город"]
+                }
+              ],
+              "explainer": "Ученик учится различать Vorname, Familienname, Stadt, Land и переносить данные в форму."
+            },
+            "grammarPoints": [],
+            "vocabulary": ["l1-e-stadt"],
+            "tasks": [
+              {
+                "id": "l1-e-task-1",
+                "type": "form_fill",
+                "skill": "guided_production",
+                "instruction": "Заполните формуляр по образцу.",
+                "fields": [
+                  { "id": "firstName", "label": "Vorname", "inputType": "text", "acceptedAnswers": ["Lara"] },
+                  { "id": "lastName", "label": "Familienname", "inputType": "text", "acceptedAnswers": ["Nowak"] },
+                  { "id": "city", "label": "Stadt", "inputType": "text", "acceptedAnswers": ["Berlin"] }
+                ],
+                "explanation": "Формуляр проверяется по каждому полю отдельно."
+              }
+            ]
+          }
+        ],
+        "summary": {
+          "grammar": [
+            { "id": "l1-summary-g1", "title": "Aussage und W-Fragen", "content": "Ich bin Lara. Wie heissen Sie? Woher kommen Sie? Was sprechen Sie?" }
+          ],
+          "communication": [
+            { "id": "l1-summary-c1", "title": "Begruessung und Abschied", "phrases": ["Hallo.", "Guten Tag.", "Auf Wiedersehen.", "Tschuess."] }
+          ],
+          "goals": [
+            "Я могу поздороваться и попрощаться.",
+            "Я могу назвать своё имя.",
+            "Я могу сказать, откуда я.",
+            "Я могу заполнить простую форму."
+          ]
+        },
+        "extras": [
+          {
+            "id": "l1-extra-1",
+            "type": "culture",
+            "title": "Begruessung regional",
+            "content": { "text": "Региональные формы приветствия в Германии, Австрии и Швейцарии.", "items": ["Moin", "Servus", "Gruezi"] }
+          }
+        ]
+      },
+      {
+        "id": "lektion-2",
+        "order": 2,
+        "title": "Lektion 2",
+        "topic": "Befinden, Familie, Wohnen, Personalien",
+        "notes": "Урок про самочувствие, семью, место жительства и персональные данные.",
+        "lessonGlossary": [
+          {
+            "id": "l2-a-super",
+            "de": "Super",
+            "ru": "супер",
+            "lessonId": "lektion-2",
+            "blockId": "l2-block-a",
+            "sectionType": "dialogue",
+            "tags": ["feeling"],
+            "cardModes": ["de_to_ru", "ru_to_de"]
+          },
+          {
+            "id": "l2-b-bruder",
+            "de": "der Bruder",
+            "ru": "брат",
+            "article": "der",
+            "lessonId": "lektion-2",
+            "blockId": "l2-block-b",
+            "sectionType": "reading",
+            "tags": ["family"],
+            "cardModes": ["de_to_ru", "ru_to_de"]
+          },
+          {
+            "id": "l2-b-tochter",
+            "de": "die Tochter",
+            "ru": "дочь",
+            "article": "die",
+            "lessonId": "lektion-2",
+            "blockId": "l2-block-b",
+            "sectionType": "reading",
+            "tags": ["family"],
+            "cardModes": ["de_to_ru", "ru_to_de"]
+          },
+          {
+            "id": "l2-c-wohnen",
+            "de": "wohnen",
+            "ru": "жить, проживать",
+            "lessonId": "lektion-2",
+            "blockId": "l2-block-c",
+            "sectionType": "reading",
+            "tags": ["residence"],
+            "cardModes": ["de_to_ru", "ru_to_de"]
+          },
+          {
+            "id": "l2-d-telefonnummer",
+            "de": "die Telefonnummer",
+            "ru": "номер телефона",
+            "article": "die",
+            "lessonId": "lektion-2",
+            "blockId": "l2-block-d",
+            "sectionType": "forms",
+            "tags": ["personal-data"],
+            "cardModes": ["de_to_ru", "ru_to_de"]
+          }
+        ],
+        "blocks": [
+          {
+            "id": "l2-block-a",
+            "code": "A",
+            "title": "Wie geht's?",
+            "goal": "Уметь спросить о самочувствии и ответить.",
+            "sceneType": "dialogue",
+            "intro": "Диалоги с du и Sie про самочувствие.",
+            "corePhrases": ["Wie geht's?", "Wie geht es Ihnen?", "Danke, gut."],
+            "content": {
+              "dialogues": [
+                {
+                  "id": "l2-a-dialogue-1",
+                  "title": "Короткий обмен",
+                  "type": "dialogue",
+                  "lines": [
+                    { "speaker": "A", "text": "Hallo, Tim. Wie geht's?" },
+                    { "speaker": "B", "text": "Danke, gut. Und dir?" }
+                  ],
+                  "translationRu": [
+                    { "speaker": "A", "text": "Привет, Тим. Как дела?" },
+                    { "speaker": "B", "text": "Спасибо, хорошо. А у тебя?" }
+                  ]
+                }
+              ],
+              "readings": [],
+              "explainer": "Для du и Sie используются разные модели вопроса."
+            },
+            "grammarPoints": [
+              {
+                "id": "l2-a-grammar-1",
+                "title": "Wie geht's? / Wie geht es Ihnen?",
+                "summary": "Вопрос о самочувствии в двух регистрах.",
+                "explanation": "С друзьями: Wie geht's? или Wie geht es dir? В вежливой форме: Wie geht es Ihnen?",
+                "pattern": "Wie geht's? -> Gut, danke. / Wie geht es Ihnen? -> Sehr gut, danke.",
+                "examples": ["Wie geht es Ihnen? - Gut, danke.", "Und dir? - Auch gut."],
+                "pitfalls": ["Не смешивать dir и Ihnen."]
+              }
+            ],
+            "vocabulary": ["l2-a-super"],
+            "tasks": [
+              {
+                "id": "l2-a-task-1",
+                "type": "single_choice",
+                "skill": "recognition",
+                "instruction": "Выберите подходящий ответ.",
+                "prompt": "Wie geht es Ihnen?",
+                "options": [
+                  { "id": "a", "text": "Gut, danke.", "isCorrect": true },
+                  { "id": "b", "text": "Ich heisse Lara." },
+                  { "id": "c", "text": "Aus Polen." }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "l2-block-b",
+            "code": "B",
+            "title": "Das ist mein Bruder",
+            "goal": "Представить членов семьи и освоить mein/dein/Ihr.",
+            "sceneType": "reading",
+            "intro": "Блок про семью и притяжательные артикли.",
+            "corePhrases": ["Das ist mein Bruder.", "Wer ist das?", "Nein, das ist meine Tochter."],
+            "content": {
+              "dialogues": [],
+              "readings": [
+                {
+                  "id": "l2-b-reading-1",
+                  "title": "Семейные фото",
+                  "type": "reading",
+                  "text": "Das ist mein Bruder Tobias. Das ist meine Tochter Sofia.",
+                  "translationRu": "Это мой брат Тобиас. Это моя дочь София.",
+                  "comprehensionFocus": ["семья", "mein/meine"]
+                }
+              ],
+              "explainer": "Притяжательный артикль меняется по роду существительного."
+            },
+            "grammarPoints": [
+              {
+                "id": "l2-b-grammar-1",
+                "title": "Possessivartikel: mein/e, dein/e, Ihr/e",
+                "summary": "Притяжательные артикли с семейной лексикой.",
+                "explanation": "С мужским и средним родом: mein Bruder, mein Kind. С женским и множественным: meine Tochter, meine Kinder.",
+                "pattern": "mein Bruder / mein Kind / meine Tochter / meine Kinder",
+                "examples": ["Das ist mein Bruder.", "Das sind meine Kinder."],
+                "pitfalls": ["Не забывать -e с die и plural."]
+              }
+            ],
+            "vocabulary": ["l2-b-bruder", "l2-b-tochter"],
+            "tasks": [
+              {
+                "id": "l2-b-task-1",
+                "type": "ordering",
+                "skill": "guided_production",
+                "instruction": "Соберите фразу.",
+                "tokens": ["Das", "ist", "mein", "Bruder"],
+                "correctOrder": ["Das", "ist", "mein", "Bruder"],
+                "explanation": "Базовый порядок слов в утверждении."
+              },
+              {
+                "id": "l2-b-task-2",
+                "type": "fill_in_blank",
+                "skill": "guided_production",
+                "instruction": "Впишите форму артикля.",
+                "prompt": "Das ist ___ Tochter.",
+                "acceptedAnswers": ["meine"],
+                "normalizedAcceptedAnswers": ["meine"],
+                "explanation": "С die Tochter нужен mein + e."
+              }
+            ]
+          },
+          {
+            "id": "l2-block-c",
+            "code": "C",
+            "title": "Er lebt in Poznan",
+            "goal": "Говорить о месте жительства и описывать людей в 3-м лице.",
+            "sceneType": "reading",
+            "intro": "Блок про er/sie, wohnen/leben и город проживания.",
+            "corePhrases": ["Er lebt in ...", "Sie wohnt in ...", "Wo wohnen Sie?"],
+            "content": {
+              "dialogues": [],
+              "readings": [
+                {
+                  "id": "l2-c-reading-1",
+                  "title": "Короткое описание человека",
+                  "type": "reading",
+                  "text": "Das ist Tim. Er kommt aus Kanada. Er spricht ein bisschen Deutsch.",
+                  "translationRu": "Это Тим. Он из Канады. Он немного говорит по-немецки.",
+                  "comprehensionFocus": ["er/sie", "город", "язык"]
+                }
+              ],
+              "explainer": "Блок закрепляет глаголы leben, wohnen, sprechen в 3-м лице."
+            },
+            "grammarPoints": [
+              {
+                "id": "l2-c-grammar-1",
+                "title": "er/sie und wohnen/leben",
+                "summary": "Формы 3-го лица.",
+                "explanation": "Er lebt, sie lebt. Er wohnt, sie wohnt. Город обычно вводится через in.",
+                "pattern": "Er lebt in Poznan. / Sie wohnt in Hamburg.",
+                "examples": ["Er lebt in Poznan.", "Sie wohnt jetzt in Deutschland."],
+                "pitfalls": ["Не путать kommen aus и wohnen in."]
+              }
+            ],
+            "vocabulary": ["l2-c-wohnen"],
+            "tasks": []
+          },
+          {
+            "id": "l2-block-d",
+            "code": "D",
+            "title": "Zahlen und Personalien",
+            "goal": "Считать до 20 и понимать вопросы о персональных данных.",
+            "sceneType": "forms",
+            "intro": "Блок про числа, анкету и личные сведения.",
+            "corePhrases": ["Wie ist Ihre Telefonnummer?", "Wie alt sind Ihre Kinder?", "Wo sind Sie geboren?"],
+            "content": {
+              "dialogues": [],
+              "readings": [
+                {
+                  "id": "l2-d-reading-1",
+                  "title": "Формуляр",
+                  "type": "reading",
+                  "text": "Familienname, Vorname, Heimatland, Geburtsort, Wohnort, Telefonnummer",
+                  "translationRu": "Фамилия, имя, родная страна, место рождения, место проживания, номер телефона",
+                  "comprehensionFocus": ["формуляр", "личные данные"]
+                }
+              ],
+              "explainer": "Числа и персональные данные идут вместе через интервью и заполнение формы."
+            },
+            "grammarPoints": [],
+            "vocabulary": ["l2-d-telefonnummer"],
+            "tasks": [
+              {
+                "id": "l2-d-task-1",
+                "type": "form_fill",
+                "skill": "guided_production",
+                "instruction": "Заполните формуляр по образцу.",
+                "fields": [
+                  { "id": "surname", "label": "Familienname", "inputType": "text", "acceptedAnswers": ["Flores Nevado"] },
+                  { "id": "country", "label": "Heimatland", "inputType": "text", "acceptedAnswers": ["Spanien"] },
+                  { "id": "city", "label": "Wohnort", "inputType": "text", "acceptedAnswers": ["Hamburg"] }
+                ],
+                "explanation": "Проверяем базовые персональные поля."
+              }
+            ]
+          },
+          {
+            "id": "l2-block-e",
+            "code": "E",
+            "title": "Deutschsprachige Länder",
+            "goal": "Понимать простые тексты о людях и городах в DACH.",
+            "sceneType": "culture",
+            "intro": "Блок про страны немецкого языка и простые биографии.",
+            "corePhrases": ["Deutschland", "Österreich", "Schweiz", "Ich wohne in ..."],
+            "content": {
+              "dialogues": [],
+              "readings": [
+                {
+                  "id": "l2-e-reading-1",
+                  "title": "Das bin ich",
+                  "type": "reading",
+                  "text": "Hallo! Mein Name ist Ralf Lichtblau. Ich wohne in Kiel.",
+                  "translationRu": "Привет! Меня зовут Ральф Лихтблау. Я живу в Киле.",
+                  "comprehensionFocus": ["город", "родина", "место жительства"]
+                }
+              ],
+              "explainer": "Тексты связывают человека, город, страну и базовую семейную информацию."
+            },
+            "grammarPoints": [],
+            "vocabulary": [],
+            "tasks": []
+          }
+        ],
+        "summary": {
+          "grammar": [
+            { "id": "l2-summary-g1", "title": "Possessivartikel und wohnen", "content": "mein Bruder, meine Tochter; Hamburg ist in Deutschland; ich wohne in Hamburg." }
+          ],
+          "communication": [
+            { "id": "l2-summary-c1", "title": "Befinden", "phrases": ["Wie geht's?", "Wie geht es Ihnen?", "Danke, gut."] }
+          ],
+          "goals": [
+            "Я могу спросить, как дела.",
+            "Я могу представить членов семьи.",
+            "Я могу сказать, где живу.",
+            "Я могу понять и заполнить простую анкету."
+          ]
+        },
+        "extras": [
+          {
+            "id": "l2-extra-1",
+            "type": "project",
+            "title": "Kurs-Kontaktliste",
+            "content": { "text": "Проектный блок для сбора контактов в группе и описания языков." }
+          }
+        ]
+      },
+      {
+        "id": "lektion-3",
+        "order": 3,
+        "title": "Lektion 3",
+        "topic": "Einkaufen, Lebensmittel, Mengenangaben, Kochen",
+        "notes": "Урок про еду, покупки, количество и простые диалоги в магазине.",
+        "lessonGlossary": [
+          { "id": "l3-zucker", "de": "der Zucker", "ru": "сахар", "article": "der", "lessonId": "lektion-3", "blockId": "l3-block-a", "sectionType": "dialogue", "tags": ["food"], "cardModes": ["de_to_ru", "ru_to_de"] },
+          { "id": "l3-brot", "de": "das Brot", "ru": "хлеб", "article": "das", "lessonId": "lektion-3", "blockId": "l3-block-a", "sectionType": "dialogue", "tags": ["food"], "cardModes": ["de_to_ru", "ru_to_de"] },
+          { "id": "l3-ei", "de": "das Ei", "ru": "яйцо", "article": "das", "lessonId": "lektion-3", "blockId": "l3-block-b", "sectionType": "dialogue", "tags": ["food"], "cardModes": ["de_to_ru", "ru_to_de"] },
+          { "id": "l3-eier", "de": "die Eier", "ru": "яйца", "article": "die", "lessonId": "lektion-3", "blockId": "l3-block-c", "sectionType": "custom", "tags": ["quantity"], "cardModes": ["de_to_ru", "ru_to_de"] },
+          { "id": "l3-preis", "de": "der Preis", "ru": "цена", "article": "der", "lessonId": "lektion-3", "blockId": "l3-block-d", "sectionType": "reading", "tags": ["shopping"], "cardModes": ["de_to_ru", "ru_to_de"] }
+        ],
+        "blocks": [
+          {
+            "id": "l3-block-a",
+            "code": "A",
+            "title": "Haben wir Zucker?",
+            "goal": "Назвать продукты и спрашивать, есть ли они дома.",
+            "sceneType": "dialogue",
+            "intro": "Блок про базовые продукты и вопросы Haben wir ... ?",
+            "corePhrases": ["Haben wir Zucker?", "Haben Sie Eier?", "Ja, natürlich."],
+            "content": {
+              "dialogues": [
+                {
+                  "id": "l3-a-dialogue-1",
+                  "title": "Список покупок",
+                  "type": "dialogue",
+                  "lines": [
+                    { "speaker": "A", "text": "Haben wir Zucker?" },
+                    { "speaker": "B", "text": "Ja." }
+                  ],
+                  "translationRu": [
+                    { "speaker": "A", "text": "У нас есть сахар?" },
+                    { "speaker": "B", "text": "Да." }
+                  ]
+                }
+              ],
+              "readings": [],
+              "explainer": "Через этот блок вводятся Lebensmittel и вопрос на наличие предмета."
+            },
+            "grammarPoints": [
+              {
+                "id": "l3-a-grammar-1",
+                "title": "Ja-/Nein-Frage: Haben wir ... ?",
+                "summary": "Простой вопрос на наличие.",
+                "explanation": "Вопрос строится без вопросительного слова: Haben wir Zucker?",
+                "pattern": "Haben wir Zucker? -> Ja. / Nein.",
+                "examples": ["Haben wir Brot?", "Haben Sie Eier?"],
+                "pitfalls": ["Не забывать форму глагола на первом месте."]
+              }
+            ],
+            "vocabulary": ["l3-zucker", "l3-brot"],
+            "tasks": [
+              {
+                "id": "l3-a-task-1",
+                "type": "single_choice",
+                "skill": "recognition",
+                "instruction": "Выберите логичный ответ.",
+                "prompt": "Haben wir Zucker?",
+                "options": [
+                  { "id": "a", "text": "Ja.", "isCorrect": true },
+                  { "id": "b", "text": "Ich heiße Lara." },
+                  { "id": "c", "text": "Aus Polen." }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "l3-block-b",
+            "code": "B",
+            "title": "Das ist doch kein Ei",
+            "goal": "Спрашивать название предмета и выражать предположение.",
+            "sceneType": "dialogue",
+            "intro": "Блок про определение слова и реакцию на ошибку.",
+            "corePhrases": ["Was ist das?", "Das ist doch kein Ei.", "Wie heißt das Wort?"],
+            "content": {
+              "dialogues": [],
+              "readings": [],
+              "explainer": "Здесь удобно тренировать das ist ..., kein/keine и словарные догадки."
+            },
+            "grammarPoints": [
+              {
+                "id": "l3-b-grammar-1",
+                "title": "kein / keine",
+                "summary": "Отрицание предмета.",
+                "explanation": "Отрицательный артикль меняется по роду и числу: kein Saft, keine Cola, keine Eier.",
+                "pattern": "Das ist kein Ei. / Das sind keine Eier.",
+                "examples": ["Das ist doch kein Ei.", "Wir haben keine Eier."],
+                "pitfalls": ["Не путать kein и nicht."]
+              }
+            ],
+            "vocabulary": ["l3-ei"],
+            "tasks": []
+          },
+          {
+            "id": "l3-block-c",
+            "code": "C",
+            "title": "Kaufst du bitte zehn Eier?",
+            "goal": "Назвать количество и составить просьбу о покупке.",
+            "sceneType": "custom",
+            "intro": "Блок про Mengenangaben и числа в реальном списке покупок.",
+            "corePhrases": ["zehn Eier", "eine Flasche", "Kaufst du bitte ... ?"],
+            "content": {
+              "dialogues": [],
+              "readings": [],
+              "explainer": "Количество связывается с продуктом и просьбой купить."
+            },
+            "grammarPoints": [],
+            "vocabulary": ["l3-eier"],
+            "tasks": [
+              {
+                "id": "l3-c-task-1",
+                "type": "fill_in_blank",
+                "skill": "guided_production",
+                "instruction": "Впишите продукт во множественном числе.",
+                "prompt": "Kaufst du bitte zehn ___?",
+                "acceptedAnswers": ["Eier"],
+                "normalizedAcceptedAnswers": ["eier"],
+                "explanation": "С числительными часто используется форма множественного числа."
+              }
+            ]
+          },
+          {
+            "id": "l3-block-d",
+            "code": "D",
+            "title": "Preise und Mengenangaben",
+            "goal": "Понимать цену и количество в магазине и в проспекте.",
+            "sceneType": "reading",
+            "intro": "Блок про ценники, количество и простые магазинные данные.",
+            "corePhrases": ["Wie viel kostet ... ?", "ein Euro", "zwei Kilo"],
+            "content": { "dialogues": [], "readings": [], "explainer": "Цены и количества закрепляются через магазинный контекст." },
+            "grammarPoints": [],
+            "vocabulary": ["l3-preis"],
+            "tasks": []
+          },
+          {
+            "id": "l3-block-e",
+            "code": "E",
+            "title": "Einkaufen und kochen",
+            "goal": "Понять простой рецепт и диалог покупки.",
+            "sceneType": "mixed",
+            "intro": "Блок про покупку еды и приготовление простого блюда.",
+            "corePhrases": ["Ich möchte ...", "Möchtest du ... ?", "Rezept"],
+            "content": {
+              "dialogues": [],
+              "readings": [
+                {
+                  "id": "l3-e-reading-1",
+                  "title": "Rezept",
+                  "type": "reading",
+                  "text": "Tortilla aus Spanien: Kartoffeln, Zwiebeln, Eier, Olivenöl, Salz.",
+                  "translationRu": "Тортилья из Испании: картофель, лук, яйца, оливковое масло, соль.",
+                  "comprehensionFocus": ["продукты", "рецепт", "количество"]
+                }
+              ],
+              "explainer": "Рецепт связывает лексику еды и практическое применение."
+            },
+            "grammarPoints": [
+              {
+                "id": "l3-e-grammar-1",
+                "title": "Akkusativ und möchte",
+                "summary": "Что я хочу купить или съесть.",
+                "explanation": "После möchte объект часто стоит в Akkusativ: einen Saft, eine Cola.",
+                "pattern": "Ich möchte einen Saft.",
+                "examples": ["Ich möchte eine Cola.", "Möchtest du ein Würstchen?"],
+                "pitfalls": ["Следить за артиклем в Akkusativ."]
+              }
+            ],
+            "vocabulary": [],
+            "tasks": []
+          }
+        ],
+        "summary": {
+          "grammar": [
+            { "id": "l3-summary-g1", "title": "Akkusativ und doch", "content": "den Saft, einen Saft, keinen Saft; Ja / Nein / Doch; lesen, treffen, nehmen, fahren." }
+          ],
+          "communication": [
+            { "id": "l3-summary-c1", "title": "Einkaufen", "phrases": ["Haben wir Zucker?", "Möchtest du ein Würstchen?", "Doch."] }
+          ],
+          "goals": [
+            "Я могу назвать продукты.",
+            "Я могу спросить, есть ли что-то дома.",
+            "Я могу назвать количество и цену.",
+            "Я могу понять простой рецепт."
+          ]
+        },
+        "extras": [
+          {
+            "id": "l3-extra-1",
+            "type": "project",
+            "title": "Ein Gericht aus meinem Heimatland",
+            "content": { "text": "Проект: составить список продуктов и показать фото блюда из своей страны." }
+          },
+          {
+            "id": "l3-extra-2",
+            "type": "game",
+            "title": "Der kleine Mann: Kiosk",
+            "content": { "text": "Комикс для тренировки продуктовой лексики.", "items": ["Käsebrötchen", "Wurstbrötchen", "Kuchen", "Hunger"] }
+          }
+        ]
+      },
+      {
+        "id": "lektion-4",
+        "order": 4,
+        "title": "Lektion 4",
+        "topic": "Wohnung, Zimmer, Möbel, Telefon, Anzeigen",
+        "notes": "Урок про жильё, описание комнат, мебель и получение информации по телефону.",
+        "lessonGlossary": [
+          { "id": "l4-zimmer", "de": "das Zimmer", "ru": "комната", "article": "das", "lessonId": "lektion-4", "blockId": "l4-block-a", "sectionType": "reading", "tags": ["housing"], "cardModes": ["de_to_ru", "ru_to_de"] },
+          { "id": "l4-bad", "de": "das Bad", "ru": "ванная", "article": "das", "lessonId": "lektion-4", "blockId": "l4-block-a", "sectionType": "reading", "tags": ["housing"], "cardModes": ["de_to_ru", "ru_to_de"] },
+          { "id": "l4-sofa", "de": "das Sofa", "ru": "диван", "article": "das", "lessonId": "lektion-4", "blockId": "l4-block-c", "sectionType": "reading", "tags": ["furniture"], "cardModes": ["de_to_ru", "ru_to_de"] },
+          { "id": "l4-lampe", "de": "die Lampe", "ru": "лампа", "article": "die", "lessonId": "lektion-4", "blockId": "l4-block-c", "sectionType": "reading", "tags": ["furniture"], "cardModes": ["de_to_ru", "ru_to_de"] },
+          { "id": "l4-miete", "de": "die Miete", "ru": "арендная плата", "article": "die", "lessonId": "lektion-4", "blockId": "l4-block-b", "sectionType": "reading", "tags": ["housing"], "cardModes": ["de_to_ru", "ru_to_de"] }
+        ],
+        "blocks": [
+          {
+            "id": "l4-block-a",
+            "code": "A",
+            "title": "Das Bad ist dort",
+            "goal": "Называть комнаты и ориентироваться в пространстве квартиры.",
+            "sceneType": "reading",
+            "intro": "Блок про комнаты и локальные слова.",
+            "corePhrases": ["Das Bad ist dort.", "Hier ist ...", "dort ist ..."],
+            "content": { "dialogues": [], "readings": [], "explainer": "Комнаты и локальные слова связываются с планом жилья." },
+            "grammarPoints": [
+              {
+                "id": "l4-a-grammar-1",
+                "title": "hier / dort",
+                "summary": "Локальные слова для ориентации.",
+                "explanation": "Для указания на место используются hier и dort.",
+                "pattern": "Das Bad ist dort. / Die Küche ist hier.",
+                "examples": ["Das Bad ist dort.", "Hier ist das Schlafzimmer."],
+                "pitfalls": ["Не смешивать с in + город."]
+              }
+            ],
+            "vocabulary": ["l4-zimmer", "l4-bad"],
+            "tasks": []
+          },
+          {
+            "id": "l4-block-b",
+            "code": "B",
+            "title": "Das Zimmer ist sehr schön. Es kostet ...",
+            "goal": "Описывать жильё через прилагательные и цену.",
+            "sceneType": "reading",
+            "intro": "Блок про описание комнат, балкона и стоимости аренды.",
+            "corePhrases": ["Das Zimmer ist sehr schön.", "Es kostet 150 Euro.", "billig / teuer"],
+            "content": {
+              "dialogues": [],
+              "readings": [
+                {
+                  "id": "l4-b-reading-1",
+                  "title": "Eine neue Wohnung",
+                  "type": "reading",
+                  "text": "Das Zimmer ist klein, aber sehr hell. Der Balkon ist schön und sehr groß.",
+                  "translationRu": "Комната маленькая, но очень светлая. Балкон красивый и очень большой.",
+                  "comprehensionFocus": ["прилагательные", "цена", "жильё"]
+                }
+              ],
+              "explainer": "Описание строится через prädikative Adjektive: schön, hell, teuer."
+            },
+            "grammarPoints": [
+              {
+                "id": "l4-b-grammar-1",
+                "title": "prädikative Adjektive und Pronomen",
+                "summary": "Das Zimmer ist teuer. Es ist hell.",
+                "explanation": "Комната, балкон или квартира могут далее заменяться через er / es / sie.",
+                "pattern": "Das Zimmer ist teuer. Es ist hell.",
+                "examples": ["Der Balkon ist groß. Er ist schön.", "Die Wohnung ist billig. Sie ist klein."],
+                "pitfalls": ["Следить за er/es/sie по роду существительного."]
+              }
+            ],
+            "vocabulary": ["l4-miete"],
+            "tasks": []
+          },
+          {
+            "id": "l4-block-c",
+            "code": "C",
+            "title": "Die Möbel sind sehr schön",
+            "goal": "Назвать мебель, технику и цвета.",
+            "sceneType": "reading",
+            "intro": "Блок про обстановку квартиры и предметы в комнате.",
+            "corePhrases": ["das Sofa", "die Lampe", "der Schrank"],
+            "content": {
+              "dialogues": [],
+              "readings": [
+                {
+                  "id": "l4-c-reading-1",
+                  "title": "Möbel und Elektrogeräte",
+                  "type": "reading",
+                  "text": "das Sofa, die Lampe, der Schrank, der Kühlschrank, die Waschmaschine",
+                  "translationRu": "диван, лампа, шкаф, холодильник, стиральная машина",
+                  "comprehensionFocus": ["мебель", "техника", "цвет"]
+                }
+              ],
+              "explainer": "Словарь комнаты и бытовых предметов связывается с описанием жилья."
+            },
+            "grammarPoints": [],
+            "vocabulary": ["l4-sofa", "l4-lampe"],
+            "tasks": []
+          },
+          {
+            "id": "l4-block-d",
+            "code": "D",
+            "title": "Wohnungsanzeigen",
+            "goal": "Понимать релевантную информацию в объявлениях о жилье.",
+            "sceneType": "reading",
+            "intro": "Блок про Zahlen, Fläche и условия в объявлении.",
+            "corePhrases": ["Wohnungsanzeige", "Euro", "groß", "klein"],
+            "content": { "dialogues": [], "readings": [], "explainer": "Ученик вычленяет основную информацию из объявления." },
+            "grammarPoints": [],
+            "vocabulary": [],
+            "tasks": []
+          },
+          {
+            "id": "l4-block-e",
+            "code": "E",
+            "title": "Am Telefon",
+            "goal": "Спрашивать информацию по телефону и понимать короткий ответ.",
+            "sceneType": "dialogue",
+            "intro": "Блок про телефонный запрос по объявлению.",
+            "corePhrases": ["Guten Tag.", "Ich rufe an wegen ...", "Ist das Zimmer frei?"],
+            "content": { "dialogues": [], "readings": [], "explainer": "Телефонный контекст закрепляет лексику жилья и вопросы на уточнение." },
+            "grammarPoints": [],
+            "vocabulary": [],
+            "tasks": []
+          }
+        ],
+        "summary": {
+          "grammar": [
+            { "id": "l4-summary-g1", "title": "Artikel, hier/dort, nicht", "content": "der/das/die; hier, dort; Das Zimmer ist teuer. Es ist nicht schön." }
+          ],
+          "communication": [
+            { "id": "l4-summary-c1", "title": "Wohnung beschreiben", "phrases": ["Das Zimmer ist sehr schön.", "Es kostet 150 Euro.", "Das Bad ist dort."] }
+          ],
+          "goals": [
+            "Я могу назвать комнаты.",
+            "Я могу описать жильё и мебель.",
+            "Я могу понять объявление о квартире.",
+            "Я могу задать простой вопрос по телефону."
+          ]
+        },
+        "extras": [
+          {
+            "id": "l4-extra-1",
+            "type": "song",
+            "title": "Das ist die Küche",
+            "content": { "text": "Песня и фильм про комнаты в доме.", "items": ["Küche", "Schlafzimmer", "Wohnzimmer", "Haus"] }
+          }
+        ]
+      },
+      {
+        "id": "lektion-5",
+        "order": 5,
+        "title": "Lektion 5",
+        "topic": "Tageszeiten, Uhrzeit, Wochenplan, Familienalltag",
+        "notes": "Урок про распорядок дня, время, дни недели и семейный быт.",
+        "lessonGlossary": [
+          { "id": "l5-aufstehen", "de": "aufstehen", "ru": "вставать", "lessonId": "lektion-5", "blockId": "l5-block-a", "sectionType": "custom", "tags": ["routine"], "cardModes": ["de_to_ru", "ru_to_de"] },
+          { "id": "l5-uhr", "de": "die Uhrzeit", "ru": "время", "article": "die", "lessonId": "lektion-5", "blockId": "l5-block-b", "sectionType": "custom", "tags": ["time"], "cardModes": ["de_to_ru", "ru_to_de"] },
+          { "id": "l5-montag", "de": "der Montag", "ru": "понедельник", "article": "der", "lessonId": "lektion-5", "blockId": "l5-block-c", "sectionType": "custom", "tags": ["weekday"], "cardModes": ["de_to_ru", "ru_to_de"] },
+          { "id": "l5-praxis", "de": "die Praxis", "ru": "кабинет врача, практика", "article": "die", "lessonId": "lektion-5", "blockId": "l5-block-e", "sectionType": "reading", "tags": ["opening-hours"], "cardModes": ["de_to_ru", "ru_to_de"] }
+        ],
+        "blocks": [
+          {
+            "id": "l5-block-a",
+            "code": "A",
+            "title": "Ich räume mein Zimmer auf",
+            "goal": "Говорить о повседневных действиях и предпочтениях.",
+            "sceneType": "mixed",
+            "intro": "Блок про действия в течение дня.",
+            "corePhrases": ["aufstehen", "frühstücken", "aufräumen", "ich räume mein Zimmer auf"],
+            "content": { "dialogues": [], "readings": [], "explainer": "Вводятся trennbare Verben и типовые дневные действия." },
+            "grammarPoints": [
+              {
+                "id": "l5-a-grammar-1",
+                "title": "trennbare Verben",
+                "summary": "Разделяемые глаголы в предложении.",
+                "explanation": "В настоящем времени приставка уходит в конец: Ich stehe früh auf.",
+                "pattern": "Ich stehe um sieben Uhr auf.",
+                "examples": ["Lara steht früh auf.", "Sie räumt am Nachmittag auf."],
+                "pitfalls": ["Не забывать приставку в конце предложения."]
+              }
+            ],
+            "vocabulary": ["l5-aufstehen"],
+            "tasks": []
+          },
+          {
+            "id": "l5-block-b",
+            "code": "B",
+            "title": "Wie spät ist es jetzt?",
+            "goal": "Спрашивать и называть время.",
+            "sceneType": "custom",
+            "intro": "Блок про официальное и разговорное называние времени.",
+            "corePhrases": ["Wie spät ist es?", "Es ist Viertel vor zwölf.", "halb zwei"],
+            "content": { "dialogues": [], "readings": [], "explainer": "Официальное и бытовое называние времени идут параллельно." },
+            "grammarPoints": [],
+            "vocabulary": ["l5-uhr"],
+            "tasks": [
+              {
+                "id": "l5-b-task-1",
+                "type": "single_choice",
+                "skill": "recognition",
+                "instruction": "Выберите правильный вариант.",
+                "prompt": "11:45",
+                "options": [
+                  { "id": "a", "text": "Viertel vor zwölf.", "isCorrect": true },
+                  { "id": "b", "text": "Viertel nach zwölf." },
+                  { "id": "c", "text": "halb zwölf." }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "l5-block-c",
+            "code": "C",
+            "title": "Wann fängt der Deutschkurs an?",
+            "goal": "Называть дни недели и время событий в неделе.",
+            "sceneType": "custom",
+            "intro": "Блок про Wochentage и график недели.",
+            "corePhrases": ["Wann ... ?", "am Montag", "um acht Uhr", "von ... bis ..."],
+            "content": { "dialogues": [], "readings": [], "explainer": "События во времени связываются через am, um, von ... bis." },
+            "grammarPoints": [
+              {
+                "id": "l5-c-grammar-1",
+                "title": "am / um / von ... bis",
+                "summary": "Временные предлоги для дней и часов.",
+                "explanation": "am используется с днями, um с конкретным временем, von ... bis с диапазоном.",
+                "pattern": "am Montag / um acht Uhr / von 8 bis 12 Uhr",
+                "examples": ["Wann fängt der Deutschkurs an?", "Am Montag um acht Uhr."],
+                "pitfalls": ["Не путать am и um."]
+              }
+            ],
+            "vocabulary": ["l5-montag"],
+            "tasks": []
+          },
+          {
+            "id": "l5-block-d",
+            "code": "D",
+            "title": "Tageszeiten",
+            "goal": "Описывать день по частям: morgens, vormittags, abends, nachts.",
+            "sceneType": "custom",
+            "intro": "Блок про Tageszeiten и типичный субботний день.",
+            "corePhrases": ["am Morgen", "am Nachmittag", "am Abend", "in der Nacht"],
+            "content": {
+              "dialogues": [],
+              "readings": [
+                {
+                  "id": "l5-d-reading-1",
+                  "title": "Roberts Samstag",
+                  "type": "reading",
+                  "text": "Am Vormittag räumt Robert auf, kauft ein und kocht. Am Nachmittag macht er Sport.",
+                  "translationRu": "Утром Роберт убирает, делает покупки и готовит. Днём он занимается спортом.",
+                  "comprehensionFocus": ["части дня", "порядок дня"]
+                }
+              ],
+              "explainer": "Части дня помогают структурировать повествование о повседневности."
+            },
+            "grammarPoints": [],
+            "vocabulary": [],
+            "tasks": []
+          },
+          {
+            "id": "l5-block-e",
+            "code": "E",
+            "title": "Familienalltag",
+            "goal": "Понимать расписание работы и тексты о семейном дне.",
+            "sceneType": "reading",
+            "intro": "Блок про Öffnungszeiten и семейный распорядок.",
+            "corePhrases": ["Öffnungszeiten", "jeden Tag", "geschlossen"],
+            "content": {
+              "dialogues": [],
+              "readings": [
+                {
+                  "id": "l5-e-reading-1",
+                  "title": "Öffnungszeiten",
+                  "type": "reading",
+                  "text": "Montag bis Freitag 7.30 - 17.00 Uhr. An gesetzlichen Feiertagen geschlossen.",
+                  "translationRu": "Понедельник-пятница 7:30-17:00. По праздникам закрыто.",
+                  "comprehensionFocus": ["часы работы", "дни недели", "официальное время"]
+                }
+              ],
+              "explainer": "Здесь встречаются официальные часы и лексика семейного быта."
+            },
+            "grammarPoints": [],
+            "vocabulary": ["l5-praxis"],
+            "tasks": []
+          }
+        ],
+        "summary": {
+          "grammar": [
+            { "id": "l5-summary-g1", "title": "trennbare Verben und Zeitangaben", "content": "Lara steht früh auf; am Montag; um acht Uhr; von ... bis ..." }
+          ],
+          "communication": [
+            { "id": "l5-summary-c1", "title": "Zeit und Alltag", "phrases": ["Wie spät ist es?", "Wann fängt der Deutschkurs an?", "am Wochenende"] }
+          ],
+          "goals": [
+            "Я могу назвать время.",
+            "Я могу описать свой день.",
+            "Я могу назвать дни недели.",
+            "Я могу понять часы работы."
+          ]
+        },
+        "extras": [
+          {
+            "id": "l5-extra-1",
+            "type": "game",
+            "title": "Die Traumfrau / Franziska",
+            "content": { "text": "Комикс и короткое чтение про распорядок дня, жизнь и хобби." }
+          }
+        ]
+      },
+      {
+        "id": "lektion-6",
+        "order": 6,
+        "title": "Lektion 6",
+        "topic": "Freizeit, Hobbys, Wetter, Ausflug",
+        "notes": "Урок про свободное время, погоду, хобби и поездки.",
+        "lessonGlossary": [
+          { "id": "l6-a-ausflug", "de": "der Ausflug", "ru": "поездка, выезд", "article": "der", "lessonId": "lektion-6", "blockId": "l6-block-a", "sectionType": "dialogue", "tags": ["leisure"], "cardModes": ["de_to_ru", "ru_to_de"] },
+          { "id": "l6-a-wetter", "de": "das Wetter", "ru": "погода", "article": "das", "lessonId": "lektion-6", "blockId": "l6-block-a", "sectionType": "dialogue", "tags": ["weather"], "cardModes": ["de_to_ru", "ru_to_de"] },
+          { "id": "l6-b-käse", "de": "der Käse", "ru": "сыр", "article": "der", "lessonId": "lektion-6", "blockId": "l6-block-b", "sectionType": "dialogue", "tags": ["snack"], "cardModes": ["de_to_ru", "ru_to_de"] },
+          { "id": "l6-e-hobby", "de": "das Hobby", "ru": "хобби", "article": "das", "lessonId": "lektion-6", "blockId": "l6-block-e", "sectionType": "reading", "tags": ["hobby"], "cardModes": ["de_to_ru", "ru_to_de"] }
+        ],
+        "blocks": [
+          {
+            "id": "l6-block-a",
+            "code": "A",
+            "title": "Das Wetter ist nicht so schön",
+            "goal": "Понимать прогноз погоды и говорить о погоде.",
+            "sceneType": "reading",
+            "intro": "Блок про прогноз погоды и оценку погодных условий.",
+            "corePhrases": ["Wie ist das Wetter?", "Es regnet.", "Die Sonne scheint."],
+            "content": {
+              "dialogues": [],
+              "readings": [
+                {
+                  "id": "l6-a-reading-1",
+                  "title": "Wetterbericht",
+                  "type": "reading",
+                  "text": "Im Sommer ist das Wetter sehr gut. Im Winter ist es kalt.",
+                  "translationRu": "Летом погода очень хорошая. Зимой холодно.",
+                  "comprehensionFocus": ["погода", "температура", "сезоны"]
+                }
+              ],
+              "explainer": "Прогноз связывается с лексикой погоды и температуры."
+            },
+            "grammarPoints": [],
+            "vocabulary": ["l6-a-ausflug", "l6-a-wetter"],
+            "tasks": []
+          },
+          {
+            "id": "l6-block-b",
+            "code": "B",
+            "title": "Hast du den Käse?",
+            "goal": "Соглашаться, отрицать и использовать doch.",
+            "sceneType": "dialogue",
+            "intro": "Блок про перекус, подтверждение и возражение.",
+            "corePhrases": ["Möchtest du ... ?", "Nein.", "Doch."],
+            "content": { "dialogues": [], "readings": [], "explainer": "На этой основе закрепляется ja / nein / doch и простое общение за едой." },
+            "grammarPoints": [
+              {
+                "id": "l6-b-grammar-1",
+                "title": "ja / nein / doch",
+                "summary": "Ответы на утвердительные и отрицательные вопросы.",
+                "explanation": "На отрицательный вопрос возражение часто даётся через doch.",
+                "pattern": "Hast du keinen Hunger mehr? - Doch.",
+                "examples": ["Haben wir den Käse nicht dabei? - Doch.", "Möchtest du ein Würstchen? - Nein."],
+                "pitfalls": ["Не использовать ja там, где нужен doch."]
+              }
+            ],
+            "vocabulary": ["l6-b-käse"],
+            "tasks": []
+          },
+          {
+            "id": "l6-block-c",
+            "code": "C",
+            "title": "Hast du keinen Hunger mehr?",
+            "goal": "Говорить о желаниях, предпочтениях и отсутствии аппетита.",
+            "sceneType": "dialogue",
+            "intro": "Блок продолжает тренировку ответов и лексики про еду и настроение.",
+            "corePhrases": ["Hast du keinen Hunger mehr?", "Doch.", "Ich möchte lieber Käse."],
+            "content": { "dialogues": [], "readings": [], "explainer": "Диалоги строятся вокруг еды, желания и отрицания." },
+            "grammarPoints": [],
+            "vocabulary": [],
+            "tasks": []
+          },
+          {
+            "id": "l6-block-d",
+            "code": "D",
+            "title": "Freizeit und Hobbys",
+            "goal": "Говорить о свободном времени и предпочтениях.",
+            "sceneType": "mixed",
+            "intro": "Блок про любимые занятия и реакцию на предложения.",
+            "corePhrases": ["Ich spiele gern ...", "Ich finde ... schön.", "Magst du ... ?"],
+            "content": { "dialogues": [], "readings": [], "explainer": "Свободное время связывается с личными предпочтениями и погодой." },
+            "grammarPoints": [],
+            "vocabulary": [],
+            "tasks": []
+          },
+          {
+            "id": "l6-block-e",
+            "code": "E",
+            "title": "Besondere Hobbys",
+            "goal": "Понимать интервью о хобби и рассказывать о собственных.",
+            "sceneType": "reading",
+            "intro": "Блок про необычные увлечения и личные интересы.",
+            "corePhrases": ["Was ist dein Hobby?", "Ich fotografiere gern.", "Das macht Spaß."],
+            "content": {
+              "dialogues": [],
+              "readings": [
+                {
+                  "id": "l6-e-reading-1",
+                  "title": "Wolkenfotos",
+                  "type": "reading",
+                  "text": "Ich finde Wolken schön und ich fotografiere gern. Das macht Spaß und kostet nicht viel.",
+                  "translationRu": "Мне нравятся облака, и я люблю фотографировать. Это приносит удовольствие и стоит недорого.",
+                  "comprehensionFocus": ["возраст", "профессия", "хобби"]
+                }
+              ],
+              "explainer": "Интервью о хобби связывают лексику свободного времени и аргументацию."
+            },
+            "grammarPoints": [],
+            "vocabulary": ["l6-e-hobby"],
+            "tasks": []
+          }
+        ],
+        "summary": {
+          "grammar": [
+            { "id": "l6-summary-g1", "title": "Akkusativ und doch", "content": "den Salat, einen Tee, keinen Saft; ja / nein / doch; nehmen, lesen, treffen, fahren." }
+          ],
+          "communication": [
+            { "id": "l6-summary-c1", "title": "Wetter und Freizeit", "phrases": ["Wie ist das Wetter?", "Ich mag Sonne.", "Möchtest du ... ?"] }
+          ],
+          "goals": [
+            "Я могу говорить о погоде.",
+            "Я могу описать своё хобби.",
+            "Я могу использовать doch в подходящей ситуации.",
+            "Я могу рассказать о досуге."
+          ]
+        },
+        "extras": [
+          {
+            "id": "l6-extra-1",
+            "type": "project",
+            "title": "Wetter und Hobbys",
+            "content": { "text": "Мини-проект: описать любимую погоду и занятие в это время." }
+          }
+        ]
+      },
+      {
+        "id": "lektion-7",
+        "order": 7,
+        "title": "Lektion 7",
+        "topic": "Schule, Entschuldigung, Können/Wollen, Vergangenheit",
+        "notes": "Урок про школу, желания, возможности, извинения и первые рассказы о прошлом.",
+        "lessonGlossary": [
+          { "id": "l7-schule", "de": "die Schule", "ru": "школа", "article": "die", "lessonId": "lektion-7", "blockId": "l7-block-a", "sectionType": "dialogue", "tags": ["school"], "cardModes": ["de_to_ru", "ru_to_de"] },
+          { "id": "l7-krank", "de": "krank", "ru": "больной", "lessonId": "lektion-7", "blockId": "l7-block-a", "sectionType": "dialogue", "tags": ["health"], "cardModes": ["de_to_ru", "ru_to_de"] },
+          { "id": "l7-mathetest", "de": "der Mathetest", "ru": "тест по математике", "article": "der", "lessonId": "lektion-7", "blockId": "l7-block-b", "sectionType": "dialogue", "tags": ["school"], "cardModes": ["de_to_ru", "ru_to_de"] },
+          { "id": "l7-ausflug", "de": "der Ausflug", "ru": "экскурсия, поездка", "article": "der", "lessonId": "lektion-7", "blockId": "l7-e", "sectionType": "reading", "tags": ["school"], "cardModes": ["de_to_ru", "ru_to_de"] }
+        ],
+        "blocks": [
+          {
+            "id": "l7-block-a",
+            "code": "A",
+            "title": "Ich kann nicht in die Schule gehen",
+            "goal": "Говорить о возможности и невозможности что-то сделать.",
+            "sceneType": "dialogue",
+            "intro": "Блок про болезнь, помощь и модальный глагол können.",
+            "corePhrases": ["Ich kann nicht ...", "Kannst du ... ?", "kein Problem"],
+            "content": {
+              "dialogues": [
+                {
+                  "id": "l7-a-dialogue-1",
+                  "title": "Утром дома",
+                  "type": "dialogue",
+                  "lines": [
+                    { "speaker": "A", "text": "Ich bin krank. Ich kann nicht in die Schule gehen." },
+                    { "speaker": "B", "text": "Kannst du Lili wecken?" }
+                  ],
+                  "translationRu": [
+                    { "speaker": "A", "text": "Я болею. Я не могу пойти в школу." },
+                    { "speaker": "B", "text": "Ты можешь разбудить Лили?" }
+                  ]
+                }
+              ],
+              "readings": [],
+              "explainer": "Через können вводятся возможность, помощь и бытовые просьбы."
+            },
+            "grammarPoints": [
+              {
+                "id": "l7-a-grammar-1",
+                "title": "Modalverb können",
+                "summary": "Могу / не могу.",
+                "explanation": "Модальный глагол ставится на 2-е место, основной смысловой глагол идёт в инфинитиве в конце.",
+                "pattern": "Ich kann nicht kommen. / Kannst du einkaufen?",
+                "examples": ["Ich kann nicht aufstehen.", "Kannst du im Supermarkt einkaufen?"],
+                "pitfalls": ["Не забывать инфинитив в конце."]
+              }
+            ],
+            "vocabulary": ["l7-schule", "l7-krank"],
+            "tasks": []
+          },
+          {
+            "id": "l7-block-b",
+            "code": "B",
+            "title": "Ja, sie will den Mathetest schreiben",
+            "goal": "Говорить о намерениях и желаниях через wollen.",
+            "sceneType": "dialogue",
+            "intro": "Блок про сильное желание и планы в курсе.",
+            "corePhrases": ["Ich will ...", "Was willst du lernen?", "Wir wollen ..."],
+            "content": { "dialogues": [], "readings": [], "explainer": "Здесь вводится wollen и выражение намерения." },
+            "grammarPoints": [
+              {
+                "id": "l7-b-grammar-1",
+                "title": "Modalverb wollen",
+                "summary": "Я хочу сделать.",
+                "explanation": "Как и с können, инфинитив уходит в конец: Ich will jonglieren lernen.",
+                "pattern": "Ich will viel sprechen. / Wir wollen Fahrrad fahren.",
+                "examples": ["Ich will Lieder singen.", "Was willst du lernen?"],
+                "pitfalls": ["Не путать will и will nicht."]
+              }
+            ],
+            "vocabulary": ["l7-mathetest"],
+            "tasks": []
+          },
+          {
+            "id": "l7-block-c",
+            "code": "C",
+            "title": "Du hast nicht gelernt",
+            "goal": "Говорить о недавних событиях и действиях в прошлом.",
+            "sceneType": "custom",
+            "intro": "Блок про первые рассказы о прошлом с Perfekt и haben.",
+            "corePhrases": ["Ich habe gearbeitet.", "Du hast nicht gelernt.", "Gestern ..."],
+            "content": { "dialogues": [], "readings": [], "explainer": "Здесь начинается повествование о том, что уже произошло." },
+            "grammarPoints": [
+              {
+                "id": "l7-c-grammar-1",
+                "title": "Perfekt mit haben",
+                "summary": "Прошедшее время с haben.",
+                "explanation": "Для многих действий используется haben + Partizip II.",
+                "pattern": "Ich habe gearbeitet.",
+                "examples": ["Gestern habe ich gearbeitet.", "Du hast nicht gelernt."],
+                "pitfalls": ["Следить за формой Partizip II."]
+              }
+            ],
+            "vocabulary": [],
+            "tasks": []
+          },
+          {
+            "id": "l7-block-d",
+            "code": "D",
+            "title": "Bist du pünktlich gekommen?",
+            "goal": "Говорить о движении и активности в прошлом через Perfekt с sein.",
+            "sceneType": "custom",
+            "intro": "Блок про события типа kommen, gehen, fahren в прошедшем.",
+            "corePhrases": ["Bist du ... gekommen?", "Ich bin ... gegangen.", "am Wochenende"],
+            "content": { "dialogues": [], "readings": [], "explainer": "Часть глаголов образует Perfekt с sein." },
+            "grammarPoints": [
+              {
+                "id": "l7-d-grammar-1",
+                "title": "Perfekt mit sein",
+                "summary": "Прошедшее время для движения и смены состояния.",
+                "explanation": "Для kommen, gehen и похожих глаголов используется sein.",
+                "pattern": "Ich bin spazieren gegangen. / Bist du pünktlich gekommen?",
+                "examples": ["Am Wochenende bin ich Fahrrad gefahren.", "Ich bin spät gekommen."],
+                "pitfalls": ["Не ставить haben с kommen/gehen в этих моделях."]
+              }
+            ],
+            "vocabulary": [],
+            "tasks": []
+          },
+          {
+            "id": "l7-block-e",
+            "code": "E",
+            "title": "Kommunikation mit der Schule",
+            "goal": "Извиниться за пропуск и понять школьное объявление.",
+            "sceneType": "reading",
+            "intro": "Блок про письмо от школы и телефонное сообщение о болезни.",
+            "corePhrases": ["Mein Kind ist krank.", "Ich kann heute nicht kommen.", "Das tut mir leid."],
+            "content": {
+              "dialogues": [],
+              "readings": [
+                {
+                  "id": "l7-e-reading-1",
+                  "title": "Elternbrief",
+                  "type": "reading",
+                  "text": "Am Freitag ist kein Unterricht. Wir machen einen Ausflug ins Schwimmbad.",
+                  "translationRu": "В пятницу занятий нет. Мы едем в бассейн.",
+                  "comprehensionFocus": ["школа", "объявление", "поездка"]
+                }
+              ],
+              "explainer": "Школьная коммуникация связывает лексику болезни, школы и вежливого сообщения."
+            },
+            "grammarPoints": [],
+            "vocabulary": ["l7-ausflug"],
+            "tasks": []
+          }
+        ],
+        "summary": {
+          "grammar": [
+            { "id": "l7-summary-g1", "title": "können, wollen, Perfekt", "content": "Kannst du ... ? / Ich will ... / Ich habe ... gemacht. / Ich bin ... gegangen." }
+          ],
+          "communication": [
+            { "id": "l7-summary-c1", "title": "Entschuldigen und Wünsche", "phrases": ["Was willst du lernen?", "Ich bin krank.", "Oh, das tut mir leid."] }
+          ],
+          "goals": [
+            "Я могу сказать, что я умею или не умею.",
+            "Я могу сказать, что я хочу.",
+            "Я могу коротко рассказать о прошлом.",
+            "Я могу извиниться за отсутствие."
+          ]
+        },
+        "extras": [
+          {
+            "id": "l7-extra-1",
+            "type": "film",
+            "title": "Ui!",
+            "content": { "text": "Zwischendurch-блок с междометиями и маленькими сценками." }
+          }
+        ]
+      }
+    ]
+  }
+}

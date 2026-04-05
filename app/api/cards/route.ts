@@ -4,25 +4,48 @@ import { normalizeCard, normalizeCards, type Card } from "@/lib/cards"
 import { readCards, writeCards } from "@/lib/server/cards-store"
 
 export async function GET() {
-  const cards = await readCards()
-  return NextResponse.json(cards)
+  try {
+    const cards = await readCards()
+    return NextResponse.json(cards)
+  } catch (error) {
+    console.error("GET /api/cards failed:", error)
+    return NextResponse.json(
+      { error: "Cards storage unavailable" },
+      { status: 503 }
+    )
+  }
 }
 
 export async function POST(request: Request) {
-  const card = normalizeCard((await request.json()) as Card)
-  const cards = await readCards()
+  try {
+    const card = normalizeCard((await request.json()) as Card)
+    const cards = await readCards()
+    const updated = [...cards, card]
 
-  const updated = [...cards, card]
+    await writeCards(updated)
 
-  await writeCards(updated)
-
-  return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error("POST /api/cards failed:", error)
+    return NextResponse.json(
+      { error: "Cards storage unavailable" },
+      { status: 503 }
+    )
+  }
 }
 
 export async function PUT(request: Request) {
-  const cards = normalizeCards((await request.json()) as Card[])
+  try {
+    const cards = normalizeCards((await request.json()) as Card[])
 
-  await writeCards(cards)
+    await writeCards(cards)
 
-  return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error("PUT /api/cards failed:", error)
+    return NextResponse.json(
+      { error: "Cards storage unavailable" },
+      { status: 503 }
+    )
+  }
 }

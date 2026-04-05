@@ -50,7 +50,7 @@ function cleanupSentNotifications(entries: Record<string, number>) {
   return cleaned;
 }
 
-function buildNotification(task: Plan["tasks"][number], plan: Plan) {
+function buildNotification(task: Plan["tasks"][number]) {
   if (!task.deadline || task.done) {
     return null;
   }
@@ -97,7 +97,7 @@ function notifyDeadlines(plans: Plan[]) {
 
   for (const plan of plans) {
     for (const task of plan.tasks) {
-      const notification = buildNotification(task, plan);
+      const notification = buildNotification(task);
 
       if (!notification || sentNotifications[notification.key]) {
         continue;

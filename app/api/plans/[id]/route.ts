@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import type { Plan } from "@/lib/plans";
+import { deleteDailyPlanAndSourceTasks, isDailyPlanId } from "@/lib/planner-daily-plans";
 import { readPlans, writePlans } from "@/lib/server/plans-store";
 
 export async function GET(
@@ -46,8 +47,11 @@ export async function DELETE(
 ) {
   const { id } = await context.params;
   const plans = await readPlans();
+  const updatedPlans = isDailyPlanId(id)
+    ? deleteDailyPlanAndSourceTasks(plans, id)
+    : plans.filter((plan) => plan.id !== id);
 
-  await writePlans(plans.filter((plan) => plan.id !== id));
+  await writePlans(updatedPlans);
 
   return NextResponse.json({ success: true });
 }

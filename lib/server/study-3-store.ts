@@ -466,12 +466,12 @@ export async function finalizeStudyThreeUpload(uploadId: string) {
     buffer: Buffer.concat(buffers),
   });
 
-  await deleteStudyThreeUploadSession(uploadId, session.totalChunks);
+  await deleteStudyThreeUploadSession(uploadId);
 
   return book;
 }
 
-async function deleteStudyThreeUploadSession(uploadId: string, totalChunks: number) {
+async function deleteStudyThreeUploadSession(uploadId: string) {
   try {
     const client = await getClient();
 

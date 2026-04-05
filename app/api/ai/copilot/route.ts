@@ -6,7 +6,7 @@ import { NextResponse } from 'next/server';
 export async function POST(req: NextRequest) {
   const {
     apiKey: key,
-    model = 'gpt-4o-mini',
+    model = 'gemini-2.5-flash',
     prompt,
     system,
   } = await req.json();
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
     const result = await generateText({
       abortSignal: req.signal,
       maxOutputTokens: 50,
-      model: `openai/${model}`,
+      model: `google/${model}`,
       prompt,
       system,
       temperature: 0.7,

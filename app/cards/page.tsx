@@ -12,7 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { normalizeCard } from "@/lib/cards";
+import { normalizeCard, type Card as MemoryCard } from "@/lib/cards";
 
 function getTypeLabel(type: string) {
   switch (type) {
@@ -42,7 +42,7 @@ function encodeSphereParam(sphere: string) {
 }
 
 export default function CardsPage() {
-  const [cards, setCards] = useState<any[]>([]);
+  const [cards, setCards] = useState<MemoryCard[]>([]);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
 

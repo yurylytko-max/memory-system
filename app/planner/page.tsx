@@ -38,6 +38,8 @@ import {
 } from "@/lib/plans";
 import {
   DAILY_PLAN_FOLDER,
+  deleteDailyPlanAndSourceTasks,
+  isDailyPlanId,
   mergeDailyPlans,
 } from "@/lib/planner-daily-plans";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -160,7 +162,11 @@ export default function Planner() {
     }
 
     await deletePlan(id);
-    setPlans((current) => current.filter((plan) => plan.id !== id));
+    setPlans((current) =>
+      isDailyPlanId(id)
+        ? deleteDailyPlanAndSourceTasks(current, id)
+        : current.filter((plan) => plan.id !== id)
+    );
   }
 
   function openEditDialog(plan: Plan) {

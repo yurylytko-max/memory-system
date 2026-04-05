@@ -71,15 +71,19 @@ export const BlockDiscussion: RenderNodeWrapper<AnyPluginConfig> = (props) => {
     return;
   }
 
-  return (props) => (
+  const BlockDiscussionRenderer = (rendererProps: PlateElementProps) => (
     <BlockCommentContent
       blockPath={blockPath}
       commentNodes={commentNodes}
       draftCommentNode={draftCommentNode}
       suggestionNodes={suggestionNodes}
-      {...props}
+      {...rendererProps}
     />
   );
+
+  BlockDiscussionRenderer.displayName = 'BlockDiscussionRenderer';
+
+  return BlockDiscussionRenderer;
 };
 
 const BlockCommentContent = ({

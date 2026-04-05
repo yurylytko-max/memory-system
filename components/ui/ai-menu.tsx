@@ -59,8 +59,13 @@ import {
 } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { commentPlugin } from '@/components/editor/plugins/comment-kit';
+import type { Chat } from '@/components/editor/use-chat';
 
 import { AIChatEditor } from './ai-chat-editor';
+
+type ChatWithAbort = Chat & {
+  _abortFakeStream?: () => void;
+};
 
 export function AIMenu() {
   const { api, editor } = useEditorPlugin(AIChatPlugin);
@@ -75,7 +80,7 @@ export function AIMenu() {
 
   const [input, setInput] = React.useState('');
 
-  const chat = usePluginOption(AIChatPlugin, 'chat');
+  const chat = usePluginOption(AIChatPlugin, 'chat') as ChatWithAbort;
 
   const { messages, status } = chat;
   const [anchorElement, setAnchorElement] = React.useState<HTMLElement | null>(
@@ -140,7 +145,7 @@ export function AIMenu() {
     api.aiChat.stop();
 
     // remove when you implement the route /api/ai/command
-    (chat as any)._abortFakeStream();
+    chat._abortFakeStream?.();
   });
 
   const isLoading = status === 'streaming' || status === 'submitted';
@@ -654,7 +659,7 @@ export function AILoadingBar() {
     api.aiChat.stop();
 
     // remove when you implement the route /api/ai/command
-    (chat as any)._abortFakeStream();
+    chat._abortFakeStream?.();
   });
 
   if (

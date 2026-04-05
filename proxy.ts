@@ -15,6 +15,7 @@ function isPublicPath(pathname: string) {
   return (
     pathname === LOGIN_PATH ||
     pathname.startsWith("/api/auth/") ||
+    pathname === "/api/internal/post-deploy-cleanup" ||
     pathname.startsWith("/_next/") ||
     pathname.startsWith("/favicon.ico") ||
     pathname.startsWith("/robots.txt") ||

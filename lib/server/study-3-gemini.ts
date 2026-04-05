@@ -1,6 +1,16 @@
 const GEMINI_URL =
   "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
 
+type GeminiEnvelope = {
+  candidates?: Array<{
+    content?: {
+      parts?: Array<{
+        text?: string;
+      }>;
+    };
+  }>;
+};
+
 function getGeminiApiKey() {
   const apiKey = process.env.GEMINI_API_KEY?.trim();
 
@@ -68,10 +78,10 @@ async function callGeminiWithRetry(
       throw new Error(toGeminiError(response.status));
     }
 
-    let envelope: any = null;
+    let envelope: GeminiEnvelope | null = null;
 
     try {
-      envelope = JSON.parse(raw);
+      envelope = JSON.parse(raw) as GeminiEnvelope;
     } catch {
       console.error(`${logPrefix} INVALID GEMINI ENVELOPE:`, raw);
 

@@ -29,6 +29,45 @@ function buildDailyTaskId(sourcePlan: Plan, task: PlanTask) {
   return `${DAILY_TASK_ID_PREFIX}${sourcePlan.id}:${task.id}`;
 }
 
+function buildManagedTaskReferenceKey(sourcePlanId: string, sourceTaskId: string) {
+  return `${sourcePlanId}:${sourceTaskId}`;
+}
+
+export function getDailyPlanDate(plan: Pick<Plan, "id" | "periodStart">) {
+  if (plan.periodStart) {
+    return plan.periodStart;
+  }
+
+  if (!isDailyPlanId(plan.id)) {
+    return null;
+  }
+
+  return plan.id.slice(DAILY_PLAN_ID_PREFIX.length) || null;
+}
+
+export function parseManagedDailyTaskId(taskId: string) {
+  const normalizedTaskId = taskId.startsWith(DAILY_TASK_ID_PREFIX)
+    ? taskId.slice(DAILY_TASK_ID_PREFIX.length)
+    : taskId;
+  const separatorIndex = normalizedTaskId.indexOf(":");
+
+  if (separatorIndex === -1) {
+    return null;
+  }
+
+  const sourcePlanId = normalizedTaskId.slice(0, separatorIndex);
+  const sourceTaskId = normalizedTaskId.slice(separatorIndex + 1);
+
+  if (!sourcePlanId || !sourceTaskId) {
+    return null;
+  }
+
+  return {
+    sourcePlanId,
+    sourceTaskId,
+  };
+}
+
 function isLegacyManagedDailyTaskId(taskId: string) {
   return taskId.includes(":");
 }
@@ -132,6 +171,100 @@ export function mergeDailyPlans(plans: Plan[]) {
   return mergedPlans.filter(
     (plan) => !isDailyPlan(plan) || generatedPlanIds.has(plan.id)
   );
+}
+
+export function synchronizeDailyPlanSources(plans: Plan[]) {
+  const dailyPlans = plans.filter(isDailyPlan);
+
+  if (dailyPlans.length === 0) {
+    return plans;
+  }
+
+  let synchronizedPlans = [...plans];
+
+  for (const dailyPlan of dailyPlans) {
+    const dailyPlanDate = getDailyPlanDate(dailyPlan);
+
+    if (!dailyPlanDate) {
+      continue;
+    }
+
+    const managedTasks = new Map<string, Pick<PlanTask, "done">>();
+
+    for (const task of dailyPlan.tasks) {
+      const reference = parseManagedDailyTaskId(task.id);
+
+      if (!reference) {
+        continue;
+      }
+
+      managedTasks.set(
+        buildManagedTaskReferenceKey(reference.sourcePlanId, reference.sourceTaskId),
+        { done: task.done }
+      );
+    }
+
+    synchronizedPlans = synchronizedPlans.map((plan) => {
+      if (isDailyPlan(plan)) {
+        return plan;
+      }
+
+      const tasks = plan.tasks.flatMap((task) => {
+        if (task.deadline !== dailyPlanDate) {
+          return [task];
+        }
+
+        const managedTask = managedTasks.get(
+          buildManagedTaskReferenceKey(plan.id, task.id)
+        );
+
+        if (!managedTask) {
+          return [];
+        }
+
+        return [
+          {
+            ...task,
+            done: managedTask.done,
+          },
+        ];
+      });
+
+      return {
+        ...plan,
+        tasks,
+      };
+    });
+  }
+
+  return synchronizedPlans;
+}
+
+export function deleteDailyPlanAndSourceTasks(plans: Plan[], dailyPlanId: string) {
+  const dailyPlan = plans.find((plan) => plan.id === dailyPlanId);
+
+  if (!dailyPlan || !isDailyPlan(dailyPlan)) {
+    return plans.filter((plan) => plan.id !== dailyPlanId);
+  }
+
+  const dailyPlanDate = getDailyPlanDate(dailyPlan);
+
+  if (!dailyPlanDate) {
+    return plans.filter((plan) => plan.id !== dailyPlanId);
+  }
+
+  return plans
+    .filter((plan) => plan.id !== dailyPlanId)
+    .map((plan) => {
+      if (isDailyPlan(plan)) {
+        return plan;
+      }
+
+      return {
+        ...plan,
+        tasks: plan.tasks.filter((task) => task.deadline !== dailyPlanDate),
+      };
+    });
 }
 
 export function findDailyPlan(plans: Plan[], planId: string) {

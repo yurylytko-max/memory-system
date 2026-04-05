@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import {
   Document,
@@ -10,12 +10,7 @@ import {
 } from "@/lib/documents";
 
 export default function EditorHome() {
-  const [docs, setDocs] = useState<Document[]>([]);
-
-  useEffect(() => {
-    const loaded = getAllDocuments();
-    setDocs(loaded);
-  }, []);
+  const [docs, setDocs] = useState<Document[]>(() => getAllDocuments());
 
   function handleDelete(id: string) {
     deleteDocument(id);

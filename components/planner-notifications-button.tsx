@@ -1,20 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 
 export default function PlannerNotificationsButton() {
-  const [permission, setPermission] = useState<NotificationPermission | "unsupported">("unsupported");
+  const [permission, setPermission] = useState<NotificationPermission | "unsupported">(
+    () => {
+      if (typeof window === "undefined" || !("Notification" in window)) {
+        return "unsupported";
+      }
 
-  useEffect(() => {
-    if (typeof window === "undefined" || !("Notification" in window)) {
-      setPermission("unsupported");
-      return;
+      return Notification.permission;
     }
-
-    setPermission(Notification.permission);
-  }, []);
+  );
 
   async function requestPermission() {
     if (typeof window === "undefined" || !("Notification" in window)) {

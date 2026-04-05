@@ -82,6 +82,7 @@ const InlineCombobox = ({
   value: valueProp,
 }: InlineComboboxProps) => {
   const editor = useEditorRef();
+  const inlineElement = element as TElement & { userId?: string };
   const inputRef = React.useRef<HTMLInputElement>(null);
   const cursorState = useHTMLInputCursorState(inputRef);
 
@@ -91,14 +92,14 @@ const InlineCombobox = ({
 
   // Check if current user is the creator of this element (for Yjs collaboration)
   const isCreator = React.useMemo(() => {
-    const elementUserId = (element as any).userId;
+    const elementUserId = inlineElement.userId;
     const currentUserId = editor.meta.userId;
 
     // If no userId (backwards compatibility or non-Yjs), allow
     if (!elementUserId) return true;
 
     return elementUserId === currentUserId;
-  }, [editor.meta.userId, element]);
+  }, [editor.meta.userId, inlineElement.userId]);
 
   const setValue = React.useCallback(
     (newValue: string) => {
