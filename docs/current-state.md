@@ -31,14 +31,20 @@
 ### Knowledge Cards
 
 - UI: [`app/cards/page.tsx`](../app/cards/page.tsx), [`app/cards/new/page.tsx`](../app/cards/new/page.tsx), [`app/cards/[cardId]/page.tsx`](../app/cards/[cardId]/page.tsx), [`app/cards/edit/[cardId]/page.tsx`](../app/cards/edit/[cardId]/page.tsx), [`app/cards/spheres/[sphere]/page.tsx`](../app/cards/spheres/[sphere]/page.tsx)
+- Workspace list UI: [`app/cards/space/[workspace]/page.tsx`](../app/cards/space/[workspace]/page.tsx)
 - API: [`app/api/cards/route.ts`](../app/api/cards/route.ts), [`app/api/cards/[id]/route.ts`](../app/api/cards/[id]/route.ts)
 - Domain/store: [`lib/cards.ts`](../lib/cards.ts), [`lib/server/cards-store.ts`](../lib/server/cards-store.ts)
 
 Текущее состояние:
 
 - Карточки являются частью базы знаний.
+- База знаний разделена на два изолированных пространства: `жизнь` и `работа`.
+- Все legacy карточки без указанного пространства автоматически нормализуются в `жизнь`.
+- Экран `/cards` теперь служит выбором пространства, а список карточек открывается внутри выбранного workspace.
+- Экран `/cards/new` теперь сначала предлагает выбрать пространство, после чего создаёт карточку только внутри него.
 - Сферы реорганизованы в knowledge folders.
-- Есть сценарии просмотра, создания, редактирования и открытия карточки по id.
+- Поиск, фильтры, сферы, теги и списки карточек работают только в рамках выбранного пространства.
+- Есть сценарии просмотра, создания, редактирования и открытия карточки по id с сохранением workspace-контекста.
 
 ### Texts And Editor
 

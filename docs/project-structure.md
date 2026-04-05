@@ -48,10 +48,11 @@
 ### Cards And Knowledge
 
 - `app/cards/page.tsx` - библиотека карточек/знаний.
-- `app/cards/new/page.tsx` - создание новой карточки.
+- `app/cards/new/page.tsx` - выбор workspace и создание новой карточки.
+- `app/cards/space/[workspace]/page.tsx` - список карточек внутри изолированного knowledge workspace.
 - `app/cards/[cardId]/page.tsx` - просмотр карточки.
 - `app/cards/edit/[cardId]/page.tsx` - редактирование карточки.
-- `app/cards/spheres/[sphere]/page.tsx` - просмотр карточек внутри knowledge folder/sphere.
+- `app/cards/spheres/[sphere]/page.tsx` - просмотр карточек внутри knowledge folder/sphere в рамках выбранного workspace.
 - `app/api/cards/route.ts` - API списка и создания карточек.
 - `app/api/cards/[id]/route.ts` - API чтения, изменения и удаления карточки.
 

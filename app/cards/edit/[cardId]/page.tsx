@@ -1,18 +1,28 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { BackButton } from "@/components/back-button";
-import { DEFAULT_CARD_SPHERE, getCard, updateCard, type Card } from "@/lib/cards";
+import {
+  DEFAULT_CARD_SPHERE,
+  getCard,
+  getCardWorkspaceLabel,
+  isCardWorkspace,
+  updateCard,
+  type Card,
+} from "@/lib/cards";
 
 export default function EditCardPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const cardId = Array.isArray(params.cardId)
     ? params.cardId[0]
     : params.cardId;
+  const workspaceParam = searchParams.get("workspace");
+  const workspace = isCardWorkspace(workspaceParam) ? workspaceParam : undefined;
 
   const [card, setCard] = useState<Card | null>(null);
   const [title, setTitle] = useState("");
@@ -30,7 +40,7 @@ export default function EditCardPage() {
         return;
       }
 
-      const found = await getCard(cardId);
+      const found = await getCard(cardId, workspace);
 
       if (found) {
         setCard(found);
@@ -46,7 +56,7 @@ export default function EditCardPage() {
     }
 
     load();
-  }, [cardId]);
+  }, [cardId, workspace]);
 
   async function handleSave(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -70,8 +80,8 @@ export default function EditCardPage() {
         .filter(Boolean),
     };
 
-    await updateCard(updatedCard);
-    router.push(`/cards/${card.id}`);
+    await updateCard(updatedCard, workspace);
+    router.push(`/cards/${card.id}?workspace=${updatedCard.workspace}`);
   }
 
   if (!loaded) {
@@ -85,7 +95,10 @@ export default function EditCardPage() {
   if (!card) {
     return (
       <main className="p-10">
-        <BackButton fallbackHref="/cards" className="text-sm text-gray-500">
+        <BackButton
+          fallbackHref={workspace ? `/cards/space/${workspace}` : "/cards"}
+          className="text-sm text-gray-500"
+        >
           ← Назад
         </BackButton>
 
@@ -98,7 +111,7 @@ export default function EditCardPage() {
     <main className="min-h-screen bg-gray-100 p-10">
       <div className="max-w-xl mx-auto">
         <BackButton
-          fallbackHref={`/cards/${card.id}`}
+          fallbackHref={`/cards/${card.id}?workspace=${card.workspace}`}
           className="inline-block text-sm text-gray-500 hover:text-black mb-6"
         >
           ← Назад к карточке
@@ -106,6 +119,9 @@ export default function EditCardPage() {
 
         <div className="bg-white p-6 rounded-xl shadow">
           <h1 className="text-2xl font-bold mb-6">Редактировать карточку</h1>
+          <p className="mb-4 text-sm text-gray-500">
+            Пространство: {getCardWorkspaceLabel(card.workspace)}
+          </p>
 
           <form onSubmit={handleSave} className="space-y-4">
             <select

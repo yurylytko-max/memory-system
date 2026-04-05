@@ -1,12 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import Tesseract from "tesseract.js";
 
 import { BackButton } from "@/components/back-button";
-import { deleteCard, getCard, updateCard, type Card } from "@/lib/cards";
+import {
+  deleteCard,
+  getCard,
+  getCardWorkspaceLabel,
+  isCardWorkspace,
+  updateCard,
+  type Card,
+} from "@/lib/cards";
 
 function getTypeLabel(type: string) {
   switch (type) {
@@ -38,10 +45,13 @@ function encodeSphereParam(sphere: string) {
 export default function CardPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const cardId = Array.isArray(params.cardId)
     ? params.cardId[0]
     : params.cardId;
+  const workspaceParam = searchParams.get("workspace");
+  const workspace = isCardWorkspace(workspaceParam) ? workspaceParam : undefined;
 
   const [card, setCard] = useState<Card | null>(null);
   const [loaded, setLoaded] = useState(false);
@@ -54,19 +64,19 @@ export default function CardPage() {
         return;
       }
 
-      const found = await getCard(cardId);
+      const found = await getCard(cardId, workspace);
       setCard(found ?? null);
       setLoaded(true);
     }
 
     load();
-  }, [cardId]);
+  }, [cardId, workspace]);
 
   async function handleDelete() {
     if (!cardId) return;
 
-    await deleteCard(cardId);
-    router.push("/cards");
+    await deleteCard(cardId, workspace);
+    router.push(workspace ? `/cards/space/${workspace}` : "/cards");
   }
 
   async function handleOCR() {
@@ -88,7 +98,7 @@ export default function CardPage() {
         content: text,
       };
 
-      await updateCard(updatedCard);
+      await updateCard(updatedCard, workspace);
       setCard(updatedCard);
     } catch (error) {
       console.error(error);
@@ -109,7 +119,10 @@ export default function CardPage() {
   if (!card) {
     return (
       <main className="p-10">
-        <BackButton fallbackHref="/cards" className="text-sm text-gray-500">
+        <BackButton
+          fallbackHref={workspace ? `/cards/space/${workspace}` : "/cards"}
+          className="text-sm text-gray-500"
+        >
           ← Назад
         </BackButton>
 
@@ -122,7 +135,7 @@ export default function CardPage() {
     <main className="min-h-screen bg-gray-100 p-10">
       <div className="max-w-3xl mx-auto">
         <BackButton
-          fallbackHref="/cards"
+          fallbackHref={workspace ? `/cards/space/${workspace}` : "/cards"}
           className="inline-block text-sm text-gray-500 hover:text-black mb-6"
         >
           ← Назад к базе знаний
@@ -134,9 +147,13 @@ export default function CardPage() {
           </div>
 
           <div className="text-sm text-gray-500 mb-4">
+            Пространство: {getCardWorkspaceLabel(card.workspace)}
+          </div>
+
+          <div className="text-sm text-gray-500 mb-4">
             Сфера:{" "}
             <Link
-              href={`/cards/spheres/${encodeSphereParam(card.sphere)}`}
+              href={`/cards/spheres/${encodeSphereParam(card.sphere)}?workspace=${card.workspace}`}
               className="underline underline-offset-4"
             >
               {card.sphere}
@@ -177,7 +194,7 @@ export default function CardPage() {
               {card.tags.map(tag => (
                 <Link
                   key={tag}
-                  href={`/tags/${encodeURIComponent(tag)}`}
+                  href={`/tags/${encodeURIComponent(tag)}?workspace=${card.workspace}`}
                   className="text-xs bg-gray-200 px-2 py-1 rounded"
                 >
                   #{tag}
@@ -188,7 +205,7 @@ export default function CardPage() {
 
           <div className="flex gap-3 mt-6">
             <Link
-              href={`/cards/edit/${card.id}`}
+              href={`/cards/edit/${card.id}?workspace=${card.workspace}`}
               className="px-4 py-2 bg-black text-white rounded"
             >
               Edit

@@ -2,12 +2,19 @@ import Link from "next/link";
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { normalizeCard } from "@/lib/cards";
+import {
+  getCardWorkspaceLabel,
+  isCardWorkspace,
+  normalizeCard,
+} from "@/lib/cards";
 import { readCards } from "@/lib/server/cards-store";
 
 type TagPageProps = {
   params: Promise<{
     tag: string;
+  }>;
+  searchParams: Promise<{
+    workspace?: string;
   }>;
 };
 
@@ -42,20 +49,24 @@ function decodeTagParam(value: string) {
   }
 }
 
-export default async function TagPage({ params }: TagPageProps) {
+export default async function TagPage({ params, searchParams }: TagPageProps) {
   const { tag: rawTag } = await params;
+  const resolvedSearchParams = await searchParams;
   const tag = decodeTagParam(rawTag);
+  const workspace = isCardWorkspace(resolvedSearchParams.workspace)
+    ? resolvedSearchParams.workspace
+    : "life";
   const cards = await readCards();
 
   const taggedCards = cards
     .map((card, index) => normalizeCard(card, index))
-    .filter((card) => card.tags.includes(tag));
+    .filter((card) => card.workspace === workspace && card.tags.includes(tag));
 
   return (
     <main className="min-h-screen bg-muted/40 p-10">
       <div className="max-w-5xl mx-auto">
         <Link
-          href="/cards"
+          href={`/cards/space/${workspace}`}
           className="inline-block text-sm text-muted-foreground hover:text-black mb-6"
         >
           ← Назад к карточкам
@@ -64,6 +75,9 @@ export default async function TagPage({ params }: TagPageProps) {
         <div className="mb-8">
           <div className="text-sm text-muted-foreground mb-2">Тег</div>
           <h1 className="text-3xl font-bold">#{tag}</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Пространство: {getCardWorkspaceLabel(workspace)}
+          </p>
           <p className="mt-2 text-sm text-muted-foreground">
             Найдено карточек: {taggedCards.length}
           </p>
@@ -80,7 +94,7 @@ export default async function TagPage({ params }: TagPageProps) {
             {taggedCards.map((card, index) => (
               <Link
                 key={`${card.id}-${index}`}
-                href={`/cards/${card.id}`}
+                href={`/cards/${card.id}?workspace=${workspace}`}
                 className="block"
               >
                 <Card className="hover:shadow-md transition cursor-pointer">

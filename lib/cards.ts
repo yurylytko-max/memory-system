@@ -7,9 +7,23 @@ export type Card = {
   sphere: string
   tags: string[]
   image?: string | null
+  workspace: CardWorkspace
 }
 
+export type CardWorkspace = "life" | "work"
+
 export const DEFAULT_CARD_SPHERE = "Без сферы"
+export const DEFAULT_CARD_WORKSPACE: CardWorkspace = "life"
+
+export const CARD_WORKSPACES: CardWorkspace[] = ["life", "work"]
+
+export function isCardWorkspace(value: string | null | undefined): value is CardWorkspace {
+  return value === "life" || value === "work"
+}
+
+export function getCardWorkspaceLabel(workspace: CardWorkspace) {
+  return workspace === "work" ? "работа" : "жизнь"
+}
 
 export function normalizeCard(card: Partial<Card>, index = 0): Card {
   const safeId =
@@ -30,6 +44,7 @@ export function normalizeCard(card: Partial<Card>, index = 0): Card {
         : DEFAULT_CARD_SPHERE,
     tags: Array.isArray(card?.tags) ? card.tags : [],
     image: card?.image ?? null,
+    workspace: isCardWorkspace(card?.workspace) ? card.workspace : DEFAULT_CARD_WORKSPACE,
   }
 }
 
@@ -39,12 +54,13 @@ export function normalizeCards(cards: unknown): Card[] {
     : []
 }
 
-export async function getAllCards(): Promise<Card[]> {
+export async function getAllCards(workspace?: CardWorkspace): Promise<Card[]> {
   if (typeof window === "undefined") {
     throw new Error("getAllCards can only be called in the browser")
   }
 
-  const response = await fetch("/api/cards", {
+  const query = workspace ? `?workspace=${workspace}` : ""
+  const response = await fetch(`/api/cards${query}`, {
     cache: "no-store",
   })
 
@@ -92,12 +108,13 @@ export async function createCard(card: Card) {
   }
 }
 
-export async function updateCard(card: Card) {
+export async function updateCard(card: Card, workspace?: CardWorkspace) {
   if (typeof window === "undefined") {
     throw new Error("updateCard can only be called in the browser")
   }
 
-  const response = await fetch(`/api/cards/${card.id}`, {
+  const query = workspace ? `?workspace=${workspace}` : ""
+  const response = await fetch(`/api/cards/${card.id}${query}`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -110,12 +127,13 @@ export async function updateCard(card: Card) {
   }
 }
 
-export async function deleteCard(id: string) {
+export async function deleteCard(id: string, workspace?: CardWorkspace) {
   if (typeof window === "undefined") {
     throw new Error("deleteCard can only be called in the browser")
   }
 
-  const response = await fetch(`/api/cards/${id}`, {
+  const query = workspace ? `?workspace=${workspace}` : ""
+  const response = await fetch(`/api/cards/${id}${query}`, {
     method: "DELETE",
   })
 
@@ -124,12 +142,13 @@ export async function deleteCard(id: string) {
   }
 }
 
-export async function getCard(id: string) {
+export async function getCard(id: string, workspace?: CardWorkspace) {
   if (typeof window === "undefined") {
     throw new Error("getCard can only be called in the browser")
   }
 
-  const response = await fetch(`/api/cards/${id}`, {
+  const query = workspace ? `?workspace=${workspace}` : ""
+  const response = await fetch(`/api/cards/${id}${query}`, {
     cache: "no-store",
   })
 
@@ -141,5 +160,5 @@ export async function getCard(id: string) {
     throw new Error("Failed to load card")
   }
 
-  return await response.json()
+  return normalizeCard(await response.json())
 }

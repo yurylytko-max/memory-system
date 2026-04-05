@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server"
 
-import { normalizeCard, type Card } from "@/lib/cards"
+import {
+  isCardWorkspace,
+  normalizeCard,
+  type Card,
+} from "@/lib/cards"
 import { readCards, writeCards } from "@/lib/server/cards-store"
 
 export async function GET(
@@ -9,10 +13,15 @@ export async function GET(
 ) {
   try {
     const { id } = await context.params
+    const { searchParams } = new URL(_request.url)
+    const workspaceParam = searchParams.get("workspace")
     const cards = await readCards()
     const card = cards.find(item => item.id === id)
 
-    if (!card) {
+    if (
+      !card ||
+      (isCardWorkspace(workspaceParam) && card.workspace !== workspaceParam)
+    ) {
       return NextResponse.json({ error: "Card not found" }, { status: 404 })
     }
 
@@ -32,12 +41,18 @@ export async function PUT(
 ) {
   try {
     const { id } = await context.params
+    const { searchParams } = new URL(request.url)
+    const workspaceParam = searchParams.get("workspace")
     const card = normalizeCard((await request.json()) as Card)
     const cards = await readCards()
 
     const existingIndex = cards.findIndex(item => item.id === id)
 
-    if (existingIndex === -1) {
+    if (
+      existingIndex === -1 ||
+      (isCardWorkspace(workspaceParam) &&
+        cards[existingIndex].workspace !== workspaceParam)
+    ) {
       return NextResponse.json({ error: "Card not found" }, { status: 404 })
     }
 
@@ -62,8 +77,24 @@ export async function DELETE(
 ) {
   try {
     const { id } = await context.params
+    const { searchParams } = new URL(_request.url)
+    const workspaceParam = searchParams.get("workspace")
     const cards = await readCards()
-    const updated = cards.filter(card => card.id !== id)
+    const updated = cards.filter(card => {
+      if (card.id !== id) {
+        return true
+      }
+
+      if (isCardWorkspace(workspaceParam) && card.workspace !== workspaceParam) {
+        return true
+      }
+
+      return false
+    })
+
+    if (updated.length === cards.length) {
+      return NextResponse.json({ error: "Card not found" }, { status: 404 })
+    }
 
     await writeCards(updated)
 

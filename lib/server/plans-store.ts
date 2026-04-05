@@ -4,7 +4,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { createClient } from "redis";
 
-import type { Plan } from "@/lib/plans";
+import { normalizePlan, type Plan } from "@/lib/plans";
 
 const KEY = "plans_db";
 const FALLBACK_PLANS_PATH = join(process.cwd(), ".data", "plans-db.json");
@@ -23,7 +23,7 @@ async function readFallbackPlans(): Promise<Plan[]> {
   try {
     const raw = await readFile(FALLBACK_PLANS_PATH, "utf8");
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    return Array.isArray(parsed) ? parsed.map(normalizePlan) : [];
   } catch {
     return [];
   }
@@ -70,7 +70,7 @@ export async function readPlans(): Promise<Plan[]> {
     }
 
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    return Array.isArray(parsed) ? parsed.map(normalizePlan) : [];
   } catch {
     return await readFallbackPlans();
   }

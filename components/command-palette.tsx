@@ -10,12 +10,6 @@ type Doc = {
   tag?: string;
 };
 
-type Card = {
-  id: string;
-  title: string;
-  content?: string;
-};
-
 export default function CommandPalette() {
 
   const router = useRouter();
@@ -24,8 +18,6 @@ export default function CommandPalette() {
   const [query,setQuery] = useState("");
 
   const [docs,setDocs] = useState<Doc[]>([]);
-  const [cards,setCards] = useState<Card[]>([]);
-
   useEffect(()=>{
 
     function key(e:KeyboardEvent){
@@ -48,18 +40,10 @@ export default function CommandPalette() {
 
   useEffect(()=>{
     async function loadData() {
-      const [{ getAllTexts }, { getAllCards }] = await Promise.all([
-        import("@/lib/texts"),
-        import("@/lib/cards"),
-      ]);
-
-      const [texts, cards] = await Promise.all([
-        getAllTexts(),
-        getAllCards(),
-      ]);
+      const { getAllTexts } = await import("@/lib/texts");
+      const texts = await getAllTexts();
 
       setDocs(texts);
-      setCards(cards);
     }
 
     if (open) {
@@ -100,10 +84,6 @@ export default function CommandPalette() {
 
   const foundDocs = docs.filter(d =>
     (d.title || "").toLowerCase().includes(q)
-  );
-
-  const foundCards = cards.filter(c =>
-    (c.title || "").toLowerCase().includes(q)
   );
 
   if(!open) return null;
@@ -150,6 +130,26 @@ export default function CommandPalette() {
 
           <button
             className="w-full rounded px-3 py-2 text-left hover:bg-gray-100"
+            onClick={()=>{
+              router.push("/cards/space/life");
+              setOpen(false);
+            }}
+          >
+            База знаний: жизнь
+          </button>
+
+          <button
+            className="w-full rounded px-3 py-2 text-left hover:bg-gray-100"
+            onClick={()=>{
+              router.push("/cards/space/work");
+              setOpen(false);
+            }}
+          >
+            База знаний: работа
+          </button>
+
+          <button
+            className="w-full rounded px-3 py-2 text-left hover:bg-gray-100"
             onClick={newCardFromSelection}
           >
             Создать карточку из выделенного текста
@@ -171,27 +171,6 @@ export default function CommandPalette() {
                   }}
                 >
                   {doc.title || "Без названия"}
-                </button>
-              ))}
-            </>
-          )}
-
-          {foundCards.length>0 && (
-            <>
-              <div className="px-2 pt-3 text-xs text-gray-500">
-                Карточки
-              </div>
-
-              {foundCards.map(card=>(
-                <button
-                  key={card.id}
-                  className="w-full rounded px-3 py-2 text-left hover:bg-gray-100"
-                  onClick={()=>{
-                    router.push(`/cards/${card.id}`);
-                    setOpen(false);
-                  }}
-                >
-                  {card.title || "Без названия"}
                 </button>
               ))}
             </>

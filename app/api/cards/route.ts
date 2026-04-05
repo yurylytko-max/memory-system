@@ -1,12 +1,23 @@
 import { NextResponse } from "next/server"
 
-import { normalizeCard, normalizeCards, type Card } from "@/lib/cards"
+import {
+  isCardWorkspace,
+  normalizeCard,
+  normalizeCards,
+  type Card,
+} from "@/lib/cards"
 import { readCards, writeCards } from "@/lib/server/cards-store"
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url)
+    const workspaceParam = searchParams.get("workspace")
     const cards = await readCards()
-    return NextResponse.json(cards)
+    const filteredCards = isCardWorkspace(workspaceParam)
+      ? cards.filter(card => card.workspace === workspaceParam)
+      : cards
+
+    return NextResponse.json(filteredCards)
   } catch (error) {
     console.error("GET /api/cards failed:", error)
     return NextResponse.json(

@@ -27,7 +27,7 @@ function clearLegacyPlans() {
   window.localStorage.removeItem(LEGACY_PLANS_STORAGE_KEY);
 }
 
-function normalizeTask(task: Partial<PlanTask>): PlanTask {
+export function normalizeTask(task: Partial<PlanTask>): PlanTask {
   return {
     id: task.id || crypto.randomUUID(),
     text: task.text || "",
@@ -40,7 +40,7 @@ function normalizeTask(task: Partial<PlanTask>): PlanTask {
   };
 }
 
-function normalizePlan(plan: Partial<Plan>): Plan {
+export function normalizePlan(plan: Partial<Plan>): Plan {
   return {
     id: plan.id || crypto.randomUUID(),
     name: plan.name || "Без названия",
@@ -60,7 +60,7 @@ export async function getAllPlans(): Promise<Plan[]> {
   }
 
   const plans = await response.json();
-  return Array.isArray(plans) ? plans : [];
+  return Array.isArray(plans) ? plans.map(normalizePlan) : [];
 }
 
 function mergePlans(serverPlans: Plan[], legacyPlans: Plan[]) {
@@ -94,7 +94,7 @@ export async function getPlan(id: string): Promise<Plan | undefined> {
     throw new Error("Failed to load plan");
   }
 
-  return await response.json();
+  return normalizePlan(await response.json());
 }
 
 export async function savePlans(plans: Plan[]) {
@@ -135,7 +135,7 @@ export async function migrateLegacyPlansToServer() {
   const serverPlans = await getAllPlans();
 
   if (legacyPlans.length === 0) {
-    return serverPlans;
+    return serverPlans.map(normalizePlan);
   }
 
   const mergedPlans = mergePlans(serverPlans, legacyPlans);

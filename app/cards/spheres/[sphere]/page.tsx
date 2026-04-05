@@ -2,12 +2,19 @@ import Link from "next/link";
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { normalizeCard } from "@/lib/cards";
+import {
+  getCardWorkspaceLabel,
+  isCardWorkspace,
+  normalizeCard,
+} from "@/lib/cards";
 import { readCards } from "@/lib/server/cards-store";
 
 type SpherePageProps = {
   params: Promise<{
     sphere: string;
+  }>;
+  searchParams: Promise<{
+    workspace?: string;
   }>;
 };
 
@@ -42,19 +49,23 @@ function getTypeLabel(type: string) {
   }
 }
 
-export default async function SpherePage({ params }: SpherePageProps) {
+export default async function SpherePage({ params, searchParams }: SpherePageProps) {
   const { sphere: rawSphere } = await params;
+  const resolvedSearchParams = await searchParams;
   const sphere = decodeSphereParam(rawSphere);
+  const workspace = isCardWorkspace(resolvedSearchParams.workspace)
+    ? resolvedSearchParams.workspace
+    : "life";
   const cards = (await readCards())
     .map((card, index) => normalizeCard(card, index))
-    .filter((card) => card.sphere === sphere)
+    .filter((card) => card.sphere === sphere && card.workspace === workspace)
     .reverse();
 
   return (
     <main className="min-h-screen bg-muted/40 p-10">
       <div className="mx-auto max-w-5xl">
         <Link
-          href="/cards"
+          href={`/cards/space/${workspace}`}
           className="inline-block text-sm text-muted-foreground hover:text-black mb-6"
         >
           ← Назад к сферам
@@ -63,6 +74,9 @@ export default async function SpherePage({ params }: SpherePageProps) {
         <div className="mb-8">
           <div className="text-sm text-muted-foreground mb-2">Сфера</div>
           <h1 className="text-3xl font-bold">{sphere}</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Пространство: {getCardWorkspaceLabel(workspace)}
+          </p>
           <p className="mt-2 text-sm text-muted-foreground">
             Карточек в папке: {cards.length}
           </p>
@@ -79,7 +93,7 @@ export default async function SpherePage({ params }: SpherePageProps) {
             {cards.map((card, index) => (
               <Link
                 key={`${card.id}-${index}`}
-                href={`/cards/${card.id}`}
+                href={`/cards/${card.id}?workspace=${workspace}`}
                 className="block"
               >
                 <Card className="hover:shadow-md transition cursor-pointer">
