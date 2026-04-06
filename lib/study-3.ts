@@ -21,6 +21,14 @@ export type StudyThreeHtmlPage = {
   html: string;
 };
 
+export type StudyThreeHtmlStatus = "not_generated" | "generated";
+
+export type StudyThreeHtmlPageRecord = {
+  page_number: number;
+  html_content: string;
+  status: StudyThreeHtmlStatus;
+};
+
 function asString(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
 }

@@ -4,7 +4,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 
-import { clampSelectionText, type StudyThreeBook } from "@/lib/study-3";
+import {
+  clampSelectionText,
+  type StudyThreeBook,
+  type StudyThreeHtmlStatus,
+} from "@/lib/study-3";
 import {
   isLocalStudyThreeBookId,
   readLocalStudyThreeBook,
@@ -16,6 +20,12 @@ type SelectionState = {
   context: string;
   translation: string;
   explanation: string;
+};
+
+type HtmlPageState = {
+  pageNumber: number;
+  status: StudyThreeHtmlStatus;
+  htmlContent: string;
 };
 
 async function readJsonSafely(response: Response) {
@@ -45,7 +55,11 @@ export default function StudyThreeReader({ bookId }: { bookId: string }) {
   const [fileUrl, setFileUrl] = useState("");
   const [pageText, setPageText] = useState("");
   const [htmlContent, setHtmlContent] = useState("");
-  const [htmlByPage, setHtmlByPage] = useState<Record<number, string>>({});
+  const [htmlPageState, setHtmlPageState] = useState<HtmlPageState>({
+    pageNumber: 1,
+    status: "not_generated",
+    htmlContent: "",
+  });
   const [isBuildingHtml, setIsBuildingHtml] = useState(false);
   const [contentMode, setContentMode] = useState<"original" | "html">("original");
   const lastSelectionRequestRef = useRef("");
@@ -89,7 +103,11 @@ export default function StudyThreeReader({ bookId }: { bookId: string }) {
       setAnswer("");
       setQuestion("");
       setHtmlContent("");
-      setHtmlByPage({});
+      setHtmlPageState({
+        pageNumber: 1,
+        status: "not_generated",
+        htmlContent: "",
+      });
       setContentMode("original");
       lastSelectionRequestRef.current = "";
 
@@ -150,9 +168,59 @@ export default function StudyThreeReader({ bookId }: { bookId: string }) {
   }, [fileUrl]);
 
   useEffect(() => {
-    const cachedHtml = htmlByPage[pageNumber] ?? "";
-    setHtmlContent(cachedHtml);
-  }, [htmlByPage, pageNumber]);
+    if (!book || isLocalStudyThreeBookId(book.id)) {
+      setHtmlPageState({
+        pageNumber,
+        status: "not_generated",
+        htmlContent: "",
+      });
+      setHtmlContent("");
+      setContentMode("original");
+      return;
+    }
+
+    let cancelled = false;
+
+    void (async () => {
+      const response = await fetch(
+        `/api/study-3/books/${book.id}/html?pageNumber=${pageNumber}`,
+        { cache: "no-store" }
+      );
+      const data = await readJsonSafely(response);
+
+      if (cancelled) {
+        return;
+      }
+
+      if (!response.ok) {
+        setError(data.error ?? "Не удалось получить сохранённый HTML.");
+        setHtmlPageState({
+          pageNumber,
+          status: "not_generated",
+          htmlContent: "",
+        });
+        setHtmlContent("");
+        setContentMode("original");
+        return;
+      }
+
+      const nextStatus =
+        data.page?.status === "generated" ? "generated" : "not_generated";
+      const nextHtml = typeof data.page?.htmlContent === "string" ? data.page.htmlContent : "";
+
+      setHtmlPageState({
+        pageNumber,
+        status: nextStatus,
+        htmlContent: nextHtml,
+      });
+      setHtmlContent(nextStatus === "generated" ? nextHtml : "");
+      setContentMode("original");
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [book, pageNumber]);
 
   function buildContext(selectedText: string) {
     const normalized = clampSelectionText(selectedText);
@@ -349,16 +417,6 @@ export default function StudyThreeReader({ bookId }: { bookId: string }) {
       return;
     }
 
-    const cachedHtml = htmlByPage[pageNumber];
-
-    if (cachedHtml) {
-      setHtmlContent(cachedHtml);
-      setContentMode("html");
-      setStatus("HTML страницы уже готов.");
-      setError("");
-      return;
-    }
-
     setIsBuildingHtml(true);
     setError("");
 
@@ -411,15 +469,18 @@ export default function StudyThreeReader({ bookId }: { bookId: string }) {
         throw new Error(data.error ?? "Не удалось построить HTML страницы.");
       }
 
-      const nextHtml = typeof data.html === "string" ? data.html : "";
+      const nextStatus =
+        data.page?.status === "generated" ? "generated" : "not_generated";
+      const nextHtml = typeof data.page?.htmlContent === "string" ? data.page.htmlContent : "";
 
-      setHtmlByPage((current) => ({
-        ...current,
-        [pageNumber]: nextHtml,
-      }));
-      setHtmlContent(nextHtml);
-      setContentMode("html");
-      setStatus("HTML страницы готов.");
+      setHtmlPageState({
+        pageNumber,
+        status: nextStatus,
+        htmlContent: nextHtml,
+      });
+      setHtmlContent(nextStatus === "generated" ? nextHtml : "");
+      setContentMode("original");
+      setStatus(data.generated ? "HTML страницы сохранён." : "HTML страницы уже сохранён.");
     } catch (htmlError) {
       setError(
         htmlError instanceof Error
@@ -429,6 +490,16 @@ export default function StudyThreeReader({ bookId }: { bookId: string }) {
     } finally {
       setIsBuildingHtml(false);
     }
+  }
+
+  function handleShowHtml() {
+    if (htmlPageState.status !== "generated" || !htmlPageState.htmlContent) {
+      return;
+    }
+
+    setHtmlContent(htmlPageState.htmlContent);
+    setContentMode("html");
+    setStatus("Показываем сохранённый HTML.");
   }
 
   const progressLabel = useMemo(() => {
@@ -490,8 +561,18 @@ export default function StudyThreeReader({ bookId }: { bookId: string }) {
                 onClick={() => void handleBuildHtml()}
                 className="rounded-full bg-slate-950 px-4 py-2 text-sm text-white transition hover:bg-slate-800 disabled:opacity-60"
               >
-                {isBuildingHtml ? "Строим HTML..." : "Построить HTML"}
+                {isBuildingHtml ? "Получаем HTML..." : "Получить HTML"}
               </button>
+              {htmlPageState.status === "generated" ? (
+                <button
+                  type="button"
+                  disabled={!htmlPageState.htmlContent}
+                  onClick={handleShowHtml}
+                  className="rounded-full border border-slate-300 px-4 py-2 text-sm text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+                >
+                  Показать HTML
+                </button>
+              ) : null}
               <button
                 type="button"
                 disabled={!book || pageNumber <= 1}
@@ -577,7 +658,7 @@ export default function StudyThreeReader({ bookId }: { bookId: string }) {
                 </div>
               ) : (
                 <div className="flex min-h-[55vh] items-center justify-center rounded-[1.75rem] border border-dashed border-slate-300 bg-slate-50 text-center text-sm text-slate-500">
-                  HTML страницы ещё не построен.
+                  HTML страницы ещё не получен.
                 </div>
               )
             ) : contentMode === "original" && book?.mime_type === "application/pdf" ? (

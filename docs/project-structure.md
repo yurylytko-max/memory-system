@@ -103,7 +103,7 @@
 - `app/api/study-3/books/upload/route.ts` - API загрузки книги.
 - `app/api/study-3/books/[bookId]/route.ts` - API метаданных книги и удаления записи учебника/page-entry.
 - `app/api/study-3/books/[bookId]/file/route.ts` - API доступа к файлу книги.
-- `app/api/study-3/books/[bookId]/html/route.ts` - API HTML-представления страниц книги.
+- `app/api/study-3/books/[bookId]/html/route.ts` - API persistent HTML page-state: чтение сохранённого HTML и инкрементальная генерация для страниц книги.
 - `app/api/study-3/blob/route.ts` - API для blob/storage сценариев.
 - `app/api/study-3/assistant/chat/route.ts` - assistant chat route для study-3.
 - `app/api/study-3/assistant/explain/route.ts` - assistant explain route для study-3.
@@ -120,7 +120,7 @@
 - `lib/vocabulary.ts` - доменная модель словаря, нормализация данных и логика review queue.
 - `lib/server/vocabulary-store.ts` - серверное хранение словаря через Redis/file fallback.
 - `lib/server/storage-paths.ts` - единая точка разрешения data-root для runtime и test storage.
-- `lib/server/study-3-store.ts` - хранение учебников `study-3`, HTML-артефактов и удаление локальных файловых fallback-данных.
+- `lib/server/study-3-store.ts` - хранение учебников `study-3`, persistent HTML page-state по страницам и удаление локальных файловых fallback-данных.
 
 ### AI And Internal Operations
 

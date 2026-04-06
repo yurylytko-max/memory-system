@@ -5,9 +5,33 @@ import { callStudyThreeGeminiHtml } from "@/lib/server/study-3-gemini";
 import {
   readStudyThreeBook,
   readStudyThreeBookFile,
-  readStudyThreeBookHtml,
+  readStudyThreeBookHtmlPage,
   writeStudyThreeBookHtml,
 } from "@/lib/server/study-3-store";
+
+export async function GET(
+  request: Request,
+  context: { params: Promise<{ bookId: string }> }
+) {
+  const { bookId } = await context.params;
+  const book = await readStudyThreeBook(bookId);
+
+  if (!book) {
+    return NextResponse.json({ error: "Учебник не найден." }, { status: 404 });
+  }
+
+  const { searchParams } = new URL(request.url);
+  const pageNumber = Math.max(1, Number(searchParams.get("pageNumber")) || 1);
+  const page = await readStudyThreeBookHtmlPage(bookId, pageNumber);
+
+  return NextResponse.json({
+    page: {
+      pageNumber: page.page_number,
+      status: page.status,
+      htmlContent: page.html_content,
+    },
+  });
+}
 
 export async function POST(
   request: Request,
@@ -42,10 +66,17 @@ export async function POST(
   const pageNumber = Math.max(1, Number(body.pageNumber) || 1);
 
   if (book) {
-    const cachedHtml = await readStudyThreeBookHtml(bookId, pageNumber);
+    const page = await readStudyThreeBookHtmlPage(bookId, pageNumber);
 
-    if (cachedHtml) {
-      return NextResponse.json({ html: cachedHtml, cached: true });
+    if (page.status === "generated") {
+      return NextResponse.json({
+        page: {
+          pageNumber: page.page_number,
+          status: page.status,
+          htmlContent: page.html_content,
+        },
+        generated: false,
+      });
     }
   }
 
@@ -123,7 +154,14 @@ Page: ${pageNumber}
       });
     }
 
-    return NextResponse.json({ html });
+    return NextResponse.json({
+      page: {
+        pageNumber,
+        status: "generated",
+        htmlContent: html,
+      },
+      generated: true,
+    });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Не удалось построить HTML." },

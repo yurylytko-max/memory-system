@@ -103,6 +103,12 @@
   - `/study/cards -> /cards`
   - `/study/:path* -> /study-3`
 - Есть загрузка книг, чтение книги, HTML pipeline, assistant routes `chat`, `explain`, `translate`, blob route и работа с Gemini-based parsing flow.
+- HTML для `study-3` страниц теперь хранится как persistent page-state в server store, а не как основной временный клиентский кэш.
+- Для каждой страницы reader использует явный статус HTML:
+  - `not_generated`;
+  - `generated`.
+- Кнопка `Получить HTML` всегда доступна и запускает только инкрементальную генерацию для ещё не обработанной страницы.
+- Кнопка `Показать HTML` появляется только после успешной генерации и открывает уже сохранённое значение без повторного вызова Gemini.
 - Слова из reader теперь сохраняются в отдельный словарь `study-3`, а не в knowledge cards.
 - Внутри `study-3` есть маршруты словаря и карточного режима изучения лексики.
 - Актуальная production-версия уже включает словарь `study-3` и режим `учить лексику`.
@@ -155,6 +161,7 @@
 - Vercel production deploy workflow существует и уже использовался.
 - Alias прод-домена указывает на `memory-system-delta.vercel.app`.
 - Последний production deploy уже включает:
+  - отдельный модуль `Чертоги разума` с маршрутами, проверкой и статусом стабилизации;
   - отделение словаря `study-3` от knowledge cards;
   - mnemonic-layer для lexical cards;
   - delete-flows для учебников/page-entry, словаря и мнемотехники;
@@ -184,6 +191,7 @@
 - Затем была интеграция удалённого `main` через merge и безопасный push без force.
 - На remote `main` есть интеграционный коммит `Sync local main state`.
 - Локальный `main` заново выровнен с актуальным `origin/main`.
+- На remote `main` уже отправлен коммит `Add mind palaces MVP`.
 - Broken refs вида `main 2` удалены.
 - Документация для ИИ-агентов сохранена в `docs/` и уже является официальной стартовой точкой для следующих сессий.
 

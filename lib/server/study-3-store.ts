@@ -9,6 +9,8 @@ import { createClient } from "redis";
 import {
   normalizeStudyThreeBook,
   normalizeStudyThreeBooks,
+  type StudyThreeHtmlPageRecord,
+  type StudyThreeHtmlStatus,
   type StudyThreeBook,
 } from "@/lib/study-3";
 import { getDataPath } from "@/lib/server/storage-paths";
@@ -47,6 +49,10 @@ function getBookFileKey(bookId: string) {
 
 function getBookHtmlKey(bookId: string, pageNumber: number) {
   return `study3_book_html:${bookId}:${pageNumber}`;
+}
+
+function getBookHtmlPagesKey(bookId: string) {
+  return `study3_book_html_pages:${bookId}`;
 }
 
 function getUploadMetaKey(uploadId: string) {
@@ -153,8 +159,151 @@ function getBookDir(bookId: string) {
   return join(BOOKS_DIR, bookId);
 }
 
+function getBookHtmlPagesPath(bookId: string) {
+  return join(getBookDir(bookId), "html-pages.json");
+}
+
 function getBookFilePath(bookId: string, fileName: string) {
   return join(getBookDir(bookId), fileName);
+}
+
+function normalizeStudyThreeHtmlStatus(value: unknown): StudyThreeHtmlStatus {
+  return value === "generated" ? "generated" : "not_generated";
+}
+
+function normalizeStudyThreeHtmlPageRecord(
+  value: unknown,
+  pageNumber: number
+): StudyThreeHtmlPageRecord {
+  const record = value && typeof value === "object" ? (value as Record<string, unknown>) : {};
+  const htmlContent =
+    typeof record.html_content === "string"
+      ? record.html_content
+      : typeof record.html === "string"
+        ? record.html
+        : "";
+  const status =
+    htmlContent.trim().length > 0
+      ? "generated"
+      : normalizeStudyThreeHtmlStatus(record.status);
+
+  return {
+    page_number: pageNumber,
+    html_content: htmlContent,
+    status,
+  };
+}
+
+function createNotGeneratedHtmlPageRecord(pageNumber: number): StudyThreeHtmlPageRecord {
+  return {
+    page_number: pageNumber,
+    html_content: "",
+    status: "not_generated",
+  };
+}
+
+function normalizeStudyThreeHtmlPages(
+  value: unknown
+): Record<number, StudyThreeHtmlPageRecord> {
+  if (!value || typeof value !== "object") {
+    return {};
+  }
+
+  const result: Record<number, StudyThreeHtmlPageRecord> = {};
+
+  for (const [rawPageNumber, rawRecord] of Object.entries(value as Record<string, unknown>)) {
+    const pageNumber = Number(rawPageNumber);
+
+    if (!Number.isInteger(pageNumber) || pageNumber < 1) {
+      continue;
+    }
+
+    result[pageNumber] = normalizeStudyThreeHtmlPageRecord(rawRecord, pageNumber);
+  }
+
+  return result;
+}
+
+async function readLegacyStudyThreeBookHtml(bookId: string, pageNumber: number) {
+  try {
+    const client = await getClient();
+
+    if (client) {
+      const html = await client.get(getBookHtmlKey(bookId, pageNumber));
+      return typeof html === "string" ? html : "";
+    }
+  } catch (error) {
+    logStudyThreeFallback("read legacy book html from redis", error);
+  }
+
+  try {
+    const filePath = join(getBookDir(bookId), `page-${pageNumber}.html`);
+    return await readFile(filePath, "utf8");
+  } catch {
+    return "";
+  }
+}
+
+async function readStudyThreeBookHtmlPages(bookId: string) {
+  try {
+    const client = await getClient();
+
+    if (client) {
+      const raw = await client.get(getBookHtmlPagesKey(bookId));
+
+      if (raw) {
+        const normalized = normalizeStudyThreeHtmlPages(JSON.parse(raw));
+        const normalizedRaw = JSON.stringify(normalized);
+
+        if (raw !== normalizedRaw) {
+          await client.set(getBookHtmlPagesKey(bookId), normalizedRaw);
+        }
+
+        return normalized;
+      }
+    }
+  } catch (error) {
+    logStudyThreeFallback("read html pages from redis", error);
+  }
+
+  try {
+    const raw = await readFile(getBookHtmlPagesPath(bookId), "utf8");
+    const normalized = normalizeStudyThreeHtmlPages(JSON.parse(raw));
+    const normalizedRaw = JSON.stringify(normalized);
+
+    if (raw !== normalizedRaw) {
+      await ensureDir(getBookDir(bookId));
+      await writeFile(getBookHtmlPagesPath(bookId), normalizedRaw, "utf8");
+    }
+
+    return normalized;
+  } catch {
+    return {};
+  }
+}
+
+async function writeStudyThreeBookHtmlPages(
+  bookId: string,
+  pages: Record<number, StudyThreeHtmlPageRecord>
+) {
+  try {
+    const client = await getClient();
+    const normalized = normalizeStudyThreeHtmlPages(pages);
+
+    if (client) {
+      await client.set(getBookHtmlPagesKey(bookId), JSON.stringify(normalized));
+      return;
+    }
+  } catch (error) {
+    logStudyThreeFallback("write html pages to redis", error);
+  }
+
+  await ensureDir(getBookDir(bookId));
+  await writeFile(
+    getBookHtmlPagesPath(bookId),
+    JSON.stringify(normalizeStudyThreeHtmlPages(pages)),
+    "utf8"
+  );
 }
 
 export async function readStudyThreeBooks() {
@@ -219,24 +368,39 @@ export async function readStudyThreeBookFile(bookId: string) {
   }
 }
 
+export async function readStudyThreeBookHtmlPage(bookId: string, pageNumber: number) {
+  const pages = await readStudyThreeBookHtmlPages(bookId);
+  const stored = pages[pageNumber];
+
+  if (stored) {
+    return stored;
+  }
+
+  const legacyHtml = await readLegacyStudyThreeBookHtml(bookId, pageNumber);
+
+  if (legacyHtml) {
+    const migrated = normalizeStudyThreeHtmlPageRecord(
+      {
+        html_content: legacyHtml,
+        status: "generated",
+      },
+      pageNumber
+    );
+
+    await writeStudyThreeBookHtmlPages(bookId, {
+      ...pages,
+      [pageNumber]: migrated,
+    });
+
+    return migrated;
+  }
+
+  return createNotGeneratedHtmlPageRecord(pageNumber);
+}
+
 export async function readStudyThreeBookHtml(bookId: string, pageNumber: number) {
-  try {
-    const client = await getClient();
-
-    if (client) {
-      const html = await client.get(getBookHtmlKey(bookId, pageNumber));
-      return typeof html === "string" ? html : "";
-    }
-  } catch (error) {
-    logStudyThreeFallback("read book html from redis", error);
-  }
-
-  try {
-    const filePath = join(getBookDir(bookId), `page-${pageNumber}.html`);
-    return await readFile(filePath, "utf8");
-  } catch {
-    return "";
-  }
+  const page = await readStudyThreeBookHtmlPage(bookId, pageNumber);
+  return page.html_content;
 }
 
 export async function writeStudyThreeBookHtml(params: {
@@ -244,20 +408,19 @@ export async function writeStudyThreeBookHtml(params: {
   pageNumber: number;
   html: string;
 }) {
-  try {
-    const client = await getClient();
+  const pages = await readStudyThreeBookHtmlPages(params.bookId);
+  const nextPage = normalizeStudyThreeHtmlPageRecord(
+    {
+      html_content: params.html,
+      status: "generated",
+    },
+    params.pageNumber
+  );
 
-    if (client) {
-      await client.set(getBookHtmlKey(params.bookId, params.pageNumber), params.html);
-      return;
-    }
-  } catch (error) {
-    logStudyThreeFallback("write book html to redis", error);
-  }
-
-  const bookDir = getBookDir(params.bookId);
-  await ensureDir(bookDir);
-  await writeFile(join(bookDir, `page-${params.pageNumber}.html`), params.html, "utf8");
+  await writeStudyThreeBookHtmlPages(params.bookId, {
+    ...pages,
+    [params.pageNumber]: nextPage,
+  });
 }
 
 async function resolvePageCount(mimeType: string, buffer: Buffer) {
@@ -583,6 +746,7 @@ export async function deleteStudyThreeBook(bookId: string) {
     if (client) {
       const keys = [
         getBookFileKey(book.id),
+        getBookHtmlPagesKey(book.id),
         ...Array.from({ length: Math.max(1, book.page_count) }, (_, index) =>
           getBookHtmlKey(book.id, index + 1)
         ),

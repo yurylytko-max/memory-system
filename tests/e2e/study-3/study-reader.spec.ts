@@ -15,6 +15,8 @@ test.describe("study reader", () => {
     await expect(page.getByTestId("study-reader-loaded")).toBeVisible();
     await expect(page.getByTestId("study-reader-content")).toBeVisible();
     await expect(page.getByTestId("study-reader-assistant")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Получить HTML" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Показать HTML" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Открыть словарь" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Учить лексику" })).toBeVisible();
   });
