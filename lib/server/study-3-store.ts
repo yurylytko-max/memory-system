@@ -1,7 +1,6 @@
 import "server-only";
 
 import { mkdir, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 
 import { PDFDocument } from "pdf-lib";
@@ -12,9 +11,9 @@ import {
   normalizeStudyThreeBooks,
   type StudyThreeBook,
 } from "@/lib/study-3";
+import { getDataPath } from "@/lib/server/storage-paths";
 
-const RUNTIME_ROOT = process.env.VERCEL ? join(tmpdir(), "memory-system") : process.cwd();
-const ROOT = join(RUNTIME_ROOT, ".data", "study-3");
+const ROOT = getDataPath("study-3");
 const BOOKS_FILE = join(ROOT, "books.json");
 const BOOKS_DIR = join(ROOT, "books");
 const BOOKS_KEY = "study3_books_db";
@@ -563,6 +562,45 @@ export async function createStudyThreeBlobBook(params: {
   });
 
   await writeBooksFile([...books, book]);
+
+  return book;
+}
+
+export async function deleteStudyThreeBook(bookId: string) {
+  const books = await readBooksFile();
+  const book = books.find((entry) => entry.id === bookId) ?? null;
+
+  if (!book) {
+    return null;
+  }
+
+  const nextBooks = books.filter((entry) => entry.id !== bookId);
+  await writeBooksFile(nextBooks);
+
+  try {
+    const client = await getClient();
+
+    if (client) {
+      const keys = [
+        getBookFileKey(book.id),
+        ...Array.from({ length: Math.max(1, book.page_count) }, (_, index) =>
+          getBookHtmlKey(book.id, index + 1)
+        ),
+      ];
+
+      if (keys.length > 0) {
+        await client.del(keys);
+      }
+    }
+  } catch (error) {
+    logStudyThreeFallback("delete study 3 book artifacts from redis", error);
+  }
+
+  try {
+    await rm(getBookDir(book.id), { recursive: true, force: true });
+  } catch {
+    // Ignore filesystem cleanup issues.
+  }
 
   return book;
 }

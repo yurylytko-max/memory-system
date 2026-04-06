@@ -527,13 +527,14 @@ export default function PlanPage() {
     .filter(({ task }) => taskMatchesSearch(task, search));
 
   return (
-    <main className="min-h-screen bg-gray-100 p-10">
+    <main className="min-h-screen bg-gray-100 p-10" data-testid="planner-detail-loaded">
       <Link href="/planner" className="text-sm text-gray-600">
         ← Назад
       </Link>
 
       <div className="mb-6 flex max-w-xl flex-col gap-3 sm:flex-row sm:items-center">
         <Input
+          data-testid="planner-detail-name-input"
           value={planName}
           onChange={(event) => setPlanName(event.target.value)}
           onBlur={renamePlan}
@@ -568,6 +569,7 @@ export default function PlanPage() {
 
       <div className="mb-6 flex flex-wrap items-center gap-3">
         <input
+          data-testid="planner-search-input"
           placeholder="Search"
           value={search}
           onChange={(event) => setSearch(event.target.value)}
@@ -620,6 +622,7 @@ export default function PlanPage() {
         </DndContext>
 
         <textarea
+          data-testid="planner-task-textarea"
           value={input}
           onChange={(event) => setInput(event.target.value)}
           placeholder="Вставьте список задач"
@@ -627,6 +630,7 @@ export default function PlanPage() {
         />
 
         <button
+          data-testid="planner-add-task-button"
           onClick={addTasks}
           className="rounded bg-black px-4 py-2 text-white"
         >
@@ -734,11 +738,15 @@ function TaskTreeItem({
   }
 
   return (
-    <div className={level > 0 ? "border-l border-gray-200 pl-4" : ""}>
+    <div
+      className={level > 0 ? "border-l border-gray-200 pl-4" : ""}
+      data-testid={level > 0 ? "planner-subtask-item" : "planner-task-item"}
+    >
       <div className="flex items-start gap-3">
         <button
           type="button"
           onClick={() => toggleTask(path)}
+          data-testid="planner-task-toggle"
           className={`mt-1 h-5 w-5 shrink-0 rounded-full border ${
             task.done ? "bg-black" : ""
           }`}
@@ -808,6 +816,7 @@ function TaskTreeItem({
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <input
                   type="date"
+                  data-testid="planner-task-deadline-input"
                   value={task.deadline || ""}
                   onChange={(event: ChangeEvent<HTMLInputElement>) => {
                     const nextValue = event.target.value || undefined;
@@ -830,6 +839,7 @@ function TaskTreeItem({
               {isSubtaskDraftOpen ? (
                 <div className="mt-3 rounded-lg border bg-gray-50 p-3">
                   <textarea
+                    data-testid="planner-subtask-textarea"
                     value={subtaskDraftValue}
                     onChange={(event) => setSubtaskDraftValue(event.target.value)}
                     placeholder="Впишите подзадачи, каждую с новой строки"
@@ -840,6 +850,7 @@ function TaskTreeItem({
                     <button
                       type="button"
                       onClick={() => addSubtasks(path)}
+                      data-testid="planner-save-subtasks-button"
                       className="rounded bg-black px-3 py-1.5 text-sm text-white"
                     >
                       Сохранить подзадачи

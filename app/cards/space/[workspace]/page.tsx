@@ -56,6 +56,7 @@ export default function CardsWorkspacePage({
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [resolved, setResolved] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     async function resolveParamsAndLoad() {
@@ -71,8 +72,16 @@ export default function CardsWorkspacePage({
 
       setWorkspace(rawWorkspace);
 
-      const data = await getAllCards(rawWorkspace);
-      setCards(Array.isArray(data) ? data : []);
+      try {
+        const data = await getAllCards(rawWorkspace);
+        setCards(Array.isArray(data) ? data : []);
+      } catch (loadError) {
+        setError(
+          loadError instanceof Error
+            ? loadError.message
+            : "Не удалось загрузить карточки."
+        );
+      }
       setResolved(true);
     }
 
@@ -145,7 +154,7 @@ export default function CardsWorkspacePage({
 
   if (!workspace) {
     return (
-      <main className="min-h-screen bg-muted/40 p-10">
+      <main className="min-h-screen bg-muted/40 p-10" data-testid="cards-workspace-missing">
         <div className="mx-auto max-w-3xl">
           <Link
             href="/cards"
@@ -164,7 +173,11 @@ export default function CardsWorkspacePage({
   const workspaceLabel = getCardWorkspaceLabel(workspace);
 
   return (
-    <main className="min-h-screen bg-muted/40 p-10">
+    <main
+      className="min-h-screen bg-muted/40 p-10"
+      data-testid="cards-workspace-page"
+      data-workspace={workspace}
+    >
       <div className="mx-auto max-w-6xl">
         <Link
           href="/cards"
@@ -186,6 +199,7 @@ export default function CardsWorkspacePage({
 
           <Link
             href={`/cards/new?workspace=${workspace}`}
+            data-testid="new-card-link"
             className="rounded-lg bg-black px-4 py-2 text-sm text-white"
           >
             Новая карточка
@@ -195,6 +209,7 @@ export default function CardsWorkspacePage({
         <Card className="mb-8">
           <CardContent className="pt-6">
             <input
+              data-testid="cards-search-input"
               placeholder="Поиск по карточкам, сферам и тегам..."
               value={search}
               onChange={(event) => setSearch(event.target.value)}
@@ -203,6 +218,7 @@ export default function CardsWorkspacePage({
 
             <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
               <select
+                data-testid="cards-type-filter"
                 value={typeFilter}
                 onChange={(event) => setTypeFilter(event.target.value)}
                 className="rounded border bg-background p-2 text-foreground"
@@ -224,6 +240,12 @@ export default function CardsWorkspacePage({
           </CardContent>
         </Card>
 
+        {error ? (
+          <Card data-testid="cards-error-state">
+            <CardContent className="pt-6 text-red-600">{error}</CardContent>
+          </Card>
+        ) : null}
+
         <section className="mb-10">
           <div className="mb-4">
             <h2 className="text-2xl font-semibold">Сферы</h2>
@@ -244,6 +266,7 @@ export default function CardsWorkspacePage({
                 <Link
                   key={folder.sphere}
                   href={`/cards/spheres/${encodeSphereParam(folder.sphere)}?workspace=${workspace}`}
+                  data-testid={`sphere-folder-${folder.sphere}`}
                   className="block"
                 >
                   <Card className="min-h-[200px] border bg-white/80 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg">
@@ -297,6 +320,7 @@ export default function CardsWorkspacePage({
                 <Link
                   key={`${card.id}-${index}`}
                   href={`/cards/${card.id}?workspace=${workspace}`}
+                  data-testid={`card-link-${card.id}`}
                   className="block"
                 >
                   <Card className="cursor-pointer transition hover:shadow-md">

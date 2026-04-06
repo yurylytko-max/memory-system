@@ -1,19 +1,16 @@
 import "server-only"
 
 import { mkdir, readFile, writeFile } from "node:fs/promises"
-import { dirname, join } from "node:path"
+import { dirname } from "node:path"
 import { BlobNotFoundError, head, put } from "@vercel/blob"
 import { createClient } from "redis"
 
 import { normalizeCards, type Card } from "@/lib/cards"
+import { getDataPath, isTestStorageMode } from "@/lib/server/storage-paths"
 
 const KEY = "cards_db"
 const BLOB_PATH = "cards-db.json"
-const FALLBACK_CARDS_PATH = join(
-  process.env.VERCEL ? "/tmp" : process.cwd(),
-  ".data",
-  "cards-db.json"
-)
+const FALLBACK_CARDS_PATH = getDataPath("cards-db.json")
 
 declare global {
   var __cardsRedisClient:
@@ -26,6 +23,10 @@ function getRedisUrl() {
 }
 
 function getBlobToken() {
+  if (isTestStorageMode()) {
+    return ""
+  }
+
   return process.env.BLOB_READ_WRITE_TOKEN
 }
 

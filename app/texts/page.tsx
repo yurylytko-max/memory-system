@@ -30,7 +30,10 @@ export default function TextsPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[linear-gradient(180deg,#eef2ff_0%,#f8fafc_30%,#ffffff_100%)] px-4 py-6 md:px-8 md:py-10">
+    <main
+      className="min-h-screen bg-[linear-gradient(180deg,#eef2ff_0%,#f8fafc_30%,#ffffff_100%)] px-4 py-6 md:px-8 md:py-10"
+      data-testid={loaded ? "texts-loaded" : "texts-loading"}
+    >
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
         <Link
           href="/"

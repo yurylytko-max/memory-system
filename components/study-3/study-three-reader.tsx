@@ -4,7 +4,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 
-import type { Card } from "@/lib/cards";
 import { clampSelectionText, type StudyThreeBook } from "@/lib/study-3";
 import {
   isLocalStudyThreeBookId,
@@ -42,6 +41,7 @@ export default function StudyThreeReader({ bookId }: { bookId: string }) {
   const [manualText, setManualText] = useState("");
   const [isExplaining, setIsExplaining] = useState(false);
   const [isTranslating, setIsTranslating] = useState(false);
+  const [isSavingVocabulary, setIsSavingVocabulary] = useState(false);
   const [fileUrl, setFileUrl] = useState("");
   const [pageText, setPageText] = useState("");
   const [htmlContent, setHtmlContent] = useState("");
@@ -279,36 +279,39 @@ export default function StudyThreeReader({ bookId }: { bookId: string }) {
     );
   }
 
-  async function handleCreateCard() {
+  async function handleCreateVocabularyItem() {
     if (!selection || !selection.translation || !book) {
       return;
     }
 
-    const payload: Card = {
-      id: `study3-${Date.now()}`,
-      title: selection.text,
-      content: selection.translation,
-      source: `${book.title} · стр. ${pageNumber}`,
-      type: "book",
-      sphere: "Учебники 3.0",
-      tags: ["study-3", "deutsch"],
-      image: null,
-    };
+    setIsSavingVocabulary(true);
+    setError("");
 
-    const response = await fetch("/api/cards", {
+    const response = await fetch("/api/vocabulary", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({
+        text: selection.text,
+        translation: selection.translation,
+        context: selection.context,
+        source_type: "study-3",
+        source_book_id: book.id,
+        source_book_title: book.title,
+        source_page: pageNumber,
+        collection: "study-3-dictionary",
+      }),
     });
+    const data = await readJsonSafely(response);
+    setIsSavingVocabulary(false);
 
     if (!response.ok) {
-      setError("Не удалось создать карточку.");
+      setError(data.error ?? "Не удалось добавить слово в словарь.");
       return;
     }
 
-    setStatus("Карточка сохранена в Cards.");
+    setStatus("Слово добавлено в словарь Учебников 3.0.");
   }
 
   async function handleAsk(event: FormEvent<HTMLFormElement>) {
@@ -437,7 +440,10 @@ export default function StudyThreeReader({ bookId }: { bookId: string }) {
   }, [book, pageNumber]);
 
   return (
-    <main className="min-h-screen bg-white px-6 py-10">
+    <main
+      className="min-h-screen bg-white px-6 py-10"
+      data-testid={book ? "study-reader-loaded" : "study-reader-loading"}
+    >
       <div className="mx-auto max-w-[1600px] space-y-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -455,12 +461,20 @@ export default function StudyThreeReader({ bookId }: { bookId: string }) {
             </p>
           </div>
 
-          <Link
-            href="/cards"
-            className="rounded-full border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-800 shadow-sm transition hover:bg-slate-50"
-          >
-            Открыть Cards
-          </Link>
+          <div className="flex flex-wrap gap-3">
+            <Link
+              href="/study-3/vocabulary"
+              className="rounded-full border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-800 shadow-sm transition hover:bg-slate-50"
+            >
+              Открыть словарь
+            </Link>
+            <Link
+              href="/study-3/vocabulary/review"
+              className="rounded-full border border-slate-300 bg-slate-950 px-5 py-3 text-sm font-medium text-white shadow-sm transition hover:bg-slate-800"
+            >
+              Учить лексику
+            </Link>
+          </div>
         </div>
 
         <div className="rounded-[1.75rem] border border-slate-200 bg-white px-5 py-4 shadow-sm">
@@ -513,13 +527,19 @@ export default function StudyThreeReader({ bookId }: { bookId: string }) {
         </div>
 
         {error ? (
-          <div className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
+          <div
+            className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700"
+            data-testid="study-reader-error"
+          >
             {error}
           </div>
         ) : null}
 
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-          <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="grid gap-6 xl:grid-cols-2">
+          <section
+            className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm"
+            data-testid="study-reader-content"
+          >
             <div className="mb-5 flex items-center gap-2">
               <button
                 type="button"
@@ -636,7 +656,10 @@ export default function StudyThreeReader({ bookId }: { bookId: string }) {
             )}
           </section>
 
-          <aside className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm">
+          <aside
+            className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm xl:min-h-[78vh]"
+            data-testid="study-reader-assistant"
+          >
             <h2 className="text-lg font-semibold text-slate-950">Ассистент</h2>
             <p className="mt-2 text-sm leading-7 text-slate-600">
               Справа появляется только выбранный фрагмент, а не весь учебник целиком.
@@ -670,11 +693,11 @@ export default function StudyThreeReader({ bookId }: { bookId: string }) {
                 <div className="grid gap-3">
                   <button
                     type="button"
-                    onClick={() => void handleCreateCard()}
-                    disabled={!selection.translation}
+                    onClick={() => void handleCreateVocabularyItem()}
+                    disabled={!selection.translation || isSavingVocabulary}
                     className="rounded-2xl bg-slate-950 px-4 py-3 text-sm font-medium text-white transition hover:bg-slate-800 disabled:opacity-60"
                   >
-                    Создать карточку
+                    {isSavingVocabulary ? "Сохраняем..." : "Добавить в словарь"}
                   </button>
                   <button
                     type="button"

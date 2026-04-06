@@ -5,7 +5,11 @@ import { useEffect, useState, type FormEvent } from "react";
 import { upload } from "@vercel/blob/client";
 
 import type { StudyThreeBook } from "@/lib/study-3";
-import { listLocalStudyThreeBooks } from "@/lib/study-3-local";
+import {
+  deleteLocalStudyThreeBook,
+  isLocalStudyThreeBookId,
+  listLocalStudyThreeBooks,
+} from "@/lib/study-3-local";
 
 async function readJsonSafely(response: Response) {
   const raw = await response.text();
@@ -29,6 +33,8 @@ export default function StudyThreeLibrary() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadStatus, setUploadStatus] = useState("");
+  const [loaded, setLoaded] = useState(false);
+  const [deletingBookId, setDeletingBookId] = useState("");
 
   useEffect(() => {
     void loadBooks();
@@ -40,6 +46,7 @@ export default function StudyThreeLibrary() {
     const remoteBooks = Array.isArray(data.books) ? data.books : [];
     const localBooks = typeof window === "undefined" ? [] : listLocalStudyThreeBooks();
     setBooks([...localBooks, ...remoteBooks]);
+    setLoaded(true);
   }
 
   async function handleUpload(event: FormEvent<HTMLFormElement>) {
@@ -131,8 +138,44 @@ export default function StudyThreeLibrary() {
     }
   }
 
+  async function handleDeleteBook(book: StudyThreeBook) {
+    const entityLabel = book.mime_type.startsWith("image/") ? "страницу" : "учебник";
+
+    if (!window.confirm(`Удалить ${entityLabel} "${book.title}"?`)) {
+      return;
+    }
+
+    setDeletingBookId(book.id);
+    setError("");
+
+    try {
+      if (isLocalStudyThreeBookId(book.id)) {
+        await deleteLocalStudyThreeBook(book.id);
+      } else {
+        const response = await fetch(`/api/study-3/books/${book.id}`, {
+          method: "DELETE",
+        });
+        const data = await readJsonSafely(response);
+
+        if (!response.ok) {
+          throw new Error(data.error ?? "Не удалось удалить запись.");
+        }
+      }
+
+      await loadBooks();
+      setUploadStatus(book.mime_type.startsWith("image/") ? "Страница удалена." : "Учебник удалён.");
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : "Не удалось удалить запись.");
+    } finally {
+      setDeletingBookId("");
+    }
+  }
+
   return (
-    <main className="min-h-screen bg-white px-6 py-10">
+    <main
+      className="min-h-screen bg-white px-6 py-10"
+      data-testid={loaded ? "study-library-loaded" : "study-library-loading"}
+    >
       <div className="mx-auto max-w-7xl space-y-8">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
@@ -142,22 +185,32 @@ export default function StudyThreeLibrary() {
             <h1 className="mt-2 text-4xl font-semibold text-slate-950">Учебники 3.0</h1>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600">
               Загрузите учебник, откройте страницу и работайте с текстом прямо в контексте книги.
-              Ассистент справа помогает только по выбранному фрагменту, а карточки создаются вручную.
+              Ассистент справа помогает только по выбранному фрагменту, а найденные слова уходят в
+              отдельный словарь учебников.
             </p>
           </div>
 
-          <Link
-            href="/cards"
-            className="rounded-full border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-800 shadow-sm transition hover:bg-slate-50"
-          >
-            Открыть Cards
-          </Link>
+          <div className="flex flex-wrap gap-3">
+            <Link
+              href="/study-3/vocabulary"
+              className="rounded-full border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-800 shadow-sm transition hover:bg-slate-50"
+            >
+              Открыть словарь
+            </Link>
+            <Link
+              href="/study-3/vocabulary/review"
+              className="rounded-full border border-slate-300 bg-slate-950 px-5 py-3 text-sm font-medium text-white shadow-sm transition hover:bg-slate-800"
+            >
+              Учить лексику
+            </Link>
+          </div>
         </div>
 
         <section className="grid gap-6 xl:grid-cols-[420px_minmax(0,1fr)]">
           <form
             onSubmit={handleUpload}
             className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm"
+            data-testid="study-upload-form"
           >
             <h2 className="text-2xl font-semibold text-slate-950">Добавить учебник</h2>
             <p className="mt-2 text-sm text-slate-600">
@@ -168,6 +221,7 @@ export default function StudyThreeLibrary() {
               <label className="block">
                 <span className="mb-2 block text-sm font-medium text-slate-700">Название</span>
                 <input
+                  data-testid="study-title-input"
                   value={title}
                   onChange={(event) => setTitle(event.target.value)}
                   placeholder="Например, Schritte A1.1"
@@ -179,13 +233,18 @@ export default function StudyThreeLibrary() {
                 <span className="mb-2 block text-sm font-medium text-slate-700">Файл</span>
                 <input
                   type="file"
+                  data-testid="study-file-input"
                   accept="application/pdf,image/*"
                   onChange={(event) => setFile(event.target.files?.[0] ?? null)}
                   className="block w-full text-sm text-slate-700 file:mr-3 file:rounded-full file:border-0 file:bg-slate-900 file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-white"
                 />
               </label>
 
-              {error ? <div className="text-sm text-red-600">{error}</div> : null}
+              {error ? (
+                <div className="text-sm text-red-600" data-testid="study-upload-error">
+                  {error}
+                </div>
+              ) : null}
 
               {isUploading || uploadProgress > 0 ? (
                 <div className="space-y-2">
@@ -205,6 +264,7 @@ export default function StudyThreeLibrary() {
               <button
                 type="submit"
                 disabled={isUploading}
+                data-testid="study-upload-button"
                 className="inline-flex w-full items-center justify-center rounded-2xl bg-slate-950 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800 disabled:opacity-60"
               >
                 {isUploading ? "Загружаем..." : "Добавить в библиотеку"}
@@ -225,35 +285,58 @@ export default function StudyThreeLibrary() {
               </div>
             </div>
 
-            <div className="mt-6 grid gap-4 md:grid-cols-2">
+            <div className="mt-6 grid gap-4 md:grid-cols-2" data-testid="study-books-list">
               {books.length === 0 ? (
                 <div className="rounded-3xl border border-dashed border-slate-300 px-6 py-12 text-center text-sm text-slate-500 md:col-span-2">
                   Здесь пока пусто.
                 </div>
               ) : (
-                books.map((book) => (
-                  <Link
-                    key={book.id}
-                    href={`/study-3/${book.id}`}
-                    className="rounded-[1.75rem] border border-slate-200 bg-[#fffdf7] p-5 transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <h3 className="text-lg font-semibold text-slate-950">{book.title}</h3>
-                        <p className="mt-2 text-sm text-slate-500">{book.file_name}</p>
-                      </div>
-                      <span className="rounded-full bg-sky-100 px-3 py-1 text-xs font-medium text-sky-800">
-                        {book.mime_type === "application/pdf" ? "PDF" : "Image"}
-                      </span>
-                    </div>
+                books.map((book) => {
+                  const isPageEntry = book.mime_type.startsWith("image/");
 
-                    <div className="mt-5 flex items-center gap-4 text-sm text-slate-600">
-                      <span>{book.page_count} стр.</span>
-                      <span>•</span>
-                      <span>{new Date(book.updated_at).toLocaleDateString("ru-RU")}</span>
-                    </div>
-                  </Link>
-                ))
+                  return (
+                    <article
+                      key={book.id}
+                      className="rounded-[1.75rem] border border-slate-200 bg-[#fffdf7] p-5"
+                      data-testid={`study-book-card-${book.id}`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <h3 className="text-lg font-semibold text-slate-950">{book.title}</h3>
+                          <p className="mt-2 text-sm text-slate-500">{book.file_name}</p>
+                        </div>
+                        <span className="rounded-full bg-sky-100 px-3 py-1 text-xs font-medium text-sky-800">
+                          {isPageEntry ? "Страница" : "Учебник"}
+                        </span>
+                      </div>
+
+                      <div className="mt-5 flex items-center gap-4 text-sm text-slate-600">
+                        <span>{book.page_count} стр.</span>
+                        <span>•</span>
+                        <span>{new Date(book.updated_at).toLocaleDateString("ru-RU")}</span>
+                      </div>
+
+                      <div className="mt-5 flex flex-wrap gap-3">
+                        <Link
+                          href={`/study-3/${book.id}`}
+                          data-testid={`study-book-link-${book.id}`}
+                          className="inline-flex items-center rounded-2xl bg-slate-950 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800"
+                        >
+                          Открыть
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={() => void handleDeleteBook(book)}
+                          disabled={deletingBookId === book.id}
+                          data-testid={`study-book-delete-${book.id}`}
+                          className="rounded-2xl border border-red-300 px-4 py-2.5 text-sm font-medium text-red-700 transition hover:bg-red-50 disabled:opacity-60"
+                        >
+                          {deletingBookId === book.id ? "Удаляем..." : "Удалить"}
+                        </button>
+                      </div>
+                    </article>
+                  );
+                })
               )}
             </div>
           </section>

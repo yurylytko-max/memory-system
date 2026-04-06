@@ -100,3 +100,11 @@ export async function saveLocalStudyThreeBook(params: {
 
   return book;
 }
+
+export async function deleteLocalStudyThreeBook(bookId: string) {
+  await withStore("readwrite", (store) => store.delete(bookId));
+
+  const books = listLocalStudyThreeBooks();
+  const nextBooks = books.filter((entry) => entry.id !== bookId);
+  writeLocalBooks(nextBooks);
+}

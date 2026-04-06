@@ -110,7 +110,7 @@ export default function CardPage() {
 
   if (!loaded) {
     return (
-      <main className="p-10 text-gray-500">
+      <main className="p-10 text-gray-500" data-testid="card-loading">
         Загрузка карточки...
       </main>
     );
@@ -118,7 +118,7 @@ export default function CardPage() {
 
   if (!card) {
     return (
-      <main className="p-10">
+      <main className="p-10" data-testid="card-not-found">
         <BackButton
           fallbackHref={workspace ? `/cards/space/${workspace}` : "/cards"}
           className="text-sm text-gray-500"
@@ -132,7 +132,11 @@ export default function CardPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-100 p-10">
+    <main
+      className="min-h-screen bg-gray-100 p-10"
+      data-testid="card-page"
+      data-workspace={card.workspace}
+    >
       <div className="max-w-3xl mx-auto">
         <BackButton
           fallbackHref={workspace ? `/cards/space/${workspace}` : "/cards"}
@@ -154,6 +158,7 @@ export default function CardPage() {
             Сфера:{" "}
             <Link
               href={`/cards/spheres/${encodeSphereParam(card.sphere)}?workspace=${card.workspace}`}
+              data-testid="card-sphere-link"
               className="underline underline-offset-4"
             >
               {card.sphere}
@@ -206,6 +211,7 @@ export default function CardPage() {
           <div className="flex gap-3 mt-6">
             <Link
               href={`/cards/edit/${card.id}?workspace=${card.workspace}`}
+              data-testid="card-edit-link"
               className="px-4 py-2 bg-black text-white rounded"
             >
               Edit
@@ -213,6 +219,7 @@ export default function CardPage() {
 
             <button
               onClick={handleDelete}
+              data-testid="card-delete-button"
               className="px-4 py-2 bg-red-500 text-white rounded"
             >
               Delete

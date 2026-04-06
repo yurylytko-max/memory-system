@@ -25,6 +25,10 @@ export async function POST(request: Request) {
     : ""
   const nextPath = getSafeRedirectPath(formData.get("next"))
   const requestUrl = new URL(request.url)
+  const shouldUseSecureCookie =
+    process.env.NODE_ENV === "production" &&
+    process.env.E2E_TEST_MODE !== "1" &&
+    requestUrl.protocol === "https:"
 
   if (!isSitePasswordProtectionEnabled()) {
     return NextResponse.redirect(new URL(nextPath, requestUrl), {
@@ -54,7 +58,7 @@ export async function POST(request: Request) {
     value: await createSiteAuthToken(),
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure: shouldUseSecureCookie,
     path: "/",
     maxAge: 60 * 60 * 24 * 30,
   })

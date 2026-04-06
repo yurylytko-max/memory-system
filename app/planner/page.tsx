@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import type { DateRange } from "react-day-picker";
 import {
   DndContext,
@@ -20,7 +21,6 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
-import PlannerNotificationsButton from "@/components/planner-notifications-button";
 import {
   Dialog,
   DialogContent,
@@ -43,6 +43,11 @@ import {
   mergeDailyPlans,
 } from "@/lib/planner-daily-plans";
 import { useIsMobile } from "@/hooks/use-mobile";
+
+const PlannerNotificationsButton = dynamic(
+  () => import("@/components/planner-notifications-button"),
+  { ssr: false }
+);
 
 function formatPlanPeriod(plan: Pick<Plan, "periodStart" | "periodEnd">) {
   const formatter = new Intl.DateTimeFormat("ru-RU", {
@@ -107,12 +112,18 @@ export default function Planner() {
   const [editingFolder, setEditingFolder] = useState("");
   const [editingRange, setEditingRange] = useState<DateRange | undefined>();
   const [dailyPlanStatus, setDailyPlanStatus] = useState<string>("");
+  const [error, setError] = useState("");
 
   useEffect(() => {
     async function loadPlans() {
-      const data = await migrateLegacyPlansToServer();
-
-      setPlans(data);
+      try {
+        const data = await migrateLegacyPlansToServer();
+        setPlans(data);
+      } catch (loadError) {
+        setError(
+          loadError instanceof Error ? loadError.message : "Не удалось загрузить планы."
+        );
+      }
       setLoaded(true);
     }
 
@@ -293,7 +304,10 @@ export default function Planner() {
   }
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-muted/40 px-4 py-10 sm:px-6 lg:px-10">
+    <main
+      className="min-h-screen overflow-x-hidden bg-muted/40 px-4 py-10 sm:px-6 lg:px-10"
+      data-testid={loaded ? "planner-loaded" : "planner-loading"}
+    >
 
       <div className="mx-auto max-w-7xl">
 
@@ -315,6 +329,7 @@ export default function Planner() {
         <div className="mb-10 grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
 
           <Input
+            data-testid="planner-name-input"
             value={planName}
             onChange={(e) => setPlanName(e.target.value)}
             placeholder="Название плана"
@@ -322,19 +337,24 @@ export default function Planner() {
           />
 
           <Input
+            data-testid="planner-folder-input"
             value={folderName}
             onChange={(e) => setFolderName(e.target.value)}
             placeholder="Папка"
             className="h-10"
           />
 
-          <Button onClick={handleCreatePlan} className="h-10 xl:px-6">
+          <Button onClick={handleCreatePlan} className="h-10 xl:px-6" data-testid="planner-create-button">
             Создать
           </Button>
 
         </div>
 
-        {!loaded ? (
+        {error ? (
+          <div className="text-sm text-red-600" data-testid="planner-error">
+            {error}
+          </div>
+        ) : !loaded ? (
           <div className="text-sm text-muted-foreground">Загрузка планов...</div>
         ) : (
           <DndContext collisionDetection={closestCenter} onDragEnd={handleFolderDragEnd}>

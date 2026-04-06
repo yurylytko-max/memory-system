@@ -145,7 +145,7 @@ export default function NewCardPage() {
 
   if (!workspace) {
     return (
-      <main className="min-h-screen bg-gray-100 p-10">
+      <main className="min-h-screen bg-gray-100 p-10" data-testid="new-card-workspace-select">
         <div className="mx-auto max-w-3xl">
           <BackButton fallbackHref="/" className="text-sm text-gray-500">
             ← Назад
@@ -159,6 +159,7 @@ export default function NewCardPage() {
           <div className="grid gap-6 md:grid-cols-2">
             <Link
               href={`/cards/new?${buildWorkspaceQuery(params, "life")}`}
+              data-testid="new-card-workspace-life"
               className="rounded-2xl border bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
             >
               <div className="mb-3 text-sm uppercase tracking-[0.2em] text-gray-500">
@@ -172,6 +173,7 @@ export default function NewCardPage() {
 
             <Link
               href={`/cards/new?${buildWorkspaceQuery(params, "work")}`}
+              data-testid="new-card-workspace-work"
               className="rounded-2xl border bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
             >
               <div className="mb-3 text-sm uppercase tracking-[0.2em] text-gray-500">
@@ -189,7 +191,11 @@ export default function NewCardPage() {
   }
 
   return (
-    <main className="mx-auto min-h-screen max-w-xl bg-gray-100 p-10">
+    <main
+      className="mx-auto min-h-screen max-w-xl bg-gray-100 p-10"
+      data-testid="new-card-page"
+      data-workspace={workspace}
+    >
       <BackButton
         fallbackHref={`/cards/space/${workspace}`}
         className="text-sm text-gray-500"
@@ -204,6 +210,7 @@ export default function NewCardPage() {
 
       <div className="space-y-4">
         <select
+          data-testid="card-type-select"
           value={type}
           onChange={(event) => setType(event.target.value)}
           className="w-full rounded border p-3"
@@ -219,6 +226,7 @@ export default function NewCardPage() {
         </select>
 
         <input
+          data-testid="card-title-input"
           placeholder="Заголовок"
           value={title}
           onChange={(event) => setTitle(event.target.value)}
@@ -226,6 +234,7 @@ export default function NewCardPage() {
         />
 
         <textarea
+          data-testid="card-content-input"
           placeholder="Содержание"
           value={content}
           onChange={(event) => setContent(event.target.value)}
@@ -233,6 +242,7 @@ export default function NewCardPage() {
         />
 
         <input
+          data-testid="card-source-input"
           placeholder="Источник"
           value={source}
           onChange={(event) => setSource(event.target.value)}
@@ -240,6 +250,7 @@ export default function NewCardPage() {
         />
 
         <input
+          data-testid="card-sphere-input"
           placeholder="Сфера"
           value={sphere}
           onChange={(event) => setSphere(event.target.value)}
@@ -248,6 +259,7 @@ export default function NewCardPage() {
         />
 
         <input
+          data-testid="card-tags-input"
           placeholder="Теги через пробел"
           value={tags}
           onChange={(event) => setTags(event.target.value)}
@@ -257,13 +269,19 @@ export default function NewCardPage() {
         <div className="space-y-2">
           <label className="text-sm text-gray-600">Прикрепить скриншот</label>
 
-          <input type="file" accept="image/*" onChange={handleImageUpload} />
+          <input
+            data-testid="card-image-input"
+            type="file"
+            accept="image/*"
+            onChange={handleImageUpload}
+          />
 
           {image ? <img src={image} className="max-h-60 rounded border" alt="" /> : null}
         </div>
 
         <button
           type="button"
+          data-testid="card-save-button"
           onClick={handleSave}
           disabled={isSaving}
           className="rounded bg-black px-6 py-2 text-white hover:bg-gray-800 disabled:opacity-60"

@@ -62,7 +62,11 @@ export default async function SpherePage({ params, searchParams }: SpherePagePro
     .reverse();
 
   return (
-    <main className="min-h-screen bg-muted/40 p-10">
+    <main
+      className="min-h-screen bg-muted/40 p-10"
+      data-testid="cards-sphere-page"
+      data-workspace={workspace}
+    >
       <div className="mx-auto max-w-5xl">
         <Link
           href={`/cards/space/${workspace}`}
@@ -94,6 +98,7 @@ export default async function SpherePage({ params, searchParams }: SpherePagePro
               <Link
                 key={`${card.id}-${index}`}
                 href={`/cards/${card.id}?workspace=${workspace}`}
+                data-testid={`sphere-card-link-${card.id}`}
                 className="block"
               >
                 <Card className="hover:shadow-md transition cursor-pointer">

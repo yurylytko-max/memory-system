@@ -1,13 +1,14 @@
 import "server-only";
 
 import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { dirname, join } from "node:path";
+import { dirname } from "node:path";
 import { createClient } from "redis";
 
 import { normalizePlan, type Plan } from "@/lib/plans";
+import { getDataPath } from "@/lib/server/storage-paths";
 
 const KEY = "plans_db";
-const FALLBACK_PLANS_PATH = join(process.cwd(), ".data", "plans-db.json");
+const FALLBACK_PLANS_PATH = getDataPath("plans-db.json");
 
 declare global {
   var __plansRedisClient:

@@ -6,7 +6,21 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "node scripts/run-eslint.mjs"
+    "lint": "node scripts/run-eslint.mjs",
+    "test": "npm run test:integration && npm run test:e2e",
+    "test:prepare": "npm run test:reset && npm run test:seed",
+    "test:reset": "node --env-file=.env.test scripts/test-reset.mjs",
+    "test:seed": "node --env-file=.env.test scripts/test-seed.mjs",
+    "test:serve": "node scripts/test-serve.mjs dev",
+    "test:serve:ci": "node scripts/test-serve.mjs start",
+    "test:serve:stable": "npm run build && npm run test:serve:ci",
+    "test:integration": "node --env-file=.env.test ./node_modules/vitest/vitest.mjs run",
+    "test:e2e": "node --env-file=.env.test ./node_modules/@playwright/test/cli.js test",
+    "test:e2e:ui": "node --env-file=.env.test ./node_modules/@playwright/test/cli.js test --ui",
+    "test:e2e:headed": "node --env-file=.env.test ./node_modules/@playwright/test/cli.js test --headed",
+    "test:e2e:debug": "node --env-file=.env.test ./node_modules/@playwright/test/cli.js test --debug",
+    "test:smoke": "node --env-file=.env.test ./node_modules/@playwright/test/cli.js test tests/e2e/smoke tests/e2e/auth/login.spec.ts",
+    "test:ci": "npm run lint && npm run build && npm run test:integration && npm run test:smoke"
   },
   "dependencies": {
     "@ai-sdk/gateway": "^3.0.66",
@@ -83,6 +97,7 @@
     "redis": "^5.11.0",
     "remark-gfm": "^4.0.1",
     "remark-math": "^6.0.0",
+    "server-only": "^0.0.1",
     "shadcn": "^4.0.6",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.5.0",
@@ -94,14 +109,21 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "@tailwindcss/postcss": "^4",
     "@types/lodash": "^4.17.24",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "cross-env": "^10.1.0",
+    "dotenv-cli": "^11.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
+    "playwright": "^1.59.1",
+    "start-server-and-test": "^3.0.0",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "tsx": "^4.21.0",
+    "typescript": "^5",
+    "vitest": "^4.1.2"
   }
 }

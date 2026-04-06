@@ -1,21 +1,35 @@
 import { NextResponse } from "next/server";
 
-import { normalizeVocabularyItem } from "@/lib/vocabulary";
+import {
+  buildVocabularyKey,
+  buildVocabularyReviewQueue,
+  filterStudyThreeVocabulary,
+  normalizeVocabularyItem,
+  validateVocabularyMnemonic,
+  type VocabularyMnemonic,
+  type VocabularyMnemonicMode,
+  type VocabularyMnemonicStatus,
+} from "@/lib/vocabulary";
 import { readVocabulary, writeVocabulary } from "@/lib/server/vocabulary-store";
 
 function sortByReview(items: Awaited<ReturnType<typeof readVocabulary>>) {
   return [...items].sort((left, right) => left.next_review.localeCompare(right.next_review));
 }
 
-export async function GET() {
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const source = searchParams.get("source");
   const items = sortByReview(await readVocabulary());
-  const now = new Date().toISOString();
-  const due = items.filter((item) => item.next_review <= now);
+  const filteredItems = source === "study-3" ? filterStudyThreeVocabulary(items) : items;
+  const queue = source === "study-3" ? buildVocabularyReviewQueue(filteredItems) : null;
+  const now = queue?.now ?? new Date().toISOString();
+  const due = queue?.dueItems ?? filteredItems.filter((item) => item.next_review <= now);
 
   return NextResponse.json({
-    items,
+    items: filteredItems,
     due,
     now,
+    queue,
   });
 }
 
@@ -28,6 +42,13 @@ export async function POST(request: Request) {
           context?: string;
           source_lesson?: string;
           source_page?: number;
+          source_type?: "study-3";
+          source_book_id?: string;
+          source_book_title?: string;
+          collection?: "study-3-dictionary";
+          mnemonic_status?: VocabularyMnemonicStatus;
+          mnemonic_mode?: VocabularyMnemonicMode;
+          mnemonic?: VocabularyMnemonic;
         }>;
       }
     | {
@@ -36,6 +57,13 @@ export async function POST(request: Request) {
         context?: string;
         source_lesson?: string;
         source_page?: number;
+        source_type?: "study-3";
+        source_book_id?: string;
+        source_book_title?: string;
+        collection?: "study-3-dictionary";
+        mnemonic_status?: VocabularyMnemonicStatus;
+        mnemonic_mode?: VocabularyMnemonicMode;
+        mnemonic?: VocabularyMnemonic;
       };
   const incomingItems = Array.isArray((body as { items?: unknown[] }).items)
     ? (
@@ -46,6 +74,13 @@ export async function POST(request: Request) {
             context?: string;
             source_lesson?: string;
             source_page?: number;
+            source_type?: "study-3";
+            source_book_id?: string;
+            source_book_title?: string;
+            collection?: "study-3-dictionary";
+            mnemonic_status?: VocabularyMnemonicStatus;
+            mnemonic_mode?: VocabularyMnemonicMode;
+            mnemonic?: VocabularyMnemonic;
           }>;
         }
       ).items
@@ -56,24 +91,33 @@ export async function POST(request: Request) {
           context?: string;
           source_lesson?: string;
           source_page?: number;
+          source_type?: "study-3";
+          source_book_id?: string;
+          source_book_title?: string;
+          collection?: "study-3-dictionary";
+          mnemonic_status?: VocabularyMnemonicStatus;
+          mnemonic_mode?: VocabularyMnemonicMode;
+          mnemonic?: VocabularyMnemonic;
         },
       ];
   const existing = await readVocabulary();
   const nextItems = [...existing];
-  const existingKeys = new Set(
-    existing.map(
-      (item) =>
-        `${item.text.trim().toLocaleLowerCase("de-DE")}::${item.translation
-          .trim()
-          .toLocaleLowerCase("ru-RU")}`
-    )
-  );
+  const existingKeys = new Set(existing.map((item) => buildVocabularyKey(item)));
+  let validationError = "";
 
   incomingItems.forEach((item, index) => {
+    if (validationError) {
+      return;
+    }
+
     const normalized = normalizeVocabularyItem(item, existing.length + index);
-    const key = `${normalized.text.trim().toLocaleLowerCase("de-DE")}::${normalized.translation
-      .trim()
-      .toLocaleLowerCase("ru-RU")}`;
+    const key = buildVocabularyKey(normalized);
+    const nextValidationError = validateVocabularyMnemonic(normalized, [...nextItems, normalized]);
+
+    if (nextValidationError) {
+      validationError = nextValidationError;
+      return;
+    }
 
     if (!key || existingKeys.has(key)) {
       return;
@@ -83,10 +127,15 @@ export async function POST(request: Request) {
     nextItems.push(normalized);
   });
 
+  if (validationError) {
+    return NextResponse.json({ error: validationError }, { status: 400 });
+  }
+
   await writeVocabulary(nextItems);
 
   return NextResponse.json({
     success: true,
     items: sortByReview(nextItems),
+    queue: buildVocabularyReviewQueue(nextItems),
   });
 }

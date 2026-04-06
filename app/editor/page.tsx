@@ -20,7 +20,7 @@ export default function EditorHome() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-100 p-10 max-w-5xl mx-auto">
+    <main className="min-h-screen bg-gray-100 p-10 max-w-5xl mx-auto" data-testid="editor-home">
 
       <Link
         href="/"

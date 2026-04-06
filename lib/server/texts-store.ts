@@ -1,13 +1,14 @@
 import "server-only";
 
 import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { dirname, join } from "node:path";
+import { dirname } from "node:path";
 import { createClient } from "redis";
 
 import type { TextDocument } from "@/lib/texts";
+import { getDataPath } from "@/lib/server/storage-paths";
 
 const KEY = "texts_db";
-const FALLBACK_TEXTS_PATH = join(process.cwd(), ".data", "texts-db.json");
+const FALLBACK_TEXTS_PATH = getDataPath("texts-db.json");
 
 declare global {
   var __textsRedisClient:

@@ -2,7 +2,7 @@
 
 ## Snapshot
 
-- Date: `2026-04-05`
+- Date: `2026-04-06`
 - Project type: single Next.js application for planning, knowledge capture, texts, cards, vocabulary and interactive textbooks.
 - Main production domain: `memory-system-delta.vercel.app`
 - Auth model: password gate with login page and auth cookie.
@@ -77,16 +77,43 @@
   - `/study/cards -> /cards`
   - `/study/:path* -> /study-3`
 - Есть загрузка книг, чтение книги, HTML pipeline, assistant routes `chat`, `explain`, `translate`, blob route и работа с Gemini-based parsing flow.
+- Слова из reader теперь сохраняются в отдельный словарь `study-3`, а не в knowledge cards.
+- Внутри `study-3` есть маршруты словаря и карточного режима изучения лексики.
+- Актуальная production-версия уже включает словарь `study-3` и режим `учить лексику`.
+- В библиотеке `study-3` поддерживается удаление загруженных учебников и отдельных image-based page entries.
+- Удаление записи учебника из `study-3` удаляет её из server store и очищает локальные файловые/HTML артефакты fallback-хранилища.
+- Reader перестроен в двухколоночный рабочий layout: страница/HTML слева и ассистент справа в симметричных колонках на desktop.
 
 ### Vocabulary
 
-- UI/flow связан с API: [`app/api/vocabulary/route.ts`](../app/api/vocabulary/route.ts), [`app/api/vocabulary/review/route.ts`](../app/api/vocabulary/review/route.ts)
+- UI/flow связан с API: [`app/study-3/vocabulary/page.tsx`](../app/study-3/vocabulary/page.tsx), [`app/study-3/vocabulary/review/page.tsx`](../app/study-3/vocabulary/review/page.tsx), [`app/api/vocabulary/route.ts`](../app/api/vocabulary/route.ts), [`app/api/vocabulary/review/route.ts`](../app/api/vocabulary/review/route.ts), [`app/api/vocabulary/[id]/route.ts`](../app/api/vocabulary/[id]/route.ts)
 - Domain/store: [`lib/vocabulary.ts`](../lib/vocabulary.ts), [`lib/server/vocabulary-store.ts`](../lib/server/vocabulary-store.ts)
+- Study UI: [`components/study-3/study-three-vocabulary.tsx`](../components/study-3/study-three-vocabulary.tsx), [`components/study-3/study-three-vocabulary-review.tsx`](../components/study-3/study-three-vocabulary-review.tsx), [`components/study-3/study-three-mnemonic-panel.tsx`](../components/study-3/study-three-mnemonic-panel.tsx)
 
 Текущее состояние:
 
-- Словарь добавлен как отдельный домен данных.
-- Нужно отдельное продуктовое уточнение по UI и пользовательскому флоу; это пока не главный модуль проекта.
+- Словарь является отдельным доменом данных и используется как подпространство `Учебники 3.0`.
+- Слова из `study-3` сохраняются отдельно от `/cards` в коллекцию `словарь`.
+- Для словаря есть отдельный список слов и отдельный экран `учить лексику`.
+- Первый проход новых слов идёт последовательно по порядку добавления.
+- После первого успешного прохождения слова переходят в интервальные повторения по упрощённой Anki-подобной логике.
+- У lexical cards появился встроенный вспомогательный слой мнемотехники, который не заменяет review engine и не связан с knowledge cards.
+- Мнемотехника имеет отдельные состояния `none`, `in_progress`, `anchored`.
+- Поддерживаются структурированные режимы:
+  - `sound`;
+  - `image`;
+  - `linked_word`;
+  - `chain`;
+  - `nested`.
+- Система не генерирует мнемонику автоматически: она только предлагает включить её после ошибок, нестабильных ответов или по ручному запросу.
+- После создания связи карточка проходит короткую проверку на воспроизведение; если связь не сработала позже, пользователь может быстро перевести её обратно в `in_progress` и переделать.
+- Из словаря можно удалять lexical cards целиком.
+- Мнемотехнику можно удалить полностью и собрать заново.
+- Внутри mnemonic-режимов поддерживается удаление отдельных дополнений:
+  - звукового якоря или образа;
+  - связи с другим словом;
+  - элементов цепочки;
+  - вложенных элементов.
 
 ## Auth And Routing
 
@@ -101,6 +128,7 @@
 
 - Vercel production deploy workflow существует и уже использовался.
 - Alias прод-домена указывает на `memory-system-delta.vercel.app`.
+- Последний production deploy уже включает отделение словаря `study-3` от knowledge cards.
 - Одноразовый cleanup legacy study-данных запускается через:
   - [`lib/server/post-deploy-cleanup.ts`](../lib/server/post-deploy-cleanup.ts)
   - [`app/api/internal/post-deploy-cleanup/route.ts`](../app/api/internal/post-deploy-cleanup/route.ts)
@@ -109,8 +137,15 @@
 ## Tooling State
 
 - `npm run lint` переопределён на [`scripts/run-eslint.mjs`](../scripts/run-eslint.mjs), чтобы избежать зависания при прямом обходе `eslint .`.
-- Полный lint сейчас должен завершаться успешно.
+- Полный lint по-прежнему шумный и может завершаться non-zero из-за warning-level замечаний в других частях репозитория.
 - Локальный `next dev` в sandbox ранее не доходил до normal `listen()` стадии; это считалось ограничением окружения, а не обязательно багом приложения.
+- В репозитории добавлена тестовая инфраструктура:
+  - browser-level тесты на Playwright в `tests/e2e`;
+  - integration/domain/API тесты в `tests/integration`;
+  - отдельный test env через `.env.test`;
+  - изолированное test storage через `TEST_DATA_ROOT`;
+  - reset/seed скрипты `scripts/test-reset.mjs` и `scripts/test-seed.mjs`.
+- Для CI добавлен workflow [`tests.yml`](../.github/workflows/tests.yml) с `lint`, `build`, integration tests и smoke Playwright suite.
 
 ## Git State
 

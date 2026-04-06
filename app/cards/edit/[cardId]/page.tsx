@@ -86,7 +86,7 @@ export default function EditCardPage() {
 
   if (!loaded) {
     return (
-      <main className="p-10 text-gray-500">
+      <main className="p-10 text-gray-500" data-testid="edit-card-loading">
         Загрузка карточки...
       </main>
     );
@@ -94,7 +94,7 @@ export default function EditCardPage() {
 
   if (!card) {
     return (
-      <main className="p-10">
+      <main className="p-10" data-testid="edit-card-not-found">
         <BackButton
           fallbackHref={workspace ? `/cards/space/${workspace}` : "/cards"}
           className="text-sm text-gray-500"
@@ -108,7 +108,11 @@ export default function EditCardPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-100 p-10">
+    <main
+      className="min-h-screen bg-gray-100 p-10"
+      data-testid="edit-card-page"
+      data-workspace={card.workspace}
+    >
       <div className="max-w-xl mx-auto">
         <BackButton
           fallbackHref={`/cards/${card.id}?workspace=${card.workspace}`}
@@ -125,6 +129,7 @@ export default function EditCardPage() {
 
           <form onSubmit={handleSave} className="space-y-4">
             <select
+              data-testid="card-type-select"
               className="w-full border p-3 rounded"
               value={type}
               onChange={e => setType(e.target.value)}
@@ -140,6 +145,7 @@ export default function EditCardPage() {
             </select>
 
             <input
+              data-testid="card-title-input"
               className="w-full border p-3 rounded"
               value={title}
               onChange={e => setTitle(e.target.value)}
@@ -147,6 +153,7 @@ export default function EditCardPage() {
             />
 
             <textarea
+              data-testid="card-content-input"
               className="w-full border p-3 rounded min-h-40"
               value={content}
               onChange={e => setContent(e.target.value)}
@@ -154,6 +161,7 @@ export default function EditCardPage() {
             />
 
             <input
+              data-testid="card-source-input"
               className="w-full border p-3 rounded"
               value={source}
               onChange={e => setSource(e.target.value)}
@@ -161,6 +169,7 @@ export default function EditCardPage() {
             />
 
             <input
+              data-testid="card-sphere-input"
               className="w-full border p-3 rounded"
               value={sphere}
               onChange={e => setSphere(e.target.value)}
@@ -169,13 +178,14 @@ export default function EditCardPage() {
             />
 
             <input
+              data-testid="card-tags-input"
               className="w-full border p-3 rounded"
               value={tags}
               onChange={e => setTags(e.target.value)}
               placeholder="Теги через пробел"
             />
 
-            <button className="bg-black text-white px-6 py-3 rounded">
+            <button className="bg-black text-white px-6 py-3 rounded" data-testid="card-save-button">
               Сохранить
             </button>
           </form>

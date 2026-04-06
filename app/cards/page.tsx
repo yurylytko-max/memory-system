@@ -2,7 +2,7 @@ import Link from "next/link"
 
 export default function CardsWorkspaceSelectPage() {
   return (
-    <main className="min-h-screen bg-muted/40 p-10">
+    <main className="min-h-screen bg-muted/40 p-10" data-testid="cards-workspace-entry">
       <div className="mx-auto max-w-3xl">
         <Link
           href="/"
@@ -21,11 +21,13 @@ export default function CardsWorkspaceSelectPage() {
             href="/cards/space/life"
             title="жизнь"
             description="Личная база знаний, существующие карточки по умолчанию находятся здесь."
+            testId="workspace-life"
           />
           <WorkspaceCard
             href="/cards/space/work"
             title="работа"
             description="Отдельное рабочее пространство с полной изоляцией карточек и сфер."
+            testId="workspace-work"
           />
         </div>
       </div>
@@ -37,14 +39,17 @@ function WorkspaceCard({
   href,
   title,
   description,
+  testId,
 }: {
   href: string
   title: string
   description: string
+  testId: string
 }) {
   return (
     <Link
       href={href}
+      data-testid={testId}
       className="rounded-2xl border bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
     >
       <div className="mb-3 text-sm uppercase tracking-[0.2em] text-muted-foreground">

@@ -5,12 +5,15 @@
 ## Root Files
 
 - `package.json` - npm scripts, зависимости и базовые метаданные проекта.
+- `playwright.config.ts` - конфигурация browser integration/smoke тестов.
+- `vitest.config.ts` - конфигурация integration/domain/API тестов.
 - `tsconfig.json` - TypeScript configuration.
 - `eslint.config.mjs` - ESLint configuration для проекта.
 - `next.config.ts` - Next.js config; сейчас содержит redirects со старых `study` маршрутов и `typescript.ignoreBuildErrors`.
 - `postcss.config.mjs` - PostCSS config.
 - `vercel.json` - Vercel runtime/deploy configuration.
 - `.env.example` - пример env-переменных.
+- `.env.test` - локальное тестовое окружение для integration/e2e запусков.
 - `components.json` - конфигурация shadcn/ui.
 - `README.md` - базовый README проекта, сейчас менее актуален, чем `docs/`.
 - `render_pdf.js` - отдельный runtime-скрипт для PDF-rendering сценариев.
@@ -27,6 +30,20 @@
 - `docs/change-log.md` - журнал значимых изменений.
 - `docs/roadmap.md` - план на ближайшие шаги.
 - `docs/open-issues.md` - открытые проблемы и риски.
+
+## Tests
+
+- `tests/e2e` - browser-level smoke и интеграционные тесты на Playwright.
+- `tests/integration` - route/store/domain integration тесты.
+- `tests/helpers` - test helpers для auth, env, storage, seeds и UI ожиданий.
+- `tests/fixtures` - предсказуемые фикстуры для planner, cards, study-3 и texts.
+- `tests/global` - global setup/teardown для test runners.
+
+## Scripts
+
+- `scripts/test-reset.mjs` - сброс изолированных тестовых данных.
+- `scripts/test-seed.mjs` - заполнение изолированных тестовых данных для smoke/e2e.
+- `scripts/test-serve.mjs` - вспомогательный запуск приложения для Playwright smoke/e2e сценариев.
 
 ## App Routes
 
@@ -72,9 +89,11 @@
 
 - `app/study-3/page.tsx` - библиотека учебников `study-3`.
 - `app/study-3/[bookId]/page.tsx` - экран чтения конкретного учебника.
+- `app/study-3/vocabulary/page.tsx` - словарь подпространства `Учебники 3.0`.
+- `app/study-3/vocabulary/review/page.tsx` - экран изучения лексики карточками внутри `study-3`.
 - `app/api/study-3/books/route.ts` - API списка книг.
 - `app/api/study-3/books/upload/route.ts` - API загрузки книги.
-- `app/api/study-3/books/[bookId]/route.ts` - API метаданных книги.
+- `app/api/study-3/books/[bookId]/route.ts` - API метаданных книги и удаления записи учебника/page-entry.
 - `app/api/study-3/books/[bookId]/file/route.ts` - API доступа к файлу книги.
 - `app/api/study-3/books/[bookId]/html/route.ts` - API HTML-представления страниц книги.
 - `app/api/study-3/blob/route.ts` - API для blob/storage сценариев.
@@ -84,8 +103,16 @@
 
 ### Vocabulary
 
-- `app/api/vocabulary/route.ts` - API основного словаря.
-- `app/api/vocabulary/review/route.ts` - API review/scoring флоу словаря.
+- `app/api/vocabulary/route.ts` - API словаря, который сейчас обслуживает `study-3`.
+- `app/api/vocabulary/review/route.ts` - API review/scoring флоу словаря и очереди карточек.
+- `app/api/vocabulary/[id]/route.ts` - API чтения отдельной lexical card и обновления её mnemonic-state.
+
+## Lib And Server
+
+- `lib/vocabulary.ts` - доменная модель словаря, нормализация данных и логика review queue.
+- `lib/server/vocabulary-store.ts` - серверное хранение словаря через Redis/file fallback.
+- `lib/server/storage-paths.ts` - единая точка разрешения data-root для runtime и test storage.
+- `lib/server/study-3-store.ts` - хранение учебников `study-3`, HTML-артефактов и удаление локальных файловых fallback-данных.
 
 ### AI And Internal Operations
 
@@ -125,7 +152,10 @@
 ### Study Components
 
 - `components/study-3/study-three-library.tsx` - библиотека и список учебников `study-3`.
-- `components/study-3/study-three-reader.tsx` - reader UI для страницы учебника.
+- `components/study-3/study-three-reader.tsx` - reader UI для страницы учебника с двухколоночным layout `страница/HTML ↔ ассистент`.
+- `components/study-3/study-three-vocabulary.tsx` - экран словаря учебников.
+- `components/study-3/study-three-vocabulary-review.tsx` - экран карточек и повторения лексики.
+- `components/study-3/study-three-mnemonic-panel.tsx` - пошаговый UI для ручного создания, удаления и пересборки мнемотехники lexical cards.
 
 ### Text Components
 

@@ -1,13 +1,14 @@
 import "server-only";
 
 import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { dirname, join } from "node:path";
+import { dirname } from "node:path";
 import { createClient } from "redis";
 
 import { normalizeVocabulary, type VocabularyItem } from "@/lib/vocabulary";
+import { getDataPath } from "@/lib/server/storage-paths";
 
 const KEY = "vocabulary_db";
-const FALLBACK_VOCABULARY_PATH = join(process.cwd(), ".data", "vocabulary-db.json");
+const FALLBACK_VOCABULARY_PATH = getDataPath("vocabulary-db.json");
 
 declare global {
   var __vocabularyRedisClient:
