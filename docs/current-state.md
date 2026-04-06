@@ -128,7 +128,11 @@
 
 - Vercel production deploy workflow существует и уже использовался.
 - Alias прод-домена указывает на `memory-system-delta.vercel.app`.
-- Последний production deploy уже включает отделение словаря `study-3` от knowledge cards.
+- Последний production deploy уже включает:
+  - отделение словаря `study-3` от knowledge cards;
+  - mnemonic-layer для lexical cards;
+  - delete-flows для учебников/page-entry, словаря и мнемотехники;
+  - reader layout с симметричными колонками `страница/HTML ↔ ассистент`.
 - Одноразовый cleanup legacy study-данных запускается через:
   - [`lib/server/post-deploy-cleanup.ts`](../lib/server/post-deploy-cleanup.ts)
   - [`app/api/internal/post-deploy-cleanup/route.ts`](../app/api/internal/post-deploy-cleanup/route.ts)
