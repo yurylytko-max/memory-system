@@ -743,7 +743,7 @@ export default function StudyThreeReader({ bookId }: { bookId: string }) {
           >
             <h2 className="text-lg font-semibold text-slate-950">Ассистент</h2>
             <p className="mt-2 text-sm leading-7 text-slate-600">
-              Справа появляется только выбранный фрагмент, а не весь учебник целиком.
+              Можно спрашивать не только про выбранный фрагмент, но и любые вопросы по языку.
             </p>
 
             {!selection ? (
@@ -804,12 +804,12 @@ export default function StudyThreeReader({ bookId }: { bookId: string }) {
             <form onSubmit={handleAsk} className="mt-8 space-y-3 border-t border-slate-200 pt-6">
               <label className="block">
                 <span className="mb-2 block text-sm font-medium text-slate-700">
-                  Вопрос по текущему фрагменту
+                  Вопрос ассистенту
                 </span>
                 <textarea
                   value={question}
                   onChange={(event) => setQuestion(event.target.value)}
-                  placeholder="Например: почему здесь formal, а не informal?"
+                  placeholder="Например: что это за глагол и как он спрягается?"
                   className="min-h-28 w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-slate-500"
                 />
               </label>
