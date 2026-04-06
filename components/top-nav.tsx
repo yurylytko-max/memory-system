@@ -77,6 +77,14 @@ export default function TopNav() {
             Учебники 3.0
           </Link>
 
+          <Link
+            href="/mind-palaces"
+            prefetch={false}
+            className="text-sm text-muted-foreground hover:text-black"
+          >
+            Чертоги
+          </Link>
+
         </div>
 
         <div className="flex items-center gap-3">

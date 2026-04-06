@@ -9,6 +9,32 @@
 
 ## Active Product Modules
 
+### Mind Palaces
+
+- UI: [`app/mind-palaces/page.tsx`](../app/mind-palaces/page.tsx), [`app/mind-palaces/[palaceId]/page.tsx`](../app/mind-palaces/[palaceId]/page.tsx)
+- API: [`app/api/mind-palaces/route.ts`](../app/api/mind-palaces/route.ts), [`app/api/mind-palaces/[id]/route.ts`](../app/api/mind-palaces/[id]/route.ts), [`app/api/mind-palaces/[id]/check/route.ts`](../app/api/mind-palaces/[id]/check/route.ts)
+- Domain/store: [`lib/mind-palaces.ts`](../lib/mind-palaces.ts), [`lib/server/mind-palaces-store.ts`](../lib/server/mind-palaces-store.ts)
+- UI components: [`components/mind-palaces/mind-palaces-page-client.tsx`](../components/mind-palaces/mind-palaces-page-client.tsx), [`components/mind-palaces/mind-palace-detail-client.tsx`](../components/mind-palaces/mind-palace-detail-client.tsx)
+
+Текущее состояние:
+
+- `Чертоги разума` реализованы как отдельный домен и не смешиваются с `/cards` или `study-3/vocabulary`.
+- MVP покрывает:
+  - создание чертога;
+  - линейный маршрут;
+  - точки-loci;
+  - фиксацию маршрута;
+  - обязательную проверку вперёд, назад и по номеру.
+- Маршрут принимает только 5–15 точек.
+- Порядок маршрута строгий: без пропусков, прыжков и пустых точек.
+- Точка должна быть конкретным визуальным образом; абстрактные описания отклоняются доменной валидацией.
+- Стабильный статус чертога выставляется только после успешного прохождения трёх обязательных проверок:
+  - `что после X`;
+  - `что перед X`;
+  - `точка №N`.
+- При ошибке на проверке маршрут возвращается на этап фиксации.
+- Добавление информации в точки до стабилизации маршрута намеренно запрещено и не открыто в UI первого этапа.
+
 ### Planner
 
 - Главная страница планировщика: [`app/planner/page.tsx`](../app/planner/page.tsx)
@@ -150,6 +176,7 @@
   - изолированное test storage через `TEST_DATA_ROOT`;
   - reset/seed скрипты `scripts/test-reset.mjs` и `scripts/test-seed.mjs`.
 - Для CI добавлен workflow [`tests.yml`](../.github/workflows/tests.yml) с `lint`, `build`, integration tests и smoke Playwright suite.
+- Для `mind palaces` добавлены отдельные integration/domain/API тесты на route-инварианты, проверки вперёд/назад/по номеру и переход в `stable`.
 
 ## Git State
 

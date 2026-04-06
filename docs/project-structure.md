@@ -62,6 +62,14 @@
 - `app/api/plans/route.ts` - API списка и создания планов.
 - `app/api/plans/[id]/route.ts` - API чтения, обновления и удаления плана.
 
+### Mind Palaces
+
+- `app/mind-palaces/page.tsx` - список чертогов и вход в создание нового маршрута.
+- `app/mind-palaces/[palaceId]/page.tsx` - страница конкретного чертога с фиксацией маршрута и проверкой.
+- `app/api/mind-palaces/route.ts` - API списка и создания чертогов.
+- `app/api/mind-palaces/[id]/route.ts` - API чтения и сохранения линейного маршрута чертога.
+- `app/api/mind-palaces/[id]/check/route.ts` - API обязательных проверок маршрута вперёд, назад и по номеру.
+
 ### Cards And Knowledge
 
 - `app/cards/page.tsx` - библиотека карточек/знаний.
@@ -156,6 +164,11 @@
 - `components/study-3/study-three-vocabulary.tsx` - экран словаря учебников.
 - `components/study-3/study-three-vocabulary-review.tsx` - экран карточек и повторения лексики.
 - `components/study-3/study-three-mnemonic-panel.tsx` - пошаговый UI для ручного создания, удаления и пересборки мнемотехники lexical cards.
+
+### Mind Palaces Components
+
+- `components/mind-palaces/mind-palaces-page-client.tsx` - клиентский экран списка чертогов и создания нового чертога.
+- `components/mind-palaces/mind-palace-detail-client.tsx` - клиентский экран фиксации маршрута и проверки чертога.
 
 ### Text Components
 
@@ -369,6 +382,7 @@
 - `lib/cards.ts` - domain helpers and types for cards.
 - `lib/documents.ts` - editor/document helpers.
 - `lib/markdown-joiner-transform.ts` - markdown transform helper.
+- `lib/mind-palaces.ts` - domain helpers, типы и строгая валидация для `Чертогов разума`.
 - `lib/plans.ts` - planner domain helpers and types.
 - `lib/planner-daily-plans.ts` - сборка и синхронизация дневных планов.
 - `lib/study-3.ts` - основной domain layer для study-3.
@@ -381,6 +395,7 @@
 ## Server Lib
 
 - `lib/server/cards-store.ts` - server-side persistence layer for cards.
+- `lib/server/mind-palaces-store.ts` - server-side persistence layer for mind palaces.
 - `lib/server/plans-store.ts` - server-side persistence layer for plans.
 - `lib/server/post-deploy-cleanup.ts` - одноразовая post-deploy очистка legacy study-данных.
 - `lib/server/study-3-gemini.ts` - интеграция Gemini для study-3 parsing/assistant сценариев.

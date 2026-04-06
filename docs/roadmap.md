@@ -55,7 +55,21 @@
 - При необходимости оформить scripts для типовых production smoke tests как стандартный набор сопровождения.
 - Обновить docs после появления устойчивого релизного ритуала.
 
-## Step 6 - Stabilize Automated Tests
+## Step 6 - Develop Mind Palaces
+
+- Расширить `Чертоги разума` после MVP только по уже заложенной последовательности:
+  - создание;
+  - фиксация;
+  - проверка;
+  - закрепление;
+  - добавление информации.
+- Не смешивать `mind-palaces` с `/cards` и `study-3/vocabulary`.
+- После стабилизации текущего маршрута добавить следующий слой:
+  - `locus -> образ`;
+  - простые вложения `база -> элементы`;
+  - те же строгие ограничения на простоту и перегрузку.
+
+## Step 7 - Stabilize Automated Tests
 
 - Довести integration и Playwright suites до устойчивого зелёного состояния на CI.
 - Расширить browser coverage на planner daily flows, cards workspace flows и study-3 reader edge cases.

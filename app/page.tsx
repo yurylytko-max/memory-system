@@ -43,6 +43,11 @@ export default function Home() {
           title="Учебники 3.0"
           href="/study-3"
         />
+
+        <Card
+          title="Чертоги разума"
+          href="/mind-palaces"
+        />
       </div>
     </main>
   );
