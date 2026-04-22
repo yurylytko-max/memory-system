@@ -6,8 +6,10 @@ import { useEffect, useState } from "react";
 import { BackButton } from "@/components/back-button";
 import {
   DEFAULT_CARD_SPHERE,
+  getAllCards,
   getCard,
   getCardWorkspaceLabel,
+  getUniqueCardSpheres,
   isCardWorkspace,
   updateCard,
   type Card,
@@ -45,6 +47,7 @@ export default function EditCardPage() {
   const [checklist, setChecklist] = useState<CardChecklistItem[]>([
     { id: "initial-checklist-item", text: "", checked: false },
   ]);
+  const [sphereOptions, setSphereOptions] = useState<string[]>([]);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -77,6 +80,35 @@ export default function EditCardPage() {
 
     load();
   }, [cardId, workspace]);
+
+  useEffect(() => {
+    const targetWorkspace = card?.workspace ?? workspace;
+
+    if (!targetWorkspace) {
+      setSphereOptions([]);
+      return;
+    }
+
+    let isMounted = true;
+
+    async function loadSphereOptions() {
+      try {
+        const cards = await getAllCards(targetWorkspace);
+
+        if (isMounted) {
+          setSphereOptions(getUniqueCardSpheres(cards));
+        }
+      } catch (error) {
+        console.error("Failed to load card spheres:", error);
+      }
+    }
+
+    void loadSphereOptions();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [card?.workspace, workspace]);
 
   async function handleSave(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -278,12 +310,18 @@ export default function EditCardPage() {
 
             <input
               data-testid="card-sphere-input"
+              list="card-sphere-options"
               className="w-full border p-3 rounded"
               value={sphere}
               onChange={e => setSphere(e.target.value)}
               placeholder="Сфера"
               required
             />
+            <datalist id="card-sphere-options">
+              {sphereOptions.map(option => (
+                <option key={option} value={option} />
+              ))}
+            </datalist>
 
             <input
               data-testid="card-tags-input"

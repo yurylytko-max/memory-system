@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 
-import { normalizeCard, normalizeCards } from "@/lib/cards";
+import { getUniqueCardSpheres, normalizeCard, normalizeCards } from "@/lib/cards";
 
 describe("cards normalization", () => {
   test("legacy cards default to life workspace", () => {
@@ -54,5 +54,16 @@ describe("cards normalization", () => {
     expect(card.checklist).toEqual([
       { id: "item-1", text: "Read chapter", checked: true },
     ]);
+  });
+
+  test("getUniqueCardSpheres returns trimmed sorted sphere options", () => {
+    expect(
+      getUniqueCardSpheres([
+        { sphere: " Работа " },
+        { sphere: "Учёба" },
+        { sphere: "" },
+        { sphere: "Работа" },
+      ])
+    ).toEqual(["Работа", "Учёба"]);
   });
 });

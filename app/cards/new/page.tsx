@@ -5,14 +5,16 @@ export const runtime = "edge";
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { BackButton } from "@/components/back-button";
 import {
   CARD_WORKSPACE_META,
   CARD_WORKSPACES,
   createCard,
+  getAllCards,
   getCardWorkspaceLabel,
+  getUniqueCardSpheres,
   isCardWorkspace,
   type Card,
   type CardChecklistItem,
@@ -68,9 +70,37 @@ export default function NewCardPage() {
   ]);
   const [image, setImage] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [sphereOptions, setSphereOptions] = useState<string[]>([]);
 
   const paramsString = useMemo(() => params.toString(), [params]);
   const selectionQuery = useMemo(() => buildSelectionQuery(params), [params]);
+
+  useEffect(() => {
+    if (!workspace) {
+      setSphereOptions([]);
+      return;
+    }
+
+    let isMounted = true;
+
+    async function loadSphereOptions() {
+      try {
+        const cards = await getAllCards(workspace);
+
+        if (isMounted) {
+          setSphereOptions(getUniqueCardSpheres(cards));
+        }
+      } catch (error) {
+        console.error("Failed to load card spheres:", error);
+      }
+    }
+
+    void loadSphereOptions();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [workspace]);
 
   async function handleImageUpload(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -347,12 +377,18 @@ export default function NewCardPage() {
 
         <input
           data-testid="card-sphere-input"
+          list="card-sphere-options"
           placeholder="Сфера"
           value={sphere}
           onChange={(event) => setSphere(event.target.value)}
           className="w-full rounded border p-3"
           required
         />
+        <datalist id="card-sphere-options">
+          {sphereOptions.map((option) => (
+            <option key={option} value={option} />
+          ))}
+        </datalist>
 
         <input
           data-testid="card-tags-input"

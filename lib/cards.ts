@@ -133,6 +133,16 @@ export function getCardContentPreview(card: Pick<Card, "content" | "checklist" |
   return card.content
 }
 
+export function getUniqueCardSpheres(cards: Pick<Card, "sphere">[]): string[] {
+  return Array.from(
+    new Set(
+      cards
+        .map(card => card.sphere.trim())
+        .filter(Boolean)
+    )
+  ).sort((a, b) => a.localeCompare(b, "ru"))
+}
+
 export async function getAllCards(workspace?: CardWorkspace): Promise<Card[]> {
   if (typeof window === "undefined") {
     throw new Error("getAllCards can only be called in the browser")
