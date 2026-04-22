@@ -131,32 +131,39 @@ async function getClient() {
 
 export async function readCards(): Promise<Card[]> {
   try {
+    const client = await getClient()
+
+    if (client) {
+      const raw = await client.get(KEY)
+
+      if (raw) {
+        const cards = normalizeCards(JSON.parse(raw))
+        const normalizedRaw = JSON.stringify(cards)
+
+        if (raw !== normalizedRaw) {
+          await client.set(KEY, normalizedRaw)
+        }
+
+        return cards
+      }
+
+      const blobCards = await readBlobCards()
+
+      if (blobCards) {
+        await client.set(KEY, JSON.stringify(blobCards))
+        return blobCards
+      }
+
+      return []
+    }
+
     const blobCards = await readBlobCards()
 
     if (blobCards) {
       return blobCards
     }
 
-    const client = await getClient()
-
-    if (!client) {
-      return await readFallbackCards()
-    }
-
-    const raw = await client.get(KEY)
-
-    if (!raw) {
-      return []
-    }
-
-    const cards = normalizeCards(JSON.parse(raw))
-    const normalizedRaw = JSON.stringify(cards)
-
-    if (raw !== normalizedRaw) {
-      await client.set(KEY, normalizedRaw)
-    }
-
-    return cards
+    return await readFallbackCards()
   } catch (error) {
     if (canUseFileFallback()) {
       return await readFallbackCards()
@@ -170,18 +177,18 @@ export async function writeCards(cards: Card[]) {
   const normalizedCards = normalizeCards(cards)
 
   try {
+    const client = await getClient()
+
+    if (client) {
+      await client.set(KEY, JSON.stringify(normalizedCards))
+      return
+    }
+
     if (await writeBlobCards(normalizedCards)) {
       return
     }
 
-    const client = await getClient()
-
-    if (!client) {
-      await writeFallbackCards(normalizedCards)
-      return
-    }
-
-    await client.set(KEY, JSON.stringify(normalizedCards))
+    await writeFallbackCards(normalizedCards)
   } catch (error) {
     if (canUseFileFallback()) {
       await writeFallbackCards(normalizedCards)
