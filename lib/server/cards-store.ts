@@ -131,6 +131,12 @@ async function getClient() {
 
 export async function readCards(): Promise<Card[]> {
   try {
+    const blobCards = await readBlobCards()
+
+    if (blobCards) {
+      return blobCards
+    }
+
     const client = await getClient()
 
     if (client) {
@@ -146,21 +152,6 @@ export async function readCards(): Promise<Card[]> {
 
         return cards
       }
-
-      const blobCards = await readBlobCards()
-
-      if (blobCards) {
-        await client.set(KEY, JSON.stringify(blobCards))
-        return blobCards
-      }
-
-      return []
-    }
-
-    const blobCards = await readBlobCards()
-
-    if (blobCards) {
-      return blobCards
     }
 
     return await readFallbackCards()
@@ -177,18 +168,38 @@ export async function writeCards(cards: Card[]) {
   const normalizedCards = normalizeCards(cards)
 
   try {
+    let wrote = false
+    let lastError: unknown = null
+
+    try {
+      if (await writeBlobCards(normalizedCards)) {
+        wrote = true
+      }
+    } catch (error) {
+      lastError = error
+    }
+
     const client = await getClient()
 
     if (client) {
-      await client.set(KEY, JSON.stringify(normalizedCards))
+      try {
+        await client.set(KEY, JSON.stringify(normalizedCards))
+        wrote = true
+      } catch (error) {
+        lastError = error
+      }
+    }
+
+    if (wrote) {
       return
     }
 
-    if (await writeBlobCards(normalizedCards)) {
+    if (canUseFileFallback()) {
+      await writeFallbackCards(normalizedCards)
       return
     }
 
-    await writeFallbackCards(normalizedCards)
+    throw lastError ?? new Error("No cards storage backend is configured")
   } catch (error) {
     if (canUseFileFallback()) {
       await writeFallbackCards(normalizedCards)
