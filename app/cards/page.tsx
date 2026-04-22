@@ -1,5 +1,7 @@
 import Link from "next/link"
 
+import { CARD_WORKSPACE_META, CARD_WORKSPACES, type CardWorkspace } from "@/lib/cards"
+
 export default function CardsWorkspaceSelectPage() {
   return (
     <main className="min-h-screen bg-muted/40 p-10" data-testid="cards-workspace-entry">
@@ -16,19 +18,17 @@ export default function CardsWorkspaceSelectPage() {
           Выбери изолированное пространство, с которым хочешь работать.
         </p>
 
-        <div className="grid gap-6 md:grid-cols-2">
-          <WorkspaceCard
-            href="/cards/space/life"
-            title="жизнь"
-            description="Личная база знаний, существующие карточки по умолчанию находятся здесь."
-            testId="workspace-life"
-          />
-          <WorkspaceCard
-            href="/cards/space/work"
-            title="работа"
-            description="Отдельное рабочее пространство с полной изоляцией карточек и сфер."
-            testId="workspace-work"
-          />
+        <div className="grid gap-6 md:grid-cols-3">
+          {CARD_WORKSPACES.map(workspace => (
+            <WorkspaceCard
+              key={workspace}
+              workspace={workspace}
+              href={`/cards/space/${workspace}`}
+              title={CARD_WORKSPACE_META[workspace].label}
+              description={CARD_WORKSPACE_META[workspace].description}
+              testId={`workspace-${workspace}`}
+            />
+          ))}
         </div>
       </div>
     </main>
@@ -36,11 +36,13 @@ export default function CardsWorkspaceSelectPage() {
 }
 
 function WorkspaceCard({
+  workspace,
   href,
   title,
   description,
   testId,
 }: {
+  workspace: CardWorkspace
   href: string
   title: string
   description: string
@@ -50,6 +52,7 @@ function WorkspaceCard({
     <Link
       href={href}
       data-testid={testId}
+      data-workspace={workspace}
       className="rounded-2xl border bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
     >
       <div className="mb-3 text-sm uppercase tracking-[0.2em] text-muted-foreground">

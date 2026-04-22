@@ -7,8 +7,11 @@ import { PDFDocument } from "pdf-lib";
 import { createClient } from "redis";
 
 import {
+  createStudyThreeFallbackLayoutFromHtml,
   normalizeStudyThreeBook,
   normalizeStudyThreeBooks,
+  normalizeStudyThreePageLayout,
+  type StudyThreePageLayout,
   type StudyThreeHtmlPageRecord,
   type StudyThreeHtmlStatus,
   type StudyThreeBook,
@@ -186,11 +189,15 @@ function normalizeStudyThreeHtmlPageRecord(
     htmlContent.trim().length > 0
       ? "generated"
       : normalizeStudyThreeHtmlStatus(record.status);
+  const layoutJson =
+    normalizeStudyThreePageLayout(record.layout_json) ??
+    (htmlContent ? createStudyThreeFallbackLayoutFromHtml(htmlContent, `Страница ${pageNumber}`) : null);
 
   return {
     page_number: pageNumber,
     html_content: htmlContent,
     status,
+    ...(layoutJson ? { layout_json: layoutJson } : {}),
   };
 }
 
@@ -407,12 +414,18 @@ export async function writeStudyThreeBookHtml(params: {
   bookId: string;
   pageNumber: number;
   html: string;
+  layoutJson?: StudyThreePageLayout;
 }) {
   const pages = await readStudyThreeBookHtmlPages(params.bookId);
+  const fallbackLayout =
+    params.layoutJson ??
+    createStudyThreeFallbackLayoutFromHtml(params.html, `Страница ${params.pageNumber}`) ??
+    undefined;
   const nextPage = normalizeStudyThreeHtmlPageRecord(
     {
       html_content: params.html,
       status: "generated",
+      ...(fallbackLayout ? { layout_json: fallbackLayout } : {}),
     },
     params.pageNumber
   );

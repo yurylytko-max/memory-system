@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   getCardWorkspaceLabel,
+  getCardContentPreview,
   isCardWorkspace,
   normalizeCard,
 } from "@/lib/cards";
@@ -111,9 +112,9 @@ export default async function SpherePage({ params, searchParams }: SpherePagePro
                   </CardHeader>
 
                   <CardContent>
-                    {card.content && (
+                    {getCardContentPreview(card) && (
                       <div className="text-muted-foreground mb-3 whitespace-pre-wrap">
-                        {card.content}
+                        {getCardContentPreview(card)}
                       </div>
                     )}
 

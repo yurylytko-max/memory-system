@@ -2,12 +2,60 @@
 
 ## Snapshot
 
-- Date: `2026-04-06`
+- Date: `2026-04-22`
 - Project type: single Next.js application for planning, knowledge capture, texts, cards, vocabulary and interactive textbooks.
 - Main production domain: `memory-system-delta.vercel.app`
 - Auth model: password gate with login page and auth cookie.
 
 ## Active Product Modules
+
+### Sound Color Trainer
+
+- UI: [`app/sound-color/page.tsx`](../app/sound-color/page.tsx)
+- UI component: [`components/sound-color/sound-color-trainer-client.tsx`](../components/sound-color/sound-color-trainer-client.tsx)
+- Domain logic: [`lib/sound-color-trainer.ts`](../lib/sound-color-trainer.ts)
+
+Текущее состояние:
+
+- Добавлен локальный web-based MVP для тренировки музыкального слуха через пользовательские ассоциации `звук -> цвет`.
+- Модуль не использует серверные API и не зависит от внешних сервисов.
+- Звук генерируется через `Web Audio API` синусоидой для 12 фиксированных нот одной октавы.
+- Данные хранятся локально в `localStorage`.
+- MVP покрывает:
+  - стартовый экран со статусом пользователя;
+  - калибровку `звук -> цвет` с ограничением времени реакции;
+  - сохранение цвета, времени реакции и уровня уверенности `low/mid/high`;
+  - второй уровень выбора цвета через popover-уточнение после клика по базовому цвету;
+  - хранение не только базового цвета, но и точного оттенка в `HEX + HSL`;
+  - повторение `звук -> цвет` с проверкой совпадения по близости оттенка внутри выбранной базовой группы;
+  - обязательную обратную проверку `цвет -> нота`;
+  - простую диагностику проблемных нот по стабильности, уверенности и скорости.
+- В архитектуру уже заложен режим деградации подсказок:
+  - `withColor`;
+  - `noColor`.
+- Хранение и расчёты вынесены в отдельный доменный модуль, чтобы позже можно было расширять тренажёр на интервалы и аккорды без смешивания с другими доменами.
+- Для быстрого локального просмотра без запуска всего Next-приложения добавлен standalone prototype:
+  - [`standalone/sound-color-prototype.html`](../standalone/sound-color-prototype.html)
+- Standalone prototype не заменяет основной маршрут `/sound-color`, а нужен как временный обходной способ проверки UI/flow при проблемах локального dev-runtime.
+- Standalone prototype перестроен в pipeline этапов:
+  - `ASSIGNMENT`;
+  - `NOTES_IN_ONE_OCTAVE`;
+  - `INTERVALS`;
+  - `MELODY_IN_ONE_OCTAVE`;
+  - `OCTAVES`.
+- Для этапов `notes`, `intervals`, `melody`, `octaves` в standalone prototype введены отдельные подфазы:
+  - `fixation`;
+  - `test`.
+- В standalone prototype добавлен единый registry режимов с полями:
+  - `id`;
+  - `stage`;
+  - `phase`;
+  - `subsetSize`;
+  - `usesOctave`;
+  - `description`.
+- В exercises standalone prototype больше не использует глобальную палитру: ответы строятся только из текущего subset нот/цветов.
+- В octave-stage добавлена функция `getColorForOctave(baseColor, octaveOffset)` с правилом изменения `lightness` и ограничением диапазона `20–80`.
+- Standalone prototype теперь логирует локальные попытки и обновляет per-note stats по stage/phase.
 
 ### Mind Palaces
 
@@ -64,10 +112,12 @@
 Текущее состояние:
 
 - Карточки являются частью базы знаний.
-- База знаний разделена на два изолированных пространства: `жизнь` и `работа`.
+- База знаний разделена на три изолированных пространства: `жизнь`, `работа` и `учёба`.
 - Все legacy карточки без указанного пространства автоматически нормализуются в `жизнь`.
 - Экран `/cards` теперь служит выбором пространства, а список карточек открывается внутри выбранного workspace.
 - Экран `/cards/new` теперь сначала предлагает выбрать пространство, после чего создаёт карточку только внутри него.
+- Содержание карточки поддерживает два режима: обычный текст и структурированный чек-лист.
+- Чек-лист хранится в карточке как массив пунктов с собственными `id`, текстом и статусом выполнения; `content` остаётся текстовым fallback/preview для старых списков и поиска.
 - Сферы реорганизованы в knowledge folders.
 - Поиск, фильтры, сферы, теги и списки карточек работают только в рамках выбранного пространства.
 - Есть сценарии просмотра, создания, редактирования и открытия карточки по id с сохранением workspace-контекста.
@@ -104,6 +154,10 @@
   - `/study/:path* -> /study-3`
 - Есть загрузка книг, чтение книги, HTML pipeline, assistant routes `chat`, `explain`, `translate`, blob route и работа с Gemini-based parsing flow.
 - HTML для `study-3` страниц теперь хранится как persistent page-state в server store, а не как основной временный клиентский кэш.
+- Источник истины для уже обработанной страницы теперь состоит из:
+  - `layout_json` с блоками страницы;
+  - `html_content` как render artifact поверх сохранённой структуры.
+- Route HTML-представления сначала пытается получить от Gemini structured JSON layout, а затем рендерит HTML на стороне сервера; legacy HTML fallback сохранён как запасной путь.
 - Для каждой страницы reader использует явный статус HTML:
   - `not_generated`;
   - `generated`.

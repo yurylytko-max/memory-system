@@ -1,0 +1,2676 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Звук → цвет</title>
+    <style>
+      :root {
+        --bg: #f4efe6;
+        --panel: #fffaf2;
+        --card: #ffffff;
+        --text: #172030;
+        --muted: #5c6778;
+        --line: #d9d9d2;
+        --accent: #101828;
+        --accent-soft: #efe8da;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: radial-gradient(circle at top, #fbf7ef 0%, var(--bg) 55%, #ede6d8 100%);
+        color: var(--text);
+        font-family: "SF Pro Text", "Segoe UI", sans-serif;
+      }
+
+      button,
+      input,
+      select {
+        font: inherit;
+      }
+
+      .app {
+        max-width: 1160px;
+        margin: 0 auto;
+        padding: 28px 20px 56px;
+      }
+
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 28px;
+        box-shadow: 0 12px 40px rgba(16, 24, 40, 0.06);
+        padding: 28px;
+      }
+
+      .kicker {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.18em;
+        color: var(--muted);
+        font-weight: 700;
+      }
+
+      h1,
+      h2,
+      h3,
+      p {
+        margin: 0;
+      }
+
+      .title {
+        margin-top: 10px;
+        font-size: clamp(30px, 4vw, 42px);
+        font-weight: 700;
+      }
+
+      .subtitle {
+        margin-top: 14px;
+        max-width: 820px;
+        line-height: 1.6;
+        color: var(--muted);
+      }
+
+      .metrics,
+      .grid-2,
+      .grid-3 {
+        display: grid;
+        gap: 14px;
+      }
+
+      .metrics,
+      .grid-3 {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .grid-2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .metric,
+      .box,
+      .feedback,
+      .config-box,
+      .answer-panel,
+      .preview-panel,
+      .result-panel {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 22px;
+      }
+
+      .metric,
+      .box,
+      .feedback,
+      .config-box,
+      .answer-panel,
+      .preview-panel,
+      .result-panel {
+        padding: 18px;
+      }
+
+      .metrics {
+        margin-top: 22px;
+      }
+
+      .metric-label {
+        font-size: 14px;
+        color: var(--muted);
+      }
+
+      .metric-value {
+        margin-top: 10px;
+        font-size: 30px;
+        font-weight: 700;
+      }
+
+      .section {
+        margin-top: 24px;
+      }
+
+      .section-title {
+        margin-top: 10px;
+        font-size: 32px;
+        font-weight: 700;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 16px;
+      }
+
+      .button {
+        border: 1px solid var(--line);
+        background: #fff;
+        color: var(--text);
+        padding: 12px 18px;
+        border-radius: 18px;
+        cursor: pointer;
+      }
+
+      .button.primary {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+      }
+
+      .button.soft {
+        background: var(--accent-soft);
+      }
+
+      .button:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+
+      .hint {
+        margin-top: 12px;
+        line-height: 1.55;
+        color: var(--muted);
+      }
+
+      .hint.strong {
+        color: var(--text);
+        font-weight: 600;
+      }
+
+      .field-label {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--muted);
+      }
+
+      .select,
+      .slider-box input {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 12px 14px;
+        background: #fff;
+        color: var(--text);
+      }
+
+      .palette,
+      .chip-row,
+      .option-grid {
+        display: grid;
+        gap: 14px;
+      }
+
+      .palette {
+        margin-top: 18px;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .option-grid {
+        margin-top: 16px;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .chip-row {
+        margin-top: 12px;
+        grid-template-columns: repeat(auto-fit, minmax(86px, 1fr));
+      }
+
+      .swatch,
+      .option-button {
+        width: 100%;
+        min-height: 90px;
+        border: 2px solid rgba(16, 24, 40, 0.08);
+        border-radius: 24px;
+        cursor: pointer;
+        background: #fff;
+        color: var(--text);
+        transition: border-color 120ms ease, transform 120ms ease;
+      }
+
+      .swatch:hover,
+      .option-button:hover {
+        transform: translateY(-1px);
+        border-color: rgba(16, 24, 40, 0.3);
+      }
+
+      .swatch:disabled,
+      .option-button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .swatch {
+        min-height: 118px;
+      }
+
+      .color-chip,
+      .mini-color {
+        border-radius: 16px;
+        border: 1px solid rgba(16, 24, 40, 0.12);
+      }
+
+      .color-chip {
+        height: 86px;
+      }
+
+      .mini-color {
+        width: 72px;
+        height: 72px;
+      }
+
+      .preview-panel {
+        margin-top: 18px;
+        padding: 24px 24px 28px;
+        border-color: rgba(16, 24, 40, 0.08);
+      }
+
+      .preview-head {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        text-align: center;
+      }
+
+      .preview-text {
+        max-width: 620px;
+      }
+
+      .preview-center {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        min-height: 340px;
+        margin-top: 8px;
+      }
+
+      .preview-main-color {
+        width: clamp(220px, 28vw, 280px);
+        height: clamp(220px, 28vw, 280px);
+        border-radius: 24px;
+        border: 1px solid rgba(16, 24, 40, 0.08);
+        box-shadow: 0 16px 32px rgba(16, 24, 40, 0.08);
+        transition: background-color 180ms ease, transform 180ms ease, opacity 180ms ease;
+      }
+
+      .preview-main-note {
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--text);
+      }
+
+      .preview-main-meta {
+        font-size: 13px;
+        color: var(--muted);
+      }
+
+      .preview-sequence {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 12px;
+        margin-top: 6px;
+      }
+
+      .preview-pair {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 18px;
+        margin-top: 8px;
+      }
+
+      .preview-pair-arrow {
+        font-size: 28px;
+        color: var(--muted);
+      }
+
+      .preview-octave-map {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 18px;
+        width: min(100%, 760px);
+        margin-top: 8px;
+      }
+
+      .octave-cell {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .octave-color {
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        max-width: 180px;
+        border-radius: 22px;
+        border: 1px solid rgba(16, 24, 40, 0.08);
+        box-shadow: 0 10px 22px rgba(16, 24, 40, 0.06);
+        transition: background-color 180ms ease, transform 180ms ease, opacity 180ms ease;
+      }
+
+      .octave-cell.active .octave-color {
+        transform: scale(1.04);
+      }
+
+      .octave-label {
+        font-size: 13px;
+        color: var(--muted);
+      }
+
+      .sequence-step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        padding: 0;
+        border: 0;
+        background: transparent;
+      }
+
+      .sequence-step-label {
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .sequence-mini-color {
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+        border: 1px solid rgba(16, 24, 40, 0.1);
+        transition: transform 180ms ease, opacity 180ms ease;
+      }
+
+      .sequence-step.active .sequence-mini-color {
+        transform: scale(1.08);
+        border-color: rgba(16, 24, 40, 0.22);
+      }
+
+      .saved-item,
+      .attempt-item {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 14px 16px;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        background: #fff;
+      }
+
+      .saved-list,
+      .attempt-list {
+        margin-top: 18px;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .feedback,
+      .result-panel {
+        margin-top: 18px;
+        line-height: 1.6;
+      }
+
+      .config-box {
+        margin-top: 18px;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border-radius: 999px;
+        padding: 6px 10px;
+        background: var(--accent-soft);
+        color: var(--text);
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(16, 24, 40, 0.38);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        z-index: 30;
+      }
+
+      .overlay.open {
+        display: flex;
+      }
+
+      .dialog {
+        width: min(100%, 640px);
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 28px;
+        box-shadow: 0 24px 80px rgba(16, 24, 40, 0.18);
+        padding: 24px;
+      }
+
+      .dialog-color {
+        width: 120px;
+        height: 78px;
+        border-radius: 18px;
+        border: 1px solid var(--line);
+      }
+
+      .slider-box {
+        margin-top: 14px;
+        padding: 16px;
+        border-radius: 20px;
+        border: 1px solid var(--line);
+      }
+
+      .slider-box label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 8px;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      @media (max-width: 920px) {
+        .metrics,
+        .grid-2,
+        .grid-3,
+        .palette,
+        .option-grid,
+        .saved-list,
+        .attempt-list {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 640px) {
+        .metrics,
+        .grid-2,
+        .grid-3,
+        .palette,
+        .option-grid,
+        .saved-list,
+        .attempt-list {
+          grid-template-columns: 1fr;
+        }
+
+        .preview-head {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <section class="panel">
+        <div class="kicker">Structured Ear Training</div>
+        <h1 class="title">Звук → цвет</h1>
+        <p class="subtitle">
+          Структура теперь строится по этапам: assignment, notes, intervals, melody,
+          octaves. У каждого содержательного этапа есть отдельные `fixation` и `test`.
+        </p>
+
+        <div class="metrics">
+          <div class="metric">
+            <div class="metric-label">Назначено нот</div>
+            <div class="metric-value" id="metric-assigned">0/12</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Текущий этап</div>
+            <div class="metric-value" id="metric-stage">assignment</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Подфаза</div>
+            <div class="metric-value" id="metric-phase">—</div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="kicker">Stage 0</div>
+          <h2 class="section-title">Assignment</h2>
+          <div class="box">
+            <div class="actions">
+              <button class="button primary" id="play-assignment-note">Проиграть ноту</button>
+              <button class="button" id="reset-data">Сбросить данные</button>
+            </div>
+            <div class="hint strong" id="assignment-status">Нота заранее не показывается.</div>
+            <div class="hint" id="assignment-helper">
+              Назначьте 12 нотам базовые цвета в одной октаве.
+            </div>
+          </div>
+
+          <div class="palette" id="assignment-palette"></div>
+          <div class="feedback hidden" id="assignment-feedback"></div>
+          <div class="saved-list" id="saved-list"></div>
+        </div>
+
+        <div class="section">
+          <div class="kicker">Learning Pipeline</div>
+          <h2 class="section-title">Stage / Phase / Mode</h2>
+
+          <div class="config-box">
+            <div class="grid-3">
+              <div>
+                <label class="field-label" for="stage-select">Stage</label>
+                <select class="select" id="stage-select"></select>
+              </div>
+              <div>
+                <label class="field-label" for="phase-select">Phase</label>
+                <select class="select" id="phase-select"></select>
+              </div>
+              <div>
+                <label class="field-label" for="mode-select">Mode</label>
+                <select class="select" id="mode-select"></select>
+              </div>
+            </div>
+
+            <div class="hint strong" id="mode-headline">Выберите режим.</div>
+            <div class="hint" id="mode-description">Описание режима появится здесь.</div>
+            <div class="hint" id="subset-description">Subset режима появится здесь.</div>
+
+            <div class="actions">
+              <button class="button primary" id="start-mode">Старт</button>
+              <button class="button soft hidden" id="confirm-fixation">Вижу / ок</button>
+              <button class="button" id="replay-exercise">Проиграть ещё раз</button>
+            </div>
+          </div>
+
+          <div class="preview-panel hidden" id="preview-panel">
+            <div class="preview-head">
+              <div style="font-weight: 700" id="preview-title">Preview</div>
+              <div class="badge" id="preview-badge">fixation</div>
+              <div class="hint preview-text" id="preview-text"></div>
+            </div>
+            <div class="preview-center">
+              <div class="preview-main-color" id="preview-main-color"></div>
+              <div class="preview-main-note" id="preview-main-note"></div>
+              <div class="preview-main-meta" id="preview-main-meta"></div>
+            </div>
+            <div class="preview-sequence" id="preview-sequence"></div>
+          </div>
+
+          <div class="answer-panel hidden" id="answer-panel">
+            <div style="font-weight: 700" id="answer-title">Ответ</div>
+            <div class="hint" id="answer-text"></div>
+            <div class="option-grid" id="answer-options"></div>
+          </div>
+
+          <div class="feedback hidden" id="exercise-feedback"></div>
+          <div class="result-panel hidden" id="result-panel"></div>
+          <div class="attempt-list" id="attempt-list"></div>
+        </div>
+      </section>
+    </div>
+
+    <div class="overlay" id="overlay">
+      <div class="dialog" id="dialog" role="dialog" aria-modal="true" tabindex="-1">
+        <div class="kicker">HSL Refinement</div>
+        <h3 style="margin-top: 10px; font-size: 30px">Уточните цвет</h3>
+        <p class="subtitle" style="margin-top: 12px">
+          Цвет для assignment сохраняется как `baseColor`.
+        </p>
+
+        <div class="preview-head" style="margin-top: 18px">
+          <div>
+            <div style="font-weight: 700" id="dialog-title">Цвет</div>
+            <div class="hint" id="dialog-meta"></div>
+          </div>
+          <div class="dialog-color" id="dialog-color"></div>
+        </div>
+
+        <div class="slider-box">
+          <label for="slider-hue">Hue</label>
+          <input id="slider-hue" type="range" min="-24" max="24" step="1" />
+        </div>
+
+        <div class="slider-box">
+          <label for="slider-sat">Saturation</label>
+          <input id="slider-sat" type="range" min="0" max="100" step="1" />
+        </div>
+
+        <div class="slider-box">
+          <label for="slider-light">Lightness</label>
+          <input id="slider-light" type="range" min="15" max="85" step="1" />
+        </div>
+
+        <div class="actions" style="justify-content: flex-end">
+          <button class="button" id="cancel-refine">Отмена</button>
+          <button class="button primary" id="confirm-refine">Сохранить</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const STORAGE_KEY = "sound-color-structured-stages-v1";
+      const ASSIGNMENT_RESPONSE_MS = 4000;
+      const HUE_VARIANCE = 24;
+      const MAX_LIGHTNESS = 80;
+      const MIN_LIGHTNESS = 20;
+      const FEATURE_FLAGS = {
+        enabledStages: {
+          notes: true,
+          intervals: true,
+          melody: true,
+          octaves: true,
+        },
+        enabledPhases: {
+          fixation: true,
+          test: true,
+        },
+      };
+
+      const NOTES = [
+        { noteId: "C4", noteName: "C", frequency: 261.63, octaveBase: 4, index: 0 },
+        { noteId: "C#4", noteName: "C#", frequency: 277.18, octaveBase: 4, index: 1 },
+        { noteId: "D4", noteName: "D", frequency: 293.66, octaveBase: 4, index: 2 },
+        { noteId: "D#4", noteName: "D#", frequency: 311.13, octaveBase: 4, index: 3 },
+        { noteId: "E4", noteName: "E", frequency: 329.63, octaveBase: 4, index: 4 },
+        { noteId: "F4", noteName: "F", frequency: 349.23, octaveBase: 4, index: 5 },
+        { noteId: "F#4", noteName: "F#", frequency: 369.99, octaveBase: 4, index: 6 },
+        { noteId: "G4", noteName: "G", frequency: 392.0, octaveBase: 4, index: 7 },
+        { noteId: "G#4", noteName: "G#", frequency: 415.3, octaveBase: 4, index: 8 },
+        { noteId: "A4", noteName: "A", frequency: 440.0, octaveBase: 4, index: 9 },
+        { noteId: "A#4", noteName: "A#", frequency: 466.16, octaveBase: 4, index: 10 },
+        { noteId: "B4", noteName: "B", frequency: 493.88, octaveBase: 4, index: 11 },
+      ];
+
+      const BASE_PALETTE = [
+        { id: "ember", hex: "#2F2A28" },
+        { id: "brick", hex: "#8E3B2E" },
+        { id: "poppy", hex: "#D1495B" },
+        { id: "coral", hex: "#E07A5F" },
+        { id: "amber", hex: "#EDA63B" },
+        { id: "wheat", hex: "#E7D3A8" },
+        { id: "moss", hex: "#6C8A3B" },
+        { id: "lagoon", hex: "#2D8C8A" },
+        { id: "cobalt", hex: "#2F5DA8" },
+        { id: "indigo", hex: "#484D9A" },
+        { id: "violet", hex: "#7251B5" },
+        { id: "rose", hex: "#C970A2" },
+      ];
+
+      const STAGES = [
+        { id: "assignment", label: "ASSIGNMENT" },
+        { id: "notes", label: "NOTES_IN_ONE_OCTAVE" },
+        { id: "intervals", label: "INTERVALS" },
+        { id: "melody", label: "MELODY_IN_ONE_OCTAVE" },
+        { id: "octaves", label: "OCTAVES" },
+      ];
+
+      const PHASES = [
+        { id: "fixation", label: "fixation" },
+        { id: "test", label: "test" },
+      ];
+
+      const INTERVAL_POOL = [
+        { semitones: 1, label: "m2" },
+        { semitones: 2, label: "M2" },
+        { semitones: 4, label: "M3" },
+      ];
+
+      const MODE_REGISTRY = [
+        {
+          id: "NOTE_SINGLE_REPEAT",
+          stage: "notes",
+          phase: "fixation",
+          subsetSize: 1,
+          usesOctave: false,
+          description: "Все назначенные ноты проходят по очереди; каждая повторяется серией без теста.",
+          build: () => {
+            const assigned = getAssignedNotes();
+            return {
+              modeId: "NOTE_SINGLE_REPEAT",
+              stage: "notes",
+              phase: "fixation",
+              subset: assigned,
+              rounds: assigned.flatMap((note) =>
+                Array.from({ length: 5 }, (_, index) =>
+                  passiveNoteRound(
+                    note,
+                    index === 0
+                      ? `Новая нота ${note.noteId}. Сначала зафиксируйте её цвет.`
+                      : `Повтор ${index + 1} для ${note.noteId}.`
+                  )
+                )
+              ),
+            };
+          },
+        },
+        {
+          id: "NOTE_TWO_PASSIVE",
+          stage: "notes",
+          phase: "fixation",
+          subsetSize: 2,
+          usesOctave: false,
+          description: "A → цвет A, B → цвет B, простое чередование двух нот.",
+          build: ({ subset }) => ({
+            modeId: "NOTE_TWO_PASSIVE",
+            stage: "notes",
+            phase: "fixation",
+            subset,
+            rounds: [passiveNoteRound(subset[0], "Первая нота."), passiveNoteRound(subset[1], "Вторая нота."), passiveNoteRound(subset[0], "Возврат к первой."), passiveNoteRound(subset[1], "Возврат ко второй.")],
+          }),
+        },
+        {
+          id: "NOTE_LIMITED_SET_PASSIVE",
+          stage: "notes",
+          phase: "fixation",
+          subsetSize: 3,
+          usesOctave: false,
+          description: "3 ноты. Цвет каждой показывается сразу, без выбора.",
+          build: ({ subset }) => ({
+            modeId: "NOTE_LIMITED_SET_PASSIVE",
+            stage: "notes",
+            phase: "fixation",
+            subset,
+            rounds: subset.flatMap((note) => [passiveNoteRound(note, "Пассивная фиксация внутри малого subset."), passiveNoteRound(note, "Повтор той же связи.")]),
+          }),
+        },
+        {
+          id: "NOTE_LONG_TONE",
+          stage: "notes",
+          phase: "fixation",
+          subsetSize: 1,
+          usesOctave: false,
+          description: "Длинный тон. Цвет удерживается на экране всё время.",
+          build: ({ subset }) => ({
+            modeId: "NOTE_LONG_TONE",
+            stage: "notes",
+            phase: "fixation",
+            subset,
+            rounds: Array.from({ length: 4 }, () => passiveNoteRound(subset[0], "Длинный тон с удержанием цвета.", { durationMs: 2400 })),
+          }),
+        },
+        {
+          id: "NOTE_SINGLE_TEST",
+          stage: "notes",
+          phase: "test",
+          subsetSize: 2,
+          usesOctave: false,
+          description: "Одна нота. Выбор из 2 цветов.",
+          build: ({ subset }) => noteColorTestSession("NOTE_SINGLE_TEST", subset, 4, 2, false),
+        },
+        {
+          id: "NOTE_TWO_TEST",
+          stage: "notes",
+          phase: "test",
+          subsetSize: 2,
+          usesOctave: false,
+          description: "2 ноты. Выбор из 2 цветов текущего subset.",
+          build: ({ subset }) => noteColorTestSession("NOTE_TWO_TEST", subset, 5, 2, false),
+        },
+        {
+          id: "NOTE_LIMITED_SET_TEST",
+          stage: "notes",
+          phase: "test",
+          subsetSize: 3,
+          usesOctave: false,
+          description: "3 ноты. Выбор только из 3 цветов subset.",
+          build: ({ subset }) => noteColorTestSession("NOTE_LIMITED_SET_TEST", subset, 5, 3, false),
+        },
+        {
+          id: "NOTE_SPEED_TEST",
+          stage: "notes",
+          phase: "test",
+          subsetSize: 3,
+          usesOctave: false,
+          description: "Та же subset-логика, но с коротким окном ответа.",
+          build: ({ subset }) => noteColorTestSession("NOTE_SPEED_TEST", subset, 6, 3, true),
+        },
+        {
+          id: "INTERVAL_PASSIVE_PAIR",
+          stage: "intervals",
+          phase: "fixation",
+          subsetSize: 2,
+          usesOctave: false,
+          description: "Две ноты подряд и две соответствующие цветовые точки.",
+          build: ({ subset, intervalPair }) => intervalPassiveSession("INTERVAL_PASSIVE_PAIR", subset, intervalPair, "Интервал как звуковая и цветовая пара."),
+        },
+        {
+          id: "INTERVAL_PASSIVE_REPEAT",
+          stage: "intervals",
+          phase: "fixation",
+          subsetSize: 2,
+          usesOctave: false,
+          description: "Одна интервальная пара повторяется несколько раз.",
+          build: ({ subset, intervalPair }) => intervalPassiveSession("INTERVAL_PASSIVE_REPEAT", subset, intervalPair, "Повтор одного и того же интервального перехода.", 4),
+        },
+        {
+          id: "INTERVAL_DIRECTION_PASSIVE",
+          stage: "intervals",
+          phase: "fixation",
+          subsetSize: 2,
+          usesOctave: false,
+          description: "Движение вверх/вниз показывается без ответа.",
+          build: ({ subset, intervalPair }) => intervalPassiveSession("INTERVAL_DIRECTION_PASSIVE", subset, intervalPair, "Смотрите направление перехода без ответа.", 3),
+        },
+        {
+          id: "INTERVAL_COLOR_PATH",
+          stage: "intervals",
+          phase: "fixation",
+          subsetSize: 2,
+          usesOctave: false,
+          description: "Сначала цветовой путь, затем тот же интервал звучит.",
+          build: ({ subset, intervalPair }) => intervalColorPathSession(subset, intervalPair),
+        },
+        {
+          id: "INTERVAL_DIRECTION_TEST",
+          stage: "intervals",
+          phase: "test",
+          subsetSize: 2,
+          usesOctave: false,
+          description: "2 звука. Ответ: вверх / вниз.",
+          build: ({ subset, intervalPair }) => intervalDirectionTestSession(subset, intervalPair),
+        },
+        {
+          id: "INTERVAL_COLOR_MATCH_TEST",
+          stage: "intervals",
+          phase: "test",
+          subsetSize: 3,
+          usesOctave: false,
+          description: "2 звука. Выбрать правильную пару цветов из малого набора.",
+          build: ({ subset, intervalPair }) => intervalColorMatchTestSession(subset, intervalPair),
+        },
+        {
+          id: "INTERVAL_NAME_TEST",
+          stage: "intervals",
+          phase: "test",
+          subsetSize: 2,
+          usesOctave: false,
+          description: "Выбор названия интервала из 2–3 вариантов.",
+          build: ({ subset, intervalPair, intervalChoices }) => intervalNameTestSession(subset, intervalPair, intervalChoices),
+        },
+        {
+          id: "INTERVAL_COMPARE_TEST",
+          stage: "intervals",
+          phase: "test",
+          subsetSize: 3,
+          usesOctave: false,
+          description: "Два интервала. Ответ: одинаковые или разные.",
+          build: ({ subset, intervalPair, secondIntervalPair }) => intervalCompareTestSession(subset, intervalPair, secondIntervalPair),
+        },
+        {
+          id: "MELODY_COLOR_SEQUENCE_PASSIVE",
+          stage: "melody",
+          phase: "fixation",
+          subsetSize: 3,
+          usesOctave: false,
+          description: "Последовательность цветов и та же мелодия внутри одной октавы.",
+          build: ({ subset, melody }) => melodyPassiveSession("MELODY_COLOR_SEQUENCE_PASSIVE", subset, melody, "Сначала цветовая цепочка, затем та же мелодия."),
+        },
+        {
+          id: "MELODY_SOUND_COLOR_FOLLOW",
+          stage: "melody",
+          phase: "fixation",
+          subsetSize: 3,
+          usesOctave: false,
+          description: "Звук идёт, цвета следуют по ходу звучания.",
+          build: ({ subset, melody }) => melodyFollowSession(subset, melody),
+        },
+        {
+          id: "MELODY_REPEAT_PASSIVE",
+          stage: "melody",
+          phase: "fixation",
+          subsetSize: 3,
+          usesOctave: false,
+          description: "Одна короткая мелодия и тот же цветовой порядок повторяются.",
+          build: ({ subset, melody }) => melodyRepeatPassiveSession(subset, melody),
+        },
+        {
+          id: "MELODY_CHUNK_PASSIVE",
+          stage: "melody",
+          phase: "fixation",
+          subsetSize: 4,
+          usesOctave: false,
+          description: "Мелодия делится на маленькие куски и предъявляется частями.",
+          build: ({ subset, melody }) => melodyChunkPassiveSession(subset, melody),
+        },
+        {
+          id: "MELODY_SOUND_TO_COLOR_TEST",
+          stage: "melody",
+          phase: "test",
+          subsetSize: 3,
+          usesOctave: false,
+          description: "Звучат 2–4 ноты. Нужно выбрать цвета по порядку.",
+          build: ({ subset, melody }) => melodySequenceTestSession("MELODY_SOUND_TO_COLOR_TEST", subset, melody, "color"),
+        },
+        {
+          id: "MELODY_SOUND_TO_NOTE_TEST",
+          stage: "melody",
+          phase: "test",
+          subsetSize: 3,
+          usesOctave: false,
+          description: "Звучат 2–4 ноты. Нужно выбрать имена нот по порядку.",
+          build: ({ subset, melody }) => melodySequenceTestSession("MELODY_SOUND_TO_NOTE_TEST", subset, melody, "note"),
+        },
+        {
+          id: "MELODY_REPEAT_DETECTION_TEST",
+          stage: "melody",
+          phase: "test",
+          subsetSize: 3,
+          usesOctave: false,
+          description: "Две короткие последовательности. Ответ: одинаковые или разные.",
+          build: ({ subset, melody, secondMelody }) => melodyRepeatDetectionSession(subset, melody, secondMelody),
+        },
+        {
+          id: "MELODY_MISSING_STEP_TEST",
+          stage: "melody",
+          phase: "test",
+          subsetSize: 3,
+          usesOctave: false,
+          description: "Определить пропущенную ноту из ограниченного набора.",
+          build: ({ subset, melody }) => melodyMissingStepSession(subset, melody),
+        },
+        {
+          id: "OCTAVE_PASSIVE_SINGLE",
+          stage: "octaves",
+          phase: "fixation",
+          subsetSize: 1,
+          usesOctave: true,
+          description: "Базовая нота и её октавная версия. Тот же hue, другая lightness.",
+          build: ({ subset }) => octavePassiveSingleSession(subset[0]),
+        },
+        {
+          id: "OCTAVE_PASSIVE_COMPARE",
+          stage: "octaves",
+          phase: "fixation",
+          subsetSize: 1,
+          usesOctave: true,
+          description: "Просто сравнить светлее / темнее без ответа.",
+          build: ({ subset }) => octavePassiveCompareSession(subset[0]),
+        },
+        {
+          id: "OCTAVE_PASSIVE_REPEAT",
+          stage: "octaves",
+          phase: "fixation",
+          subsetSize: 1,
+          usesOctave: true,
+          description: "Один и тот же октавный переход несколько раз.",
+          build: ({ subset }) => octavePassiveRepeatSession(subset[0]),
+        },
+        {
+          id: "OCTAVE_LIGHTNESS_MAPPING",
+          stage: "octaves",
+          phase: "fixation",
+          subsetSize: 1,
+          usesOctave: true,
+          description: "Серия вверх и вниз с визуальной lightness-картой.",
+          build: ({ subset }) => octaveLightnessMappingSession(subset[0]),
+        },
+        {
+          id: "OCTAVE_DIRECTION_TEST",
+          stage: "octaves",
+          phase: "test",
+          subsetSize: 1,
+          usesOctave: true,
+          description: "2 звука. Ответ: выше / ниже.",
+          build: ({ subset }) => octaveDirectionTestSession(subset[0]),
+        },
+        {
+          id: "OCTAVE_COLOR_MATCH_TEST",
+          stage: "octaves",
+          phase: "test",
+          subsetSize: 1,
+          usesOctave: true,
+          description: "Звук. Выбрать правильный вариант светлее/темнее из 2.",
+          build: ({ subset }) => octaveColorMatchTestSession(subset[0]),
+        },
+        {
+          id: "OCTAVE_BASE_RELATION_TEST",
+          stage: "octaves",
+          phase: "test",
+          subsetSize: 2,
+          usesOctave: true,
+          description: "Определить, та же ли это нота в другой октаве.",
+          build: ({ subset }) => octaveBaseRelationTestSession(subset),
+        },
+        {
+          id: "OCTAVE_SERIES_TEST",
+          stage: "octaves",
+          phase: "test",
+          subsetSize: 1,
+          usesOctave: true,
+          description: "Короткая серия октавных переходов и выбор правильной цветовой цепочки.",
+          build: ({ subset }) => octaveSeriesTestSession(subset[0]),
+        },
+      ];
+
+      const state = {
+        profile: null,
+        assignmentQueue: [],
+        assignmentPrompt: null,
+        refinement: null,
+        audioContext: null,
+        selectedStage: "notes",
+        selectedPhase: "fixation",
+        selectedModeId: "NOTE_SINGLE_REPEAT",
+        activeSession: null,
+        activeRound: null,
+        activePrompt: null,
+        playbackTimer: null,
+      };
+
+      function createEmptyStats() {
+        return {
+          notes: { fixationRuns: 0, testRuns: 0, accuracy: 0, reactionTimes: [] },
+          intervals: { fixationRuns: 0, testRuns: 0, accuracy: 0 },
+          melody: { fixationRuns: 0, testRuns: 0, accuracy: 0 },
+          octaves: { fixationRuns: 0, testRuns: 0, accuracy: 0 },
+        };
+      }
+
+      function createProfile() {
+        return {
+          notes: NOTES.map((note) => ({
+            noteId: note.noteId,
+            noteName: note.noteName,
+            octaveBase: note.octaveBase,
+            baseColor: null,
+            octaveSensitivity: 0,
+            stats: createEmptyStats(),
+          })),
+          attempts: [],
+        };
+      }
+
+      function clamp(value, min = 0, max = 1) {
+        return Math.min(max, Math.max(min, value));
+      }
+
+      function sleep(ms) {
+        return new Promise((resolve) => setTimeout(resolve, ms));
+      }
+
+      function clampHue(value) {
+        const normalized = value % 360;
+        return normalized < 0 ? normalized + 360 : normalized;
+      }
+
+      function clampLightness(value) {
+        return Math.max(MIN_LIGHTNESS / 100, Math.min(MAX_LIGHTNESS / 100, value));
+      }
+
+      function hexToRgb(hex) {
+        const normalized = String(hex).replace("#", "").trim();
+        if (!/^[0-9a-fA-F]{6}$/.test(normalized)) return null;
+        return {
+          r: parseInt(normalized.slice(0, 2), 16),
+          g: parseInt(normalized.slice(2, 4), 16),
+          b: parseInt(normalized.slice(4, 6), 16),
+        };
+      }
+
+      function rgbToHex({ r, g, b }) {
+        const pad = (value) => value.toString(16).padStart(2, "0");
+        return `#${pad(r)}${pad(g)}${pad(b)}`.toUpperCase();
+      }
+
+      function rgbToHsl(rgb) {
+        const r = rgb.r / 255;
+        const g = rgb.g / 255;
+        const b = rgb.b / 255;
+        const max = Math.max(r, g, b);
+        const min = Math.min(r, g, b);
+        const l = (max + min) / 2;
+        const delta = max - min;
+        if (delta === 0) return { h: 0, s: 0, l };
+        const s = delta / (1 - Math.abs(2 * l - 1));
+        let h = 0;
+        if (max === r) h = 60 * (((g - b) / delta) % 6);
+        else if (max === g) h = 60 * ((b - r) / delta + 2);
+        else h = 60 * ((r - g) / delta + 4);
+        return { h: clampHue(h), s, l };
+      }
+
+      function hslToRgb(h, s, l) {
+        const hue = clampHue(h);
+        const saturation = clamp(s);
+        const lightness = clamp(l);
+        const chroma = (1 - Math.abs(2 * lightness - 1)) * saturation;
+        const x = chroma * (1 - Math.abs(((hue / 60) % 2) - 1));
+        const m = lightness - chroma / 2;
+        let r = 0;
+        let g = 0;
+        let b = 0;
+        if (hue < 60) [r, g] = [chroma, x];
+        else if (hue < 120) [r, g] = [x, chroma];
+        else if (hue < 180) [g, b] = [chroma, x];
+        else if (hue < 240) [g, b] = [x, chroma];
+        else if (hue < 300) [r, b] = [x, chroma];
+        else [r, b] = [chroma, x];
+        return {
+          r: Math.round((r + m) * 255),
+          g: Math.round((g + m) * 255),
+          b: Math.round((b + m) * 255),
+        };
+      }
+
+      function hslToHex(h, s, l) {
+        return rgbToHex(hslToRgb(h, s, l));
+      }
+
+      function createColorFromPaletteHex(hex) {
+        const hsl = rgbToHsl(hexToRgb(hex));
+        return {
+          h: hsl.h,
+          s: hsl.s,
+          l: hsl.l,
+          hex: hslToHex(hsl.h, hsl.s, hsl.l),
+        };
+      }
+
+      function getColorForOctave(baseColor, octaveOffset) {
+        if (!baseColor) return null;
+        const nextLightness = clampLightness(baseColor.l + octaveOffset * 0.15);
+        return {
+          h: baseColor.h,
+          s: baseColor.s,
+          l: nextLightness,
+          hex: hslToHex(baseColor.h, baseColor.s, nextLightness),
+        };
+      }
+
+      function getSignedHueOffset(center, hue) {
+        const raw = ((hue - center + 540) % 360) - 180;
+        return Math.max(-HUE_VARIANCE, Math.min(HUE_VARIANCE, raw));
+      }
+
+      function createRefinedColor(baseColor, overrides = {}) {
+        const hue = clampHue(baseColor.h + Math.max(-HUE_VARIANCE, Math.min(HUE_VARIANCE, overrides.hOffset ?? 0)));
+        const saturation = clamp(overrides.s ?? baseColor.s);
+        const lightness = clamp(overrides.l ?? baseColor.l);
+        return {
+          h: hue,
+          s: saturation,
+          l: lightness,
+          hex: hslToHex(hue, saturation, lightness),
+        };
+      }
+
+      function shuffle(list) {
+        const copy = [...list];
+        for (let index = copy.length - 1; index > 0; index -= 1) {
+          const randomIndex = Math.floor(Math.random() * (index + 1));
+          [copy[index], copy[randomIndex]] = [copy[randomIndex], copy[index]];
+        }
+        return copy;
+      }
+
+      function sample(list, count) {
+        return shuffle(list).slice(0, Math.min(count, list.length));
+      }
+
+      function randomChoice(list) {
+        return list[Math.floor(Math.random() * list.length)];
+      }
+
+      function getNoteMeta(noteId) {
+        return NOTES.find((note) => note.noteId === noteId) || NOTES[0];
+      }
+
+      function getProfileNote(noteId) {
+        return state.profile.notes.find((note) => note.noteId === noteId) || null;
+      }
+
+      function getAssignedNotes() {
+        return state.profile.notes.filter((note) => note.baseColor);
+      }
+
+      function getAssignedCount() {
+        return getAssignedNotes().length;
+      }
+
+      function ensureAssignmentQueue() {
+        const missing = state.profile.notes.filter((note) => !note.baseColor).map((note) => note.noteId);
+        if (!missing.length) {
+          state.assignmentQueue = [];
+          return;
+        }
+        const current = state.assignmentQueue.filter((noteId) => missing.includes(noteId));
+        const extra = missing.filter((noteId) => !current.includes(noteId));
+        state.assignmentQueue = [...current, ...shuffle(extra)];
+      }
+
+      function getCurrentAssignmentNoteId() {
+        ensureAssignmentQueue();
+        return state.assignmentQueue[0] || null;
+      }
+
+      function getCurrentAssignmentNote() {
+        const noteId = getCurrentAssignmentNoteId();
+        return noteId ? getNoteMeta(noteId) : null;
+      }
+
+      function updateAccuracyBucket(bucket, correct) {
+        const total = (bucket._tests || 0) + 1;
+        const success = (bucket._correct || 0) + (correct ? 1 : 0);
+        bucket._tests = total;
+        bucket._correct = success;
+        bucket.accuracy = Math.round((success / total) * 100) / 100;
+      }
+
+      function logAttempt(entry) {
+        state.profile.attempts.push({
+          ...entry,
+          timestamp: Date.now(),
+        });
+      }
+
+      function touchStats(noteIds, stage, phase, result = null, reactionTime = null) {
+        noteIds.forEach((noteId) => {
+          const note = getProfileNote(noteId);
+          if (!note) return;
+          const bucket = note.stats[stage];
+          if (phase === "fixation") {
+            bucket.fixationRuns += 1;
+          } else {
+            bucket.testRuns += 1;
+            if (typeof result === "boolean") updateAccuracyBucket(bucket, result);
+            if (stage === "notes" && typeof reactionTime === "number") {
+              bucket.reactionTimes.push(reactionTime);
+            }
+          }
+        });
+      }
+
+      function saveProfile() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state.profile));
+      }
+
+      function normalizeStoredColor(storedColor) {
+        if (!storedColor) return null;
+        if (storedColor.hex && typeof storedColor.h === "number") return storedColor;
+        if (storedColor.hex) return createColorFromPaletteHex(storedColor.hex);
+        return null;
+      }
+
+      function loadProfile() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (!raw) return createProfile();
+          const parsed = JSON.parse(raw);
+          return {
+            notes: NOTES.map((note) => {
+              const stored = (parsed.notes || []).find((item) => item.noteId === note.noteId) || {};
+              return {
+                noteId: note.noteId,
+                noteName: stored.noteName || note.noteName,
+                octaveBase: stored.octaveBase || 4,
+                baseColor: normalizeStoredColor(stored.baseColor),
+                octaveSensitivity: stored.octaveSensitivity || 0,
+                stats: stored.stats || createEmptyStats(),
+              };
+            }),
+            attempts: Array.isArray(parsed.attempts) ? parsed.attempts : [],
+          };
+        } catch {
+          return createProfile();
+        }
+      }
+
+      async function ensureAudioContext() {
+        if (!state.audioContext) state.audioContext = new AudioContext();
+        if (state.audioContext.state === "suspended") await state.audioContext.resume();
+        return state.audioContext;
+      }
+
+      async function playTone({ noteId, durationMs = 1000, waveform = "sine", volume = 0.16, octaveOffset = 0 }) {
+        const context = await ensureAudioContext();
+        const note = getNoteMeta(noteId);
+        const now = context.currentTime;
+        const oscillator = context.createOscillator();
+        const gain = context.createGain();
+        oscillator.type = waveform;
+        oscillator.frequency.setValueAtTime(note.frequency * Math.pow(2, octaveOffset), now);
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.exponentialRampToValueAtTime(Math.max(0.03, volume), now + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + durationMs / 1000);
+        oscillator.connect(gain);
+        gain.connect(context.destination);
+        oscillator.start(now);
+        oscillator.stop(now + durationMs / 1000 + 0.03);
+        await sleep(durationMs + 40);
+      }
+
+      async function playSequence(steps) {
+        for (const step of steps) {
+          if (step.restMs) {
+            await sleep(step.restMs);
+            continue;
+          }
+          await playTone(step);
+          if (step.gapAfterMs) await sleep(step.gapAfterMs);
+        }
+      }
+
+      function toneStep(noteId, overrides = {}) {
+        return {
+          noteId,
+          durationMs: overrides.durationMs ?? 820,
+          waveform: overrides.waveform || "sine",
+          volume: overrides.volume ?? 0.16,
+          octaveOffset: overrides.octaveOffset ?? 0,
+          gapAfterMs: overrides.gapAfterMs ?? 220,
+        };
+      }
+
+      function passiveRound({ stage, noteIds, steps, previewItems, text }) {
+        return {
+          stage,
+          phase: "fixation",
+          answerType: "fixation",
+          noteIds,
+          steps,
+          previewItems,
+          promptText: text,
+        };
+      }
+
+      function testRound({ stage, noteIds, steps, previewItems = null, answerType, options, correctAnswer, promptText, timeLimitMs = 4000, meta = {} }) {
+        return {
+          stage,
+          phase: "test",
+          answerType,
+          noteIds,
+          steps,
+          previewItems,
+          options,
+          correctAnswer,
+          promptText,
+          timeLimitMs,
+          meta,
+        };
+      }
+
+      function makeColorItem(note, color, label = null) {
+        return {
+          kind: "color",
+          noteId: note.noteId,
+          noteName: note.noteName,
+          label: label || note.noteName,
+          color,
+        };
+      }
+
+      function buildSubset(stage, requestedSize) {
+        const assigned = getAssignedNotes();
+        if (!assigned.length) return [];
+        if (stage === "octaves") return sample(assigned, 1);
+        return sample(assigned, Math.min(requestedSize, assigned.length));
+      }
+
+      function pickIntervalPair(subset) {
+        const ordered = [...subset].sort((a, b) => getNoteMeta(a.noteId).index - getNoteMeta(b.noteId).index);
+        const allowed = [];
+        for (let index = 0; index < ordered.length; index += 1) {
+          for (let inner = index + 1; inner < ordered.length; inner += 1) {
+            const first = ordered[index];
+            const second = ordered[inner];
+            const diff = getNoteMeta(second.noteId).index - getNoteMeta(first.noteId).index;
+            const matched = INTERVAL_POOL.find((interval) => interval.semitones === diff);
+            if (matched) {
+              allowed.push({ first, second, label: matched.label, semitones: matched.semitones, direction: "up" });
+              allowed.push({ first: second, second: first, label: matched.label, semitones: matched.semitones, direction: "down" });
+            }
+          }
+        }
+        return allowed.length ? randomChoice(allowed) : null;
+      }
+
+      function pickSecondIntervalPair(subset, excludeLabel) {
+        const pair = pickIntervalPair(subset);
+        if (!pair) return null;
+        if (pair.label === excludeLabel && subset.length >= 3) {
+          return pickIntervalPair(shuffle(subset));
+        }
+        return pair;
+      }
+
+      function buildMelody(subset, length = 3) {
+        const notes = [];
+        const pool = subset.length >= length ? sample(subset, length) : shuffle(subset);
+        while (notes.length < length) {
+          notes.push(pool[notes.length % pool.length]);
+        }
+        return notes;
+      }
+
+      function passiveNoteRound(note, text, toneOverrides = {}) {
+        return passiveRound({
+          stage: "notes",
+          noteIds: [note.noteId],
+          steps: [toneStep(note.noteId, toneOverrides)],
+          previewItems: [makeColorItem(note, note.baseColor)],
+          text,
+        });
+      }
+
+      function noteColorTestSession(modeId, subset, roundsCount, optionCount, speedMode) {
+        return {
+          modeId,
+          stage: "notes",
+          phase: "test",
+          subset,
+          rounds: Array.from({ length: roundsCount }, () => {
+            const target = randomChoice(subset);
+            const choices = sample(subset, optionCount);
+            if (!choices.find((note) => note.noteId === target.noteId)) choices[0] = target;
+            return testRound({
+              stage: "notes",
+              noteIds: [target.noteId],
+              steps: [toneStep(target.noteId)],
+              answerType: "color",
+              options: choices.map((note) => ({
+                id: note.noteId,
+                label: note.noteName,
+                color: note.baseColor,
+              })),
+              correctAnswer: target.noteId,
+              promptText: "Выберите цвет только из текущего subset.",
+              timeLimitMs: speedMode ? 1200 : 4000,
+            });
+          }),
+        };
+      }
+
+      function intervalPassiveSession(modeId, subset, pair, text, repeats = 2) {
+        const previewItems = [makeColorItem(pair.first, pair.first.baseColor), makeColorItem(pair.second, pair.second.baseColor)];
+        return {
+          modeId,
+          stage: "intervals",
+          phase: "fixation",
+          subset,
+          rounds: Array.from({ length: repeats }, () =>
+            passiveRound({
+              stage: "intervals",
+              noteIds: [pair.first.noteId, pair.second.noteId],
+              steps: [toneStep(pair.first.noteId), toneStep(pair.second.noteId)],
+              previewItems,
+              text,
+            })
+          ),
+        };
+      }
+
+      function intervalColorPathSession(subset, pair) {
+        return {
+          modeId: "INTERVAL_COLOR_PATH",
+          stage: "intervals",
+          phase: "fixation",
+          subset,
+          rounds: [
+            passiveRound({
+              stage: "intervals",
+              noteIds: [pair.first.noteId, pair.second.noteId],
+              steps: [{ restMs: 500 }],
+              previewItems: [makeColorItem(pair.first, pair.first.baseColor), makeColorItem(pair.second, pair.second.baseColor)],
+              text: "Сначала цветовой путь пары.",
+            }),
+            passiveRound({
+              stage: "intervals",
+              noteIds: [pair.first.noteId, pair.second.noteId],
+              steps: [toneStep(pair.first.noteId), toneStep(pair.second.noteId)],
+              previewItems: [makeColorItem(pair.first, pair.first.baseColor), makeColorItem(pair.second, pair.second.baseColor)],
+              text: "Теперь тот же интервал звучит.",
+            }),
+          ],
+        };
+      }
+
+      function intervalDirectionTestSession(subset, pair) {
+        return {
+          modeId: "INTERVAL_DIRECTION_TEST",
+          stage: "intervals",
+          phase: "test",
+          subset,
+          rounds: Array.from({ length: 5 }, () =>
+            testRound({
+              stage: "intervals",
+              noteIds: [pair.first.noteId, pair.second.noteId],
+              steps: [toneStep(pair.first.noteId), toneStep(pair.second.noteId)],
+              answerType: "binary",
+              options: [
+                { id: "up", label: "вверх" },
+                { id: "down", label: "вниз" },
+              ],
+              correctAnswer: pair.direction,
+              promptText: "Определите направление интервала.",
+            })
+          ),
+        };
+      }
+
+      function intervalColorMatchTestSession(subset, pair) {
+        const distractor = sample(subset.filter((note) => note.noteId !== pair.first.noteId && note.noteId !== pair.second.noteId), 1)[0] || subset[0];
+        const correctPair = [
+          { color: pair.first.baseColor, label: pair.first.noteName },
+          { color: pair.second.baseColor, label: pair.second.noteName },
+        ];
+        const wrongPair = [
+          { color: pair.first.baseColor, label: pair.first.noteName },
+          { color: distractor.baseColor, label: distractor.noteName },
+        ];
+        return {
+          modeId: "INTERVAL_COLOR_MATCH_TEST",
+          stage: "intervals",
+          phase: "test",
+          subset,
+          rounds: Array.from({ length: 4 }, () =>
+            testRound({
+              stage: "intervals",
+              noteIds: [pair.first.noteId, pair.second.noteId],
+              steps: [toneStep(pair.first.noteId), toneStep(pair.second.noteId)],
+              answerType: "pair",
+              options: [
+                { id: "correct", pair: correctPair },
+                { id: "wrong", pair: wrongPair },
+              ],
+              correctAnswer: "correct",
+              promptText: "Выберите правильную цветовую пару.",
+            })
+          ),
+        };
+      }
+
+      function intervalNameTestSession(subset, pair, intervalChoices) {
+        const options = intervalChoices.map((interval) => ({
+          id: interval.label,
+          label: interval.label,
+        }));
+        return {
+          modeId: "INTERVAL_NAME_TEST",
+          stage: "intervals",
+          phase: "test",
+          subset,
+          rounds: Array.from({ length: 4 }, () =>
+            testRound({
+              stage: "intervals",
+              noteIds: [pair.first.noteId, pair.second.noteId],
+              steps: [toneStep(pair.first.noteId), toneStep(pair.second.noteId)],
+              answerType: "label",
+              options,
+              correctAnswer: pair.label,
+              promptText: "Выберите имя интервала из ограниченного набора.",
+            })
+          ),
+        };
+      }
+
+      function intervalCompareTestSession(subset, firstPair, secondPair) {
+        const same = firstPair.label === secondPair.label;
+        return {
+          modeId: "INTERVAL_COMPARE_TEST",
+          stage: "intervals",
+          phase: "test",
+          subset,
+          rounds: Array.from({ length: 4 }, () =>
+            testRound({
+              stage: "intervals",
+              noteIds: [firstPair.first.noteId, firstPair.second.noteId, secondPair.first.noteId, secondPair.second.noteId],
+              steps: [
+                toneStep(firstPair.first.noteId),
+                toneStep(firstPair.second.noteId),
+                { restMs: 500 },
+                toneStep(secondPair.first.noteId),
+                toneStep(secondPair.second.noteId),
+              ],
+              answerType: "binary",
+              options: [
+                { id: "same", label: "одинаковые" },
+                { id: "different", label: "разные" },
+              ],
+              correctAnswer: same ? "same" : "different",
+              promptText: "Сравните два интервала.",
+            })
+          ),
+        };
+      }
+
+      function melodyPassiveSession(modeId, subset, melody, text) {
+        return {
+          modeId,
+          stage: "melody",
+          phase: "fixation",
+          subset,
+          rounds: Array.from({ length: 3 }, () =>
+            passiveRound({
+              stage: "melody",
+              noteIds: melody.map((item) => item.noteId),
+              steps: melody.map((item) => toneStep(item.noteId)),
+              previewItems: melody.map((item) => makeColorItem(item, item.baseColor)),
+              text,
+            })
+          ),
+        };
+      }
+
+      function melodyFollowSession(subset, melody) {
+        return melodyPassiveSession("MELODY_SOUND_COLOR_FOLLOW", subset, melody, "Слушайте мелодию и следите за цветами по порядку.");
+      }
+
+      function melodyRepeatPassiveSession(subset, melody) {
+        return melodyPassiveSession("MELODY_REPEAT_PASSIVE", subset, melody, "Одна мелодия повторяется несколько раз.");
+      }
+
+      function melodyChunkPassiveSession(subset, melody) {
+        const firstChunk = melody.slice(0, 2);
+        const secondChunk = melody.slice(2);
+        return {
+          modeId: "MELODY_CHUNK_PASSIVE",
+          stage: "melody",
+          phase: "fixation",
+          subset,
+          rounds: [
+            passiveRound({
+              stage: "melody",
+              noteIds: firstChunk.map((item) => item.noteId),
+              steps: firstChunk.map((item) => toneStep(item.noteId)),
+              previewItems: firstChunk.map((item) => makeColorItem(item, item.baseColor)),
+              text: "Первый кусок мелодии.",
+            }),
+            passiveRound({
+              stage: "melody",
+              noteIds: secondChunk.map((item) => item.noteId),
+              steps: secondChunk.map((item) => toneStep(item.noteId)),
+              previewItems: secondChunk.map((item) => makeColorItem(item, item.baseColor)),
+              text: "Второй кусок мелодии.",
+            }),
+          ],
+        };
+      }
+
+      function melodySequenceTestSession(modeId, subset, melody, variant) {
+        return {
+          modeId,
+          stage: "melody",
+          phase: "test",
+          subset,
+          rounds: [
+            testRound({
+              stage: "melody",
+              noteIds: melody.map((note) => note.noteId),
+              steps: melody.map((note) => toneStep(note.noteId)),
+              answerType: variant === "color" ? "sequenceColor" : "sequenceNote",
+              options: subset.map((note) => ({
+                id: note.noteId,
+                label: note.noteName,
+                color: note.baseColor,
+              })),
+              correctAnswer: melody.map((note) => note.noteId),
+              promptText: variant === "color" ? "Выберите цвета мелодии по порядку." : "Выберите имена нот по порядку.",
+              timeLimitMs: 6000,
+            }),
+          ],
+        };
+      }
+
+      function melodyRepeatDetectionSession(subset, melody, secondMelody) {
+        const same = melody.map((item) => item.noteId).join("|") === secondMelody.map((item) => item.noteId).join("|");
+        return {
+          modeId: "MELODY_REPEAT_DETECTION_TEST",
+          stage: "melody",
+          phase: "test",
+          subset,
+          rounds: [
+            testRound({
+              stage: "melody",
+              noteIds: [...melody.map((item) => item.noteId), ...secondMelody.map((item) => item.noteId)],
+              steps: [
+                ...melody.map((item) => toneStep(item.noteId)),
+                { restMs: 500 },
+                ...secondMelody.map((item) => toneStep(item.noteId)),
+              ],
+              answerType: "binary",
+              options: [
+                { id: "same", label: "одинаковые" },
+                { id: "different", label: "разные" },
+              ],
+              correctAnswer: same ? "same" : "different",
+              promptText: "Сравните две короткие мелодии.",
+            }),
+          ],
+        };
+      }
+
+      function melodyMissingStepSession(subset, melody) {
+        const missingIndex = Math.min(1, melody.length - 1);
+        const missingNote = melody[missingIndex];
+        const played = melody.filter((_, index) => index !== missingIndex);
+        return {
+          modeId: "MELODY_MISSING_STEP_TEST",
+          stage: "melody",
+          phase: "test",
+          subset,
+          rounds: [
+            testRound({
+              stage: "melody",
+              noteIds: melody.map((note) => note.noteId),
+              steps: played.map((note) => toneStep(note.noteId)),
+              answerType: "label",
+              options: subset.map((note) => ({ id: note.noteId, label: note.noteName })),
+              correctAnswer: missingNote.noteId,
+              promptText: "Определите пропущенную ноту из малого набора.",
+            }),
+          ],
+        };
+      }
+
+      function octavePassiveSingleSession(note) {
+        return {
+          modeId: "OCTAVE_PASSIVE_SINGLE",
+          stage: "octaves",
+          phase: "fixation",
+          subset: [note],
+          rounds: [
+            passiveRound({
+              stage: "octaves",
+              noteIds: [note.noteId],
+              steps: [toneStep(note.noteId, { octaveOffset: 0 }), toneStep(note.noteId, { octaveOffset: 1 })],
+              previewItems: [makeColorItem(note, getColorForOctave(note.baseColor, 0), `${note.noteName} base`), makeColorItem(note, getColorForOctave(note.baseColor, 1), `${note.noteName} +1`)],
+              text: "База и октавный сдвиг той же ноты.",
+            }),
+          ],
+        };
+      }
+
+      function octavePassiveCompareSession(note) {
+        return octavePassiveSingleSession(note);
+      }
+
+      function octavePassiveRepeatSession(note) {
+        return {
+          modeId: "OCTAVE_PASSIVE_REPEAT",
+          stage: "octaves",
+          phase: "fixation",
+          subset: [note],
+          rounds: Array.from({ length: 3 }, () =>
+            passiveRound({
+              stage: "octaves",
+              noteIds: [note.noteId],
+              steps: [toneStep(note.noteId, { octaveOffset: 0 }), toneStep(note.noteId, { octaveOffset: -1 })],
+              previewItems: [makeColorItem(note, getColorForOctave(note.baseColor, 0), `${note.noteName} base`), makeColorItem(note, getColorForOctave(note.baseColor, -1), `${note.noteName} -1`)],
+              text: "Повтор октавного перехода вниз.",
+            })
+          ),
+        };
+      }
+
+      function octaveLightnessMappingSession(note) {
+        return {
+          modeId: "OCTAVE_LIGHTNESS_MAPPING",
+          stage: "octaves",
+          phase: "fixation",
+          subset: [note],
+          rounds: [
+            passiveRound({
+              stage: "octaves",
+              noteIds: [note.noteId],
+              steps: [
+                toneStep(note.noteId, { octaveOffset: -1 }),
+                toneStep(note.noteId, { octaveOffset: 0 }),
+                toneStep(note.noteId, { octaveOffset: 1 }),
+              ],
+              previewItems: [
+                makeColorItem(note, getColorForOctave(note.baseColor, -1), "темнее"),
+                makeColorItem(note, getColorForOctave(note.baseColor, 0), "база"),
+                makeColorItem(note, getColorForOctave(note.baseColor, 1), "светлее"),
+              ],
+              text: "Правило lightness для октавного сдвига.",
+            }),
+          ],
+        };
+      }
+
+      function octaveDirectionTestSession(note) {
+        const direction = Math.random() > 0.5 ? 1 : -1;
+        return {
+          modeId: "OCTAVE_DIRECTION_TEST",
+          stage: "octaves",
+          phase: "test",
+          subset: [note],
+          rounds: Array.from({ length: 4 }, () =>
+            testRound({
+              stage: "octaves",
+              noteIds: [note.noteId],
+              steps: [toneStep(note.noteId, { octaveOffset: 0 }), toneStep(note.noteId, { octaveOffset: direction })],
+              answerType: "binary",
+              options: [
+                { id: "up", label: "выше" },
+                { id: "down", label: "ниже" },
+              ],
+              correctAnswer: direction > 0 ? "up" : "down",
+              promptText: "Определите октавное направление.",
+            })
+          ),
+        };
+      }
+
+      function octaveColorMatchTestSession(note) {
+        const direction = Math.random() > 0.5 ? 1 : -1;
+        return {
+          modeId: "OCTAVE_COLOR_MATCH_TEST",
+          stage: "octaves",
+          phase: "test",
+          subset: [note],
+          rounds: Array.from({ length: 4 }, () =>
+            testRound({
+              stage: "octaves",
+              noteIds: [note.noteId],
+              steps: [toneStep(note.noteId, { octaveOffset: direction })],
+              answerType: "color",
+              options: [
+                { id: "correct", label: "вариант 1", color: getColorForOctave(note.baseColor, direction) },
+                { id: "wrong", label: "вариант 2", color: getColorForOctave(note.baseColor, direction * -1) },
+              ],
+              correctAnswer: "correct",
+              promptText: "Выберите правильный lightness-вариант.",
+            })
+          ),
+        };
+      }
+
+      function octaveBaseRelationTestSession(subset) {
+        const [first, second] = subset.length >= 2 ? subset : [subset[0], subset[0]];
+        const sameRelation = Math.random() > 0.5;
+        const secondNoteId = sameRelation ? first.noteId : second.noteId;
+        const shift = Math.random() > 0.5 ? 1 : -1;
+        return {
+          modeId: "OCTAVE_BASE_RELATION_TEST",
+          stage: "octaves",
+          phase: "test",
+          subset,
+          rounds: [
+            testRound({
+              stage: "octaves",
+              noteIds: [first.noteId, secondNoteId],
+              steps: [toneStep(first.noteId, { octaveOffset: 0 }), toneStep(secondNoteId, { octaveOffset: shift })],
+              answerType: "binary",
+              options: [
+                { id: "same", label: "та же нота" },
+                { id: "different", label: "другая нота" },
+              ],
+              correctAnswer: sameRelation ? "same" : "different",
+              promptText: "Это та же нота в другой октаве или нет?",
+            }),
+          ],
+        };
+      }
+
+      function octaveSeriesTestSession(note) {
+        const sequence = [0, 1, 0, -1];
+        const correct = sequence.map((offset, index) => ({
+          id: `c-${index}`,
+          color: getColorForOctave(note.baseColor, offset),
+        }));
+        const wrong = [0, -1, 0, 1].map((offset, index) => ({
+          id: `w-${index}`,
+          color: getColorForOctave(note.baseColor, offset),
+        }));
+        return {
+          modeId: "OCTAVE_SERIES_TEST",
+          stage: "octaves",
+          phase: "test",
+          subset: [note],
+          rounds: [
+            testRound({
+              stage: "octaves",
+              noteIds: [note.noteId],
+              steps: sequence.map((offset) => toneStep(note.noteId, { octaveOffset: offset })),
+              answerType: "pair",
+              options: [
+                { id: "correct", pair: correct },
+                { id: "wrong", pair: wrong },
+              ],
+              correctAnswer: "correct",
+              promptText: "Выберите правильную цветовую серию для октавных переходов.",
+            }),
+          ],
+        };
+      }
+
+      function buildSessionForMode(modeId) {
+        const mode = MODE_REGISTRY.find((item) => item.id === modeId);
+        if (!mode) return null;
+        const subset = buildSubset(mode.stage, mode.subsetSize);
+        if (subset.length < mode.subsetSize && !(mode.stage === "octaves" && subset.length >= 1)) return null;
+        const intervalPair = mode.stage === "intervals" ? pickIntervalPair(subset) : null;
+        if (mode.stage === "intervals" && !intervalPair) return null;
+        const secondIntervalPair = mode.stage === "intervals" ? pickSecondIntervalPair(subset, intervalPair?.label) : null;
+        const intervalChoices = mode.stage === "intervals"
+          ? sample([
+              { semitones: intervalPair.semitones, label: intervalPair.label },
+              ...INTERVAL_POOL.filter((interval) => interval.label !== intervalPair.label),
+            ], 3)
+          : null;
+        const melody = mode.stage === "melody" ? buildMelody(subset, 3) : null;
+        const secondMelody = mode.stage === "melody" ? (Math.random() > 0.5 ? melody : buildMelody(subset, 3)) : null;
+        return mode.build({
+          subset,
+          intervalPair,
+          secondIntervalPair,
+          intervalChoices,
+          melody,
+          secondMelody,
+        });
+      }
+
+      function getAvailableModes(stage = state.selectedStage, phase = state.selectedPhase) {
+        if (stage === "assignment") return [];
+        return MODE_REGISTRY.filter((mode) => mode.stage === stage && mode.phase === phase);
+      }
+
+      function getCurrentMode() {
+        return MODE_REGISTRY.find((mode) => mode.id === state.selectedModeId) || getAvailableModes()[0] || null;
+      }
+
+      function getModeAvailability(mode = getCurrentMode()) {
+        if (!mode) return { ready: false, reason: "Нет режима." };
+        const assigned = getAssignedCount();
+        if (assigned < mode.subsetSize) {
+          return { ready: false, reason: `Нужно минимум ${mode.subsetSize} назначенных нот.` };
+        }
+        if (mode.stage === "intervals" && assigned < 3) {
+          return { ready: false, reason: "Для интервалов нужен хотя бы небольшой набор нот." };
+        }
+        if (mode.stage === "melody" && assigned < 3) {
+          return { ready: false, reason: "Для мелодий нужны минимум 3 назначенные ноты." };
+        }
+        if (mode.stage === "octaves" && assigned < 1) {
+          return { ready: false, reason: "Для октав нужна хотя бы одна назначенная нота." };
+        }
+        return { ready: true, reason: "" };
+      }
+
+      function clearPlaybackTimer() {
+        if (!state.playbackTimer) return;
+        clearTimeout(state.playbackTimer);
+        state.playbackTimer = null;
+      }
+
+      function openRefinement(baseHex) {
+        if (!state.assignmentPrompt) return;
+        const base = createColorFromPaletteHex(baseHex);
+        state.refinement = {
+          noteId: state.assignmentPrompt.noteId,
+          color: base,
+          base,
+        };
+        syncRefinementDialog();
+        document.getElementById("overlay").classList.add("open");
+        document.getElementById("dialog").focus();
+        render();
+      }
+
+      function closeRefinement() {
+        state.refinement = null;
+        document.getElementById("overlay").classList.remove("open");
+        render();
+      }
+
+      function syncRefinementDialog() {
+        if (!state.refinement) return;
+        const base = state.refinement.base;
+        const color = state.refinement.color;
+        document.getElementById("dialog-title").textContent = getProfileNote(state.refinement.noteId)?.noteId || "Note";
+        document.getElementById("dialog-meta").textContent =
+          `${color.hex} · H ${Math.round(color.h)} · S ${Math.round(color.s * 100)}% · L ${Math.round(color.l * 100)}%`;
+        document.getElementById("dialog-color").style.background = color.hex;
+        document.getElementById("slider-hue").value = String(Math.round(getSignedHueOffset(base.h, color.h)));
+        document.getElementById("slider-sat").value = String(Math.round(color.s * 100));
+        document.getElementById("slider-light").value = String(Math.round(color.l * 100));
+      }
+
+      function confirmAssignmentRefinement() {
+        if (!state.refinement) return;
+        const noteId = state.refinement.noteId;
+        state.profile.notes = state.profile.notes.map((note) =>
+          note.noteId === noteId
+            ? { ...note, baseColor: state.refinement.color }
+            : note
+        );
+        logAttempt({
+          type: "assignment",
+          stage: "assignment",
+          phase: "assignment",
+          modeId: "ASSIGNMENT",
+          noteIds: [noteId],
+          chosenValue: state.refinement.color.hex,
+          isMatch: true,
+          reactionTime: Date.now() - state.assignmentPrompt.startedAt,
+        });
+        state.assignmentQueue = state.assignmentQueue.filter((item) => item !== noteId);
+        state.assignmentPrompt = null;
+        saveProfile();
+        closeRefinement();
+        showAssignmentFeedback("Цвет назначен и сохранён как baseColor.");
+      }
+
+      function showAssignmentFeedback(message) {
+        const node = document.getElementById("assignment-feedback");
+        if (!message) {
+          node.classList.add("hidden");
+          node.textContent = "";
+          return;
+        }
+        node.classList.remove("hidden");
+        node.textContent = message;
+      }
+
+      function showExerciseFeedback(message) {
+        const node = document.getElementById("exercise-feedback");
+        if (!message) {
+          node.classList.add("hidden");
+          node.textContent = "";
+          return;
+        }
+        node.classList.remove("hidden");
+        node.textContent = message;
+      }
+
+      async function startAssignment() {
+        const note = getCurrentAssignmentNote();
+        if (!note || state.refinement) return;
+        state.assignmentPrompt = {
+          noteId: note.noteId,
+          startedAt: Date.now(),
+          expiresAt: Date.now() + ASSIGNMENT_RESPONSE_MS,
+        };
+        try {
+          await playTone({ noteId: note.noteId });
+          showAssignmentFeedback("Нота проиграна. Выберите базовый цвет.");
+        } catch {
+          showAssignmentFeedback("Звук не проигрался, но можно выбрать цвет.");
+        }
+        render();
+      }
+
+      function renderAssignmentPalette() {
+        const container = document.getElementById("assignment-palette");
+        const enabled = Boolean(state.assignmentPrompt) && !state.refinement;
+        container.innerHTML = BASE_PALETTE.map((item) => `
+          <button
+            class="swatch"
+            type="button"
+            data-assignment-hex="${item.hex}"
+            style="background:${item.hex}"
+            ${enabled ? "" : "disabled"}
+          ></button>
+        `).join("");
+      }
+
+      function renderSavedList() {
+        const container = document.getElementById("saved-list");
+        const assigned = getAssignedNotes();
+        if (!assigned.length) {
+          container.innerHTML = `
+            <div class="saved-item" style="grid-column: 1 / -1">
+              <span>Пока нет назначенных нот.</span>
+            </div>
+          `;
+          return;
+        }
+        container.innerHTML = assigned.map((note) => `
+          <div class="saved-item">
+            <div class="mini-color" style="background:${note.baseColor.hex}"></div>
+            <div>
+              <div style="font-weight:700">${note.noteId}</div>
+              <div class="hint">${note.baseColor.hex}</div>
+            </div>
+          </div>
+        `).join("");
+      }
+
+      function renderAttempts() {
+        const container = document.getElementById("attempt-list");
+        const attempts = [...state.profile.attempts].slice(-6).reverse();
+        if (!attempts.length) {
+          container.innerHTML = `
+            <div class="attempt-item" style="grid-column: 1 / -1">
+              <span>Журнал попыток пуст.</span>
+            </div>
+          `;
+          return;
+        }
+        container.innerHTML = attempts.map((attempt) => `
+          <div class="attempt-item">
+            <div>
+              <div style="font-weight:700">${attempt.modeId}</div>
+              <div class="hint">${attempt.stage} · ${attempt.phase} · ${attempt.isMatch ? "ok" : "miss"}</div>
+            </div>
+          </div>
+        `).join("");
+      }
+
+      function renderStagePhaseModeSelectors() {
+        const stageSelect = document.getElementById("stage-select");
+        const phaseSelect = document.getElementById("phase-select");
+        const modeSelect = document.getElementById("mode-select");
+
+        stageSelect.innerHTML = STAGES.filter((stage) => stage.id === "assignment" || FEATURE_FLAGS.enabledStages[stage.id]).map((stage) => `
+          <option value="${stage.id}" ${stage.id === state.selectedStage ? "selected" : ""}>${stage.label}</option>
+        `).join("");
+
+        phaseSelect.innerHTML = PHASES.filter((phase) => FEATURE_FLAGS.enabledPhases[phase.id]).map((phase) => `
+          <option value="${phase.id}" ${phase.id === state.selectedPhase ? "selected" : ""}>${phase.label}</option>
+        `).join("");
+
+        const modes = getAvailableModes();
+        if (!modes.find((mode) => mode.id === state.selectedModeId)) {
+          state.selectedModeId = modes[0]?.id || "";
+        }
+
+        modeSelect.innerHTML = modes.map((mode) => `
+          <option value="${mode.id}" ${mode.id === state.selectedModeId ? "selected" : ""}>${mode.id}</option>
+        `).join("");
+
+        const mode = getCurrentMode();
+        const availability = getModeAvailability(mode);
+        document.getElementById("mode-headline").textContent = mode
+          ? `${mode.stage} / ${mode.phase} / ${mode.id}`
+          : "Для assignment режим не нужен.";
+        document.getElementById("mode-description").textContent = mode
+          ? mode.description
+          : "Stage 0 работает как assignment без exercise registry.";
+        document.getElementById("subset-description").textContent = mode
+          ? `subset=${mode.subsetSize}, usesOctave=${mode.usesOctave ? "yes" : "no"}${availability.ready ? "" : ` · ${availability.reason}`}`
+          : "Сначала назначьте цвета.";
+      }
+
+      function renderPreview(round = state.activeRound) {
+        const panel = document.getElementById("preview-panel");
+        if (!round) {
+          panel.classList.add("hidden");
+          return;
+        }
+        panel.classList.remove("hidden");
+        document.getElementById("preview-title").textContent = round.phase === "fixation" ? "Fixation" : "Exercise";
+        document.getElementById("preview-text").textContent = round.promptText;
+        document.getElementById("preview-badge").textContent = `${round.stage} · ${round.phase}`;
+        const currentIndex = state.activePrompt?.answerIndex || 0;
+        const previewItems = round.previewItems || [];
+        const currentItem = previewItems[Math.min(currentIndex, Math.max(0, previewItems.length - 1))] || null;
+        const mainColor = document.getElementById("preview-main-color");
+        const mainNote = document.getElementById("preview-main-note");
+        const mainMeta = document.getElementById("preview-main-meta");
+        mainColor.style.background = currentItem?.color?.hex || "transparent";
+        mainColor.style.opacity = currentItem ? "1" : "0";
+        mainNote.textContent = currentItem?.label || "";
+        mainMeta.textContent = currentItem?.noteId || "";
+        const sequence = document.getElementById("preview-sequence");
+        sequence.className = "preview-sequence";
+        if (round.stage === "notes") {
+          if (previewItems.length <= 1) {
+            sequence.innerHTML = "";
+            return;
+          }
+          sequence.innerHTML = previewItems.map((item, index) => `
+            <div class="sequence-step ${index === Math.min(currentIndex, previewItems.length - 1) ? "active" : ""}">
+              <div class="sequence-mini-color" style="background:${item.color.hex}"></div>
+              <span class="sequence-step-label">${item.label}</span>
+            </div>
+          `).join("");
+          return;
+        }
+
+        if (round.stage === "intervals") {
+          if (previewItems.length < 2) {
+            sequence.innerHTML = "";
+            return;
+          }
+          const first = previewItems[0];
+          const second = previewItems[1];
+          sequence.className = "preview-pair";
+          sequence.innerHTML = `
+            <div class="sequence-step active">
+              <div class="sequence-mini-color" style="background:${first.color.hex}; width:88px; height:88px;"></div>
+              <span class="sequence-step-label">${first.label}</span>
+            </div>
+            <div class="preview-pair-arrow">${first.noteId === second.noteId ? "•" : "→"}</div>
+            <div class="sequence-step active">
+              <div class="sequence-mini-color" style="background:${second.color.hex}; width:88px; height:88px;"></div>
+              <span class="sequence-step-label">${second.label}</span>
+            </div>
+          `;
+          return;
+        }
+
+        if (round.stage === "melody") {
+          if (previewItems.length <= 1) {
+            sequence.innerHTML = "";
+            return;
+          }
+          sequence.innerHTML = previewItems.map((item, index) => `
+            <div class="sequence-step ${index === Math.min(currentIndex, previewItems.length - 1) ? "active" : ""}">
+              <div class="sequence-mini-color" style="background:${item.color.hex}"></div>
+              <span class="sequence-step-label">${item.label}</span>
+            </div>
+          `).join("");
+          return;
+        }
+
+        if (round.stage === "octaves") {
+          if (previewItems.length <= 1) {
+            sequence.innerHTML = "";
+            return;
+          }
+          sequence.className = "preview-octave-map";
+          sequence.innerHTML = previewItems.map((item, index) => `
+            <div class="octave-cell ${index === Math.min(currentIndex, previewItems.length - 1) ? "active" : ""}">
+              <div class="octave-color" style="background:${item.color.hex}"></div>
+              <div style="font-weight:700">${item.noteName || ""}</div>
+              <div class="octave-label">${item.label}</div>
+            </div>
+          `).join("");
+          return;
+        }
+
+        if (previewItems.length <= 1) {
+          sequence.innerHTML = "";
+          return;
+        }
+        sequence.innerHTML = previewItems.map((item, index) => `
+          <div class="sequence-step ${index === Math.min(currentIndex, previewItems.length - 1) ? "active" : ""}">
+            <div class="sequence-mini-color" style="background:${item.color.hex}"></div>
+            <span class="sequence-step-label">${item.label}</span>
+          </div>
+        `).join("");
+      }
+
+      function renderAnswerPanel(round = state.activeRound, prompt = state.activePrompt) {
+        const panel = document.getElementById("answer-panel");
+        if (!round || round.phase !== "test" || !prompt) {
+          panel.classList.add("hidden");
+          return;
+        }
+        panel.classList.remove("hidden");
+        document.getElementById("answer-title").textContent = round.answerType;
+        document.getElementById("answer-text").textContent =
+          round.answerType.startsWith("sequence")
+            ? `Шаг ${prompt.answerIndex + 1} из ${round.correctAnswer.length}`
+            : "Ответ только внутри текущего subset.";
+
+        const container = document.getElementById("answer-options");
+        if (round.answerType === "color") {
+          container.innerHTML = round.options.map((option) => `
+            <button class="option-button" type="button" data-answer-id="${option.id}">
+              <div class="color-chip" style="background:${option.color.hex}"></div>
+              <div style="margin-top:8px">${option.label}</div>
+            </button>
+          `).join("");
+          return;
+        }
+
+        if (round.answerType === "pair") {
+          container.innerHTML = round.options.map((option) => `
+            <button class="option-button" type="button" data-answer-id="${option.id}">
+              <div class="chip-row">
+                ${option.pair.map((step) => `<div class="color-chip" style="background:${step.color.hex};height:42px"></div>`).join("")}
+              </div>
+            </button>
+          `).join("");
+          return;
+        }
+
+        if (round.answerType === "sequenceColor") {
+          container.innerHTML = round.options.map((option) => `
+            <button class="option-button" type="button" data-answer-id="${option.id}">
+              <div class="color-chip" style="background:${option.color.hex}"></div>
+              <div style="margin-top:8px">${option.label}</div>
+            </button>
+          `).join("");
+          return;
+        }
+
+        container.innerHTML = round.options.map((option) => `
+          <button class="option-button" type="button" data-answer-id="${option.id}">
+            ${option.label}
+          </button>
+        `).join("");
+      }
+
+      function renderResult() {
+        const panel = document.getElementById("result-panel");
+        if (!state.activeSession?.finished) {
+          panel.classList.add("hidden");
+          panel.textContent = "";
+          return;
+        }
+        panel.classList.remove("hidden");
+        if (state.activeSession.phase === "fixation") {
+          panel.textContent = "Fixation завершён. Без агрессивной оценки.";
+          return;
+        }
+        panel.textContent = `Test завершён. Accuracy: ${state.activeSession.correct}/${state.activeSession.total}`;
+      }
+
+      function render() {
+        document.getElementById("metric-assigned").textContent = `${getAssignedCount()}/${NOTES.length}`;
+        document.getElementById("metric-stage").textContent = state.selectedStage;
+        document.getElementById("metric-phase").textContent = state.selectedStage === "assignment" ? "assignment" : state.selectedPhase;
+
+        const assignmentNote = getCurrentAssignmentNote();
+        document.getElementById("assignment-status").textContent = state.assignmentPrompt
+          ? "Выберите базовый цвет текущей ноты."
+          : assignmentNote
+            ? "Нота заранее не показывается."
+            : "Все 12 baseColor назначены.";
+        document.getElementById("assignment-helper").textContent = assignmentNote
+          ? assignmentNote.noteId
+          : "Assignment завершён.";
+
+        renderAssignmentPalette();
+        renderSavedList();
+        renderAttempts();
+        renderStagePhaseModeSelectors();
+        renderPreview();
+        renderAnswerPanel();
+        renderResult();
+
+        const mode = getCurrentMode();
+        const availability = getModeAvailability(mode);
+        document.getElementById("start-mode").disabled =
+          state.selectedStage === "assignment" ||
+          !mode ||
+          !availability.ready ||
+          Boolean(state.activePrompt) ||
+          Boolean(state.refinement);
+        document.getElementById("replay-exercise").disabled = !state.activeRound;
+        document.getElementById("confirm-fixation").classList.toggle("hidden", !(state.activeRound && state.activeRound.phase === "fixation" && state.activePrompt));
+        document.getElementById("confirm-fixation").disabled = !(state.activeRound && state.activeRound.phase === "fixation" && state.activePrompt);
+      }
+
+      async function startMode() {
+        const mode = getCurrentMode();
+        const availability = getModeAvailability(mode);
+        if (!mode || !availability.ready) {
+          showExerciseFeedback(availability.reason || "Режим недоступен.");
+          return;
+        }
+        const session = buildSessionForMode(mode.id);
+        if (!session) {
+          showExerciseFeedback("Не удалось собрать session для режима.");
+          return;
+        }
+        state.activeSession = {
+          ...session,
+          currentIndex: 0,
+          finished: false,
+          correct: 0,
+          total: 0,
+        };
+        showExerciseFeedback(`Старт: ${mode.id}. Сначала будет ${mode.phase}.`);
+        await playCurrentRound();
+      }
+
+      async function playCurrentRound() {
+        const session = state.activeSession;
+        if (!session) return;
+        const round = session.rounds[session.currentIndex];
+        if (!round) {
+          session.finished = true;
+          state.activeRound = null;
+          state.activePrompt = null;
+          showExerciseFeedback(session.phase === "fixation" ? "Fixation завершён." : "Test завершён.");
+          render();
+          return;
+        }
+
+        state.activeRound = round;
+        state.activePrompt = null;
+        render();
+
+        await playSequence(round.steps);
+
+        if (round.phase === "fixation") {
+          state.activePrompt = {
+            type: "fixation",
+            startedAt: Date.now(),
+          };
+          render();
+          return;
+        }
+
+        state.activePrompt = {
+          type: round.answerType,
+          startedAt: Date.now(),
+          expiresAt: Date.now() + round.timeLimitMs,
+          answerIndex: 0,
+          collected: [],
+        };
+        render();
+      }
+
+      function nextRound() {
+        clearPlaybackTimer();
+        state.playbackTimer = setTimeout(async () => {
+          if (!state.activeSession) return;
+          state.activeSession.currentIndex += 1;
+          await playCurrentRound();
+        }, 520);
+      }
+
+      function finishFixationRound() {
+        if (!state.activeRound || !state.activeSession) return;
+        touchStats(state.activeRound.noteIds, state.activeRound.stage, "fixation");
+        logAttempt({
+          type: "exercise",
+          stage: state.activeRound.stage,
+          phase: "fixation",
+          modeId: state.activeSession.modeId,
+          noteIds: state.activeRound.noteIds,
+          chosenValue: "ok",
+          isMatch: true,
+          reactionTime: Date.now() - state.activePrompt.startedAt,
+        });
+        state.activePrompt = null;
+        showExerciseFeedback("Fixation подтверждён. Переход к следующему раунду.");
+        saveProfile();
+        render();
+        nextRound();
+      }
+
+      function evaluateAnswer(round, prompt, answerId) {
+        if (round.answerType === "sequenceColor" || round.answerType === "sequenceNote") {
+          prompt.collected.push(answerId);
+          const expected = round.correctAnswer[prompt.answerIndex];
+          const correctStep = expected === answerId;
+          if (!correctStep) return { complete: true, correct: false };
+          if (prompt.collected.length === round.correctAnswer.length) return { complete: true, correct: true };
+          prompt.answerIndex += 1;
+          return { complete: false, correct: null };
+        }
+        return { complete: true, correct: answerId === round.correctAnswer };
+      }
+
+      function handleAnswer(answerId) {
+        const round = state.activeRound;
+        const prompt = state.activePrompt;
+        if (!round || !prompt || round.phase !== "test") return;
+
+        const reactionTime = Date.now() - prompt.startedAt;
+        const evaluation = evaluateAnswer(round, prompt, answerId);
+
+        if (!evaluation.complete) {
+          renderAnswerPanel(round, prompt);
+          showExerciseFeedback("Шаг принят. Продолжайте последовательность.");
+          return;
+        }
+
+        const correct = evaluation.correct === true;
+        touchStats(round.noteIds, round.stage, "test", correct, reactionTime);
+        logAttempt({
+          type: "exercise",
+          stage: round.stage,
+          phase: "test",
+          modeId: state.activeSession.modeId,
+          noteIds: round.noteIds,
+          chosenValue: Array.isArray(prompt.collected) && prompt.collected.length ? prompt.collected.join("|") : answerId,
+          isMatch: correct,
+          reactionTime,
+        });
+        state.activeSession.total += 1;
+        if (correct) state.activeSession.correct += 1;
+        state.activePrompt = null;
+        showExerciseFeedback(correct ? "Ответ совпал." : "Ответ не совпал.");
+        saveProfile();
+        render();
+        nextRound();
+      }
+
+      function handlePromptTimeout() {
+        const round = state.activeRound;
+        const prompt = state.activePrompt;
+        if (!round || !prompt || round.phase !== "test") return;
+        touchStats(round.noteIds, round.stage, "test", false, round.timeLimitMs);
+        logAttempt({
+          type: "exercise",
+          stage: round.stage,
+          phase: "test",
+          modeId: state.activeSession.modeId,
+          noteIds: round.noteIds,
+          chosenValue: "timeout",
+          isMatch: false,
+          reactionTime: round.timeLimitMs,
+        });
+        state.activeSession.total += 1;
+        state.activePrompt = null;
+        showExerciseFeedback("Время вышло.");
+        saveProfile();
+        render();
+        nextRound();
+      }
+
+      async function replayExercise() {
+        if (!state.activeRound) return;
+        await playSequence(state.activeRound.steps);
+      }
+
+      function resetAllData() {
+        clearPlaybackTimer();
+        state.profile = createProfile();
+        state.assignmentQueue = [];
+        state.assignmentPrompt = null;
+        state.refinement = null;
+        state.activeSession = null;
+        state.activeRound = null;
+        state.activePrompt = null;
+        saveProfile();
+        render();
+        showAssignmentFeedback("Данные очищены.");
+        showExerciseFeedback("");
+      }
+
+      function bootSelectors() {
+        state.selectedStage = "notes";
+        state.selectedPhase = "fixation";
+        state.selectedModeId = "NOTE_SINGLE_REPEAT";
+      }
+
+      document.getElementById("play-assignment-note").addEventListener("click", startAssignment);
+      document.getElementById("reset-data").addEventListener("click", resetAllData);
+      document.getElementById("start-mode").addEventListener("click", startMode);
+      document.getElementById("confirm-fixation").addEventListener("click", finishFixationRound);
+      document.getElementById("replay-exercise").addEventListener("click", replayExercise);
+      document.getElementById("cancel-refine").addEventListener("click", closeRefinement);
+      document.getElementById("confirm-refine").addEventListener("click", confirmAssignmentRefinement);
+
+      document.getElementById("stage-select").addEventListener("change", (event) => {
+        state.selectedStage = event.target.value;
+        if (state.selectedStage === "assignment") {
+          state.selectedPhase = "fixation";
+          state.selectedModeId = "";
+        } else {
+          state.selectedPhase = "fixation";
+          state.selectedModeId = getAvailableModes(state.selectedStage, state.selectedPhase)[0]?.id || "";
+        }
+        render();
+      });
+
+      document.getElementById("phase-select").addEventListener("change", (event) => {
+        state.selectedPhase = event.target.value;
+        state.selectedModeId = getAvailableModes(state.selectedStage, state.selectedPhase)[0]?.id || "";
+        render();
+      });
+
+      document.getElementById("mode-select").addEventListener("change", (event) => {
+        state.selectedModeId = event.target.value;
+        render();
+      });
+
+      document.getElementById("assignment-palette").addEventListener("click", (event) => {
+        const button = event.target.closest("[data-assignment-hex]");
+        if (!button || button.disabled) return;
+        openRefinement(button.dataset.assignmentHex);
+      });
+
+      document.getElementById("answer-options").addEventListener("click", (event) => {
+        const button = event.target.closest("[data-answer-id]");
+        if (!button || button.disabled) return;
+        handleAnswer(button.dataset.answerId);
+      });
+
+      document.getElementById("overlay").addEventListener("click", (event) => {
+        if (event.target.id === "overlay") closeRefinement();
+      });
+
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && state.refinement) closeRefinement();
+      });
+
+      document.getElementById("slider-hue").addEventListener("input", (event) => {
+        if (!state.refinement) return;
+        state.refinement.color = createRefinedColor(state.refinement.base, {
+          hOffset: Number(event.target.value),
+          s: state.refinement.color.s,
+          l: state.refinement.color.l,
+        });
+        syncRefinementDialog();
+      });
+
+      document.getElementById("slider-sat").addEventListener("input", (event) => {
+        if (!state.refinement) return;
+        state.refinement.color = createRefinedColor(state.refinement.base, {
+          hOffset: getSignedHueOffset(state.refinement.base.h, state.refinement.color.h),
+          s: Number(event.target.value) / 100,
+          l: state.refinement.color.l,
+        });
+        syncRefinementDialog();
+      });
+
+      document.getElementById("slider-light").addEventListener("input", (event) => {
+        if (!state.refinement) return;
+        state.refinement.color = createRefinedColor(state.refinement.base, {
+          hOffset: getSignedHueOffset(state.refinement.base.h, state.refinement.color.h),
+          s: state.refinement.color.s,
+          l: Number(event.target.value) / 100,
+        });
+        syncRefinementDialog();
+      });
+
+      setInterval(() => {
+        if (!state.activePrompt || !state.activeRound || state.activeRound.phase !== "test") return;
+        if (Date.now() >= state.activePrompt.expiresAt) {
+          handlePromptTimeout();
+        }
+      }, 160);
+
+      state.profile = loadProfile();
+      bootSelectors();
+      ensureAssignmentQueue();
+      render();
+    </script>
+  </body>
+</html>

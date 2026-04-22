@@ -48,6 +48,11 @@ export default function Home() {
           title="Чертоги разума"
           href="/mind-palaces"
         />
+
+        <Card
+          title="Звук → цвет"
+          href="/sound-color"
+        />
       </div>
     </main>
   );

@@ -25,6 +25,30 @@ export function createCardsWorkspaceFixture(): Card[] {
       workspace: "work",
     },
     {
+      id: "card-study-1",
+      title: "Учебный чек-лист",
+      content: "Повторить лексику\nСделать упражнение",
+      contentType: "checklist",
+      checklist: [
+        {
+          id: "study-checklist-1",
+          text: "Повторить лексику",
+          checked: false,
+        },
+        {
+          id: "study-checklist-2",
+          text: "Сделать упражнение",
+          checked: true,
+        },
+      ],
+      source: "Schritte",
+      type: "thought",
+      sphere: "Немецкий",
+      tags: ["учёба", "немецкий"],
+      image: null,
+      workspace: "study",
+    },
+    {
       id: "card-life-legacy",
       title: "Legacy card",
       content: "Без workspace в исходных данных",

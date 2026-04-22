@@ -21,6 +21,10 @@
 - `deu.traineddata` - tesseract language data для немецкого OCR.
 - `eng.traineddata` - tesseract language data для английского OCR.
 
+## Standalone
+
+- `standalone/sound-color-prototype.html` - автономный HTML/JS prototype модуля `звук -> цвет`, который открывается напрямую в браузере без Next.js и сервера и сейчас включает калибровку, хранение ассоциаций и единый экран режимов упражнений.
+
 ## Docs
 
 - `docs/start-prompt.md` - стартовый инструктаж для ИИ-агента.
@@ -30,6 +34,7 @@
 - `docs/change-log.md` - журнал значимых изменений.
 - `docs/roadmap.md` - план на ближайшие шаги.
 - `docs/open-issues.md` - открытые проблемы и риски.
+- `docs/tests.md` - прикладные тест-кейсы для MVP-модулей поверх автотестов.
 
 ## Tests
 
@@ -70,10 +75,16 @@
 - `app/api/mind-palaces/[id]/route.ts` - API чтения и сохранения линейного маршрута чертога.
 - `app/api/mind-palaces/[id]/check/route.ts` - API обязательных проверок маршрута вперёд, назад и по номеру.
 
+### Sound Color Trainer
+
+- `app/sound-color/page.tsx` - отдельный локальный экран тренажёра `звук -> цвет`.
+- `components/sound-color/sound-color-trainer-client.tsx` - клиентский UI калибровки, тренировки, обратной проверки и статистики.
+- `lib/sound-color-trainer.ts` - доменная модель, палитра, набор нот, расчёт стабильности, диагностика и локальная структура данных.
+
 ### Cards And Knowledge
 
-- `app/cards/page.tsx` - библиотека карточек/знаний.
-- `app/cards/new/page.tsx` - выбор workspace и создание новой карточки.
+- `app/cards/page.tsx` - выбор изолированного пространства базы знаний: `жизнь`, `работа`, `учёба`.
+- `app/cards/new/page.tsx` - выбор workspace и создание новой карточки с текстовым содержанием или чек-листом.
 - `app/cards/space/[workspace]/page.tsx` - список карточек внутри изолированного knowledge workspace.
 - `app/cards/[cardId]/page.tsx` - просмотр карточки.
 - `app/cards/edit/[cardId]/page.tsx` - редактирование карточки.
@@ -118,9 +129,12 @@
 ## Lib And Server
 
 - `lib/vocabulary.ts` - доменная модель словаря, нормализация данных и логика review queue.
+- `lib/cards.ts` - доменная модель knowledge cards: workspaces `life/work/study`, нормализация legacy данных, текстовое и checklist-содержание.
+- `lib/server/cards-store.ts` - серверное хранение knowledge cards через Redis/Vercel Blob/file fallback.
 - `lib/server/vocabulary-store.ts` - серверное хранение словаря через Redis/file fallback.
 - `lib/server/storage-paths.ts` - единая точка разрешения data-root для runtime и test storage.
-- `lib/server/study-3-store.ts` - хранение учебников `study-3`, persistent HTML page-state по страницам и удаление локальных файловых fallback-данных.
+- `lib/server/study-3-store.ts` - хранение учебников `study-3`, persistent page-state c `layout_json/html_content` по страницам и удаление локальных файловых fallback-данных.
+- `lib/server/study-3-renderer.ts` - server-side renderer для преобразования structured `study-3` page layout в HTML.
 
 ### AI And Internal Operations
 

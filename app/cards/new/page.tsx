@@ -9,10 +9,14 @@ import { useMemo, useState } from "react";
 
 import { BackButton } from "@/components/back-button";
 import {
+  CARD_WORKSPACE_META,
+  CARD_WORKSPACES,
   createCard,
   getCardWorkspaceLabel,
   isCardWorkspace,
   type Card,
+  type CardChecklistItem,
+  type CardContentType,
   type CardWorkspace,
 } from "@/lib/cards";
 import { compressImage } from "@/lib/utils";
@@ -30,6 +34,14 @@ function buildSelectionQuery(params: URLSearchParams) {
   const nextParams = new URLSearchParams(params.toString());
   nextParams.delete("workspace");
   return nextParams.toString();
+}
+
+function createChecklistItem(text = ""): CardChecklistItem {
+  return {
+    id: crypto.randomUUID(),
+    text,
+    checked: false,
+  };
 }
 
 export default function NewCardPage() {
@@ -50,6 +62,10 @@ export default function NewCardPage() {
   const [sphere, setSphere] = useState("");
   const [tags, setTags] = useState(initialTag);
   const [type, setType] = useState("thought");
+  const [contentType, setContentType] = useState<CardContentType>("text");
+  const [checklist, setChecklist] = useState<CardChecklistItem[]>([
+    { id: "initial-checklist-item", text: "", checked: false },
+  ]);
   const [image, setImage] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -75,7 +91,23 @@ export default function NewCardPage() {
     return {
       id: crypto.randomUUID(),
       title,
-      content,
+      content:
+        contentType === "checklist"
+          ? checklist
+              .map((item) => item.text.trim())
+              .filter(Boolean)
+              .join("\n")
+          : content,
+      contentType,
+      checklist:
+        contentType === "checklist"
+          ? checklist
+              .map((item) => ({
+                ...item,
+                text: item.text.trim(),
+              }))
+              .filter((item) => item.text !== "")
+          : [],
       source,
       type,
       sphere: sphere.trim(),
@@ -113,6 +145,14 @@ export default function NewCardPage() {
 
     if (!sphere.trim()) {
       alert("Укажи сферу карточки.");
+      return;
+    }
+
+    if (
+      contentType === "checklist" &&
+      checklist.every((item) => item.text.trim() === "")
+    ) {
+      alert("Добавь хотя бы один пункт чек-листа.");
       return;
     }
 
@@ -156,34 +196,26 @@ export default function NewCardPage() {
             Выбери, в каком пространстве должна быть создана карточка.
           </p>
 
-          <div className="grid gap-6 md:grid-cols-2">
-            <Link
-              href={`/cards/new?${buildWorkspaceQuery(params, "life")}`}
-              data-testid="new-card-workspace-life"
-              className="rounded-2xl border bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
-            >
-              <div className="mb-3 text-sm uppercase tracking-[0.2em] text-gray-500">
-                Пространство
-              </div>
-              <div className="mb-2 text-2xl font-semibold">жизнь</div>
-              <p className="text-sm text-gray-600">
-                Личная карточка и личные сферы базы знаний.
-              </p>
-            </Link>
-
-            <Link
-              href={`/cards/new?${buildWorkspaceQuery(params, "work")}`}
-              data-testid="new-card-workspace-work"
-              className="rounded-2xl border bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
-            >
-              <div className="mb-3 text-sm uppercase tracking-[0.2em] text-gray-500">
-                Пространство
-              </div>
-              <div className="mb-2 text-2xl font-semibold">работа</div>
-              <p className="text-sm text-gray-600">
-                Изолированная рабочая база знаний без пересечения с личной.
-              </p>
-            </Link>
+          <div className="grid gap-6 md:grid-cols-3">
+            {CARD_WORKSPACES.map((item) => (
+              <Link
+                key={item}
+                href={`/cards/new?${buildWorkspaceQuery(params, item)}`}
+                data-testid={`new-card-workspace-${item}`}
+                data-workspace={item}
+                className="rounded-2xl border bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
+              >
+                <div className="mb-3 text-sm uppercase tracking-[0.2em] text-gray-500">
+                  Пространство
+                </div>
+                <div className="mb-2 text-2xl font-semibold">
+                  {CARD_WORKSPACE_META[item].label}
+                </div>
+                <p className="text-sm text-gray-600">
+                  {CARD_WORKSPACE_META[item].description}
+                </p>
+              </Link>
+            ))}
           </div>
         </div>
       </main>
@@ -238,8 +270,72 @@ export default function NewCardPage() {
           placeholder="Содержание"
           value={content}
           onChange={(event) => setContent(event.target.value)}
-          className="h-32 w-full rounded border p-3"
+          className={contentType === "text" ? "h-32 w-full rounded border p-3" : "hidden"}
         />
+
+        <div className="rounded border bg-white p-3">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+            <label htmlFor="card-content-type" className="text-sm text-gray-600">
+              Формат содержания
+            </label>
+            <select
+              id="card-content-type"
+              data-testid="card-content-type-select"
+              value={contentType}
+              onChange={(event) => setContentType(event.target.value as CardContentType)}
+              className="rounded border p-2 text-sm"
+            >
+              <option value="text">Текст</option>
+              <option value="checklist">Чек-лист</option>
+            </select>
+          </div>
+
+          {contentType === "checklist" ? (
+            <div className="space-y-3" data-testid="card-checklist-editor">
+              {checklist.map((item, index) => (
+                <div key={item.id} className="flex items-center gap-2">
+                  <input
+                    data-testid={`card-checklist-item-${index}`}
+                    value={item.text}
+                    onChange={(event) => {
+                      const nextChecklist = [...checklist];
+                      nextChecklist[index] = {
+                        ...item,
+                        text: event.target.value,
+                      };
+                      setChecklist(nextChecklist);
+                    }}
+                    placeholder={`Пункт ${index + 1}`}
+                    className="min-w-0 flex-1 rounded border p-2"
+                  />
+                  <button
+                    type="button"
+                    aria-label="Удалить пункт"
+                    onClick={() =>
+                      setChecklist((current) =>
+                        current.length > 1
+                          ? current.filter((candidate) => candidate.id !== item.id)
+                          : current
+                      )
+                    }
+                    className="rounded border px-3 py-2 text-sm text-gray-500"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+
+              <button
+                type="button"
+                data-testid="card-add-checklist-item"
+                onClick={() => setChecklist((current) => [...current, createChecklistItem()])}
+                className="rounded border px-3 py-2 text-sm"
+              >
+                Добавить пункт
+              </button>
+            </div>
+          ) : null}
+        </div>
 
         <input
           data-testid="card-source-input"

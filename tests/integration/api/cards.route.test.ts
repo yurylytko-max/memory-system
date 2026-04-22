@@ -50,14 +50,34 @@ describe("cards route", () => {
             image: null,
             workspace: "work",
           },
+          {
+            id: "study-card",
+            title: "Study",
+            content: "Checklist",
+            contentType: "checklist",
+            checklist: [
+              {
+                id: "study-item",
+                text: "Read",
+                checked: false,
+              },
+            ],
+            source: "",
+            type: "thought",
+            sphere: "Study",
+            tags: [],
+            image: null,
+            workspace: "study",
+          },
         ]),
       })
     );
 
-    const response = await GET(new Request("http://localhost/api/cards?workspace=work"));
+    const response = await GET(new Request("http://localhost/api/cards?workspace=study"));
     const cards = await response.json();
 
     expect(cards).toHaveLength(1);
-    expect(cards[0].workspace).toBe("work");
+    expect(cards[0].workspace).toBe("study");
+    expect(cards[0].checklist[0].text).toBe("Read");
   });
 });

@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/card";
 import {
   getAllCards,
+  getCardContentPreview,
   getCardWorkspaceLabel,
   isCardWorkspace,
   normalizeCard,
@@ -98,7 +99,7 @@ export default function CardsWorkspacePage({
     return normalizedCards.filter((card) => {
       const text = [
         card.title,
-        card.content,
+        getCardContentPreview(card),
         card.source,
         card.sphere,
         ...card.tags,
@@ -335,9 +336,9 @@ export default function CardsWorkspacePage({
                     </CardHeader>
 
                     <CardContent>
-                      {card.content && (
+                      {getCardContentPreview(card) && (
                         <p className="line-clamp-4 whitespace-pre-wrap text-muted-foreground">
-                          {card.content}
+                          {getCardContentPreview(card)}
                         </p>
                       )}
                     </CardContent>

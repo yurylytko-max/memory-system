@@ -108,6 +108,20 @@ export default function CardPage() {
     }
   }
 
+  async function handleChecklistToggle(itemId: string) {
+    if (!card) return;
+
+    const updatedCard: Card = {
+      ...card,
+      checklist: (card.checklist || []).map((item) =>
+        item.id === itemId ? { ...item, checked: !item.checked } : item
+      ),
+    };
+
+    await updateCard(updatedCard, workspace);
+    setCard(updatedCard);
+  }
+
   if (!loaded) {
     return (
       <main className="p-10 text-gray-500" data-testid="card-loading">
@@ -184,9 +198,30 @@ export default function CardPage() {
             </div>
           )}
 
-          <div className="text-gray-700 whitespace-pre-wrap mb-4">
-            {card.content}
-          </div>
+          {card.contentType === "checklist" && card.checklist?.length ? (
+            <div className="mb-4 space-y-2" data-testid="card-checklist">
+              {card.checklist.map((item) => (
+                <label
+                  key={item.id}
+                  className="flex items-start gap-3 rounded border bg-gray-50 px-3 py-2 text-gray-700"
+                >
+                  <input
+                    type="checkbox"
+                    checked={item.checked}
+                    onChange={() => handleChecklistToggle(item.id)}
+                    className="mt-1"
+                  />
+                  <span className={item.checked ? "line-through text-gray-400" : ""}>
+                    {item.text}
+                  </span>
+                </label>
+              ))}
+            </div>
+          ) : (
+            <div className="text-gray-700 whitespace-pre-wrap mb-4">
+              {card.content}
+            </div>
+          )}
 
           {card.source && (
             <div className="text-sm text-gray-500 mb-4">

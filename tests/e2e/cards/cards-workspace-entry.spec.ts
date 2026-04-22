@@ -9,10 +9,11 @@ test.describe("cards workspace entry", () => {
     await addAuthCookie(context);
   });
 
-  test("shows both workspaces", async ({ page }) => {
+  test("shows all isolated workspaces", async ({ page }) => {
     await page.goto("/cards");
     await expect(page.getByTestId("cards-workspace-entry")).toBeVisible();
     await expect(page.getByTestId("workspace-life")).toBeVisible();
     await expect(page.getByTestId("workspace-work")).toBeVisible();
+    await expect(page.getByTestId("workspace-study")).toBeVisible();
   });
 });

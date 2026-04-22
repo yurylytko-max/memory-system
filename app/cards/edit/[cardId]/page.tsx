@@ -11,7 +11,17 @@ import {
   isCardWorkspace,
   updateCard,
   type Card,
+  type CardChecklistItem,
+  type CardContentType,
 } from "@/lib/cards";
+
+function createChecklistItem(text = ""): CardChecklistItem {
+  return {
+    id: crypto.randomUUID(),
+    text,
+    checked: false,
+  };
+}
 
 export default function EditCardPage() {
   const params = useParams();
@@ -31,6 +41,10 @@ export default function EditCardPage() {
   const [sphere, setSphere] = useState(DEFAULT_CARD_SPHERE);
   const [tags, setTags] = useState("");
   const [type, setType] = useState("thought");
+  const [contentType, setContentType] = useState<CardContentType>("text");
+  const [checklist, setChecklist] = useState<CardChecklistItem[]>([
+    { id: "initial-checklist-item", text: "", checked: false },
+  ]);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -50,6 +64,12 @@ export default function EditCardPage() {
         setSphere(found.sphere || DEFAULT_CARD_SPHERE);
         setTags((found.tags || []).join(" "));
         setType(found.type || "thought");
+        setContentType(found.contentType || "text");
+        setChecklist(
+          found.checklist && found.checklist.length > 0
+            ? found.checklist
+            : [{ id: "initial-checklist-item", text: "", checked: false }]
+        );
       }
 
       setLoaded(true);
@@ -67,10 +87,34 @@ export default function EditCardPage() {
       return;
     }
 
+    if (
+      contentType === "checklist" &&
+      checklist.every((item) => item.text.trim() === "")
+    ) {
+      alert("Добавь хотя бы один пункт чек-листа.");
+      return;
+    }
+
     const updatedCard: Card = {
       ...card,
       title,
-      content,
+      content:
+        contentType === "checklist"
+          ? checklist
+              .map((item) => item.text.trim())
+              .filter(Boolean)
+              .join("\n")
+          : content,
+      contentType,
+      checklist:
+        contentType === "checklist"
+          ? checklist
+              .map((item) => ({
+                ...item,
+                text: item.text.trim(),
+              }))
+              .filter((item) => item.text !== "")
+          : [],
       source,
       type,
       sphere: sphere.trim(),
@@ -154,11 +198,75 @@ export default function EditCardPage() {
 
             <textarea
               data-testid="card-content-input"
-              className="w-full border p-3 rounded min-h-40"
+              className={contentType === "text" ? "w-full border p-3 rounded min-h-40" : "hidden"}
               value={content}
               onChange={e => setContent(e.target.value)}
               placeholder="Содержание"
             />
+
+            <div className="rounded border p-3">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                <label htmlFor="card-content-type" className="text-sm text-gray-600">
+                  Формат содержания
+                </label>
+                <select
+                  id="card-content-type"
+                  data-testid="card-content-type-select"
+                  className="rounded border p-2 text-sm"
+                  value={contentType}
+                  onChange={e => setContentType(e.target.value as CardContentType)}
+                >
+                  <option value="text">Текст</option>
+                  <option value="checklist">Чек-лист</option>
+                </select>
+              </div>
+
+              {contentType === "checklist" ? (
+                <div className="space-y-3" data-testid="card-checklist-editor">
+                  {checklist.map((item, index) => (
+                    <div key={item.id} className="flex items-center gap-2">
+                      <input
+                        data-testid={`card-checklist-item-${index}`}
+                        className="min-w-0 flex-1 rounded border p-2"
+                        value={item.text}
+                        onChange={e => {
+                          const nextChecklist = [...checklist];
+                          nextChecklist[index] = {
+                            ...item,
+                            text: e.target.value,
+                          };
+                          setChecklist(nextChecklist);
+                        }}
+                        placeholder={`Пункт ${index + 1}`}
+                      />
+                      <button
+                        type="button"
+                        aria-label="Удалить пункт"
+                        className="rounded border px-3 py-2 text-sm text-gray-500"
+                        onClick={() =>
+                          setChecklist(current =>
+                            current.length > 1
+                              ? current.filter(candidate => candidate.id !== item.id)
+                              : current
+                          )
+                        }
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+
+                  <button
+                    type="button"
+                    data-testid="card-add-checklist-item"
+                    className="rounded border px-3 py-2 text-sm"
+                    onClick={() => setChecklist(current => [...current, createChecklistItem()])}
+                  >
+                    Добавить пункт
+                  </button>
+                </div>
+              ) : null}
+            </div>
 
             <input
               data-testid="card-source-input"
