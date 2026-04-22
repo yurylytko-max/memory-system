@@ -16,6 +16,7 @@
 /test-results
 /.test-data
 /.npm-cache
+/backups
 
 # next.js
 /.next/

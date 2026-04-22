@@ -89,6 +89,69 @@ describe("planner daily plans", () => {
     expect(sourceTask.subtasks[0].text).toBe("Прогнать smoke и regression");
   });
 
+  test("moving a managed daily task to another existing day keeps it in source plan", () => {
+    const plans = mergeDailyPlans([
+      createSourcePlan(),
+      {
+        id: "plan-other",
+        name: "Другой план",
+        folder: "Работа",
+        folderOrder: 0,
+        tasks: [
+          {
+            id: "task-2",
+            text: "Уже есть задача на другой день",
+            done: false,
+            deadline: "2026-04-09",
+            versions: [],
+            subtasks: [],
+          },
+        ],
+      },
+    ]);
+    const dailyPlan = plans.find((plan) => plan.id === `${DAILY_PLAN_ID_PREFIX}2026-04-08`)!;
+
+    dailyPlan.tasks[0].deadline = "2026-04-09";
+
+    const synchronized = mergeDailyPlans(synchronizeDailyPlanSources(plans));
+    const sourcePlan = synchronized.find((plan) => plan.id === "plan-main")!;
+    const oldDailyPlan = synchronized.find((plan) => plan.id === `${DAILY_PLAN_ID_PREFIX}2026-04-08`);
+    const newDailyPlan = synchronized.find((plan) => plan.id === `${DAILY_PLAN_ID_PREFIX}2026-04-09`)!;
+
+    expect(sourcePlan.tasks).toHaveLength(1);
+    expect(sourcePlan.tasks[0].deadline).toBe("2026-04-09");
+    expect(oldDailyPlan).toBeUndefined();
+    expect(newDailyPlan.tasks.some((task) => task.id.includes("plan-main:task-1"))).toBe(true);
+  });
+
+  test("mergeDailyPlans moves manual daily tasks by their edited deadline", () => {
+    const dailyPlan: Plan = {
+      id: `${DAILY_PLAN_ID_PREFIX}2026-04-08`,
+      name: "День",
+      folder: "план на день",
+      folderOrder: -1,
+      periodStart: "2026-04-08",
+      periodEnd: "2026-04-08",
+      tasks: [
+        {
+          id: "manual-daily-note",
+          text: "Ручная задача",
+          done: false,
+          deadline: "2026-04-09",
+          versions: [],
+          subtasks: [],
+        },
+      ],
+    };
+
+    const merged = mergeDailyPlans([dailyPlan]);
+    const oldDailyPlan = merged.find((plan) => plan.id === `${DAILY_PLAN_ID_PREFIX}2026-04-08`);
+    const newDailyPlan = merged.find((plan) => plan.id === `${DAILY_PLAN_ID_PREFIX}2026-04-09`);
+
+    expect(oldDailyPlan).toBeUndefined();
+    expect(newDailyPlan?.tasks.some((task) => task.id === "manual-daily-note")).toBe(true);
+  });
+
   test("deleteDailyPlanAndSourceTasks removes matching source tasks", () => {
     const merged = mergeDailyPlans([createSourcePlan()]);
     const updated = deleteDailyPlanAndSourceTasks(

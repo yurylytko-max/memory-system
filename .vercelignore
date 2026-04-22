@@ -3,6 +3,7 @@
 node_modules
 exports
 imports
+backups
 Lithuania-2026-short.pdf
 *.traineddata
 tsconfig.tsbuildinfo

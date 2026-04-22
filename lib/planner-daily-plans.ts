@@ -9,6 +9,11 @@ type DailyTaskSource = {
   sourcePlan: Plan;
 };
 
+type ManualDailyTask = {
+  task: PlanTask;
+  date: string;
+};
+
 function cloneTaskTree(task: PlanTask): PlanTask {
   return {
     ...task,
@@ -132,8 +137,72 @@ export function buildDailyPlans(plans: Plan[]) {
     }));
 }
 
+function collectManualDailyTasks(plans: Plan[]) {
+  const manualTasks: ManualDailyTask[] = [];
+
+  for (const plan of plans) {
+    if (!isDailyPlan(plan)) {
+      continue;
+    }
+
+    const planDate = getDailyPlanDate(plan);
+
+    for (const task of plan.tasks) {
+      if (isManagedDailyTask(task)) {
+        continue;
+      }
+
+      const targetDate = task.deadline || planDate;
+
+      if (!targetDate) {
+        continue;
+      }
+
+      manualTasks.push({
+        task: cloneTaskTree(task),
+        date: targetDate,
+      });
+    }
+  }
+
+  return manualTasks;
+}
+
 export function mergeDailyPlans(plans: Plan[]) {
   const generatedDailyPlans = buildDailyPlans(plans);
+  const manualTasksByDate = new Map<string, PlanTask[]>();
+
+  for (const { task, date } of collectManualDailyTasks(plans)) {
+    const currentTasks = manualTasksByDate.get(date) ?? [];
+    currentTasks.push(task);
+    manualTasksByDate.set(date, currentTasks);
+  }
+
+  for (const [date, manualTasks] of manualTasksByDate) {
+    const generatedPlan = generatedDailyPlans.find(
+      (plan) => getDailyPlanDate(plan) === date
+    );
+
+    if (generatedPlan) {
+      generatedPlan.tasks = [...manualTasks, ...generatedPlan.tasks];
+      continue;
+    }
+
+    generatedDailyPlans.push({
+      id: `${DAILY_PLAN_ID_PREFIX}${date}`,
+      name: formatDailyPlanName(date),
+      folder: DAILY_PLAN_FOLDER,
+      folderOrder: -1,
+      periodStart: date,
+      periodEnd: date,
+      tasks: manualTasks,
+    });
+  }
+
+  generatedDailyPlans.sort((a, b) =>
+    (getDailyPlanDate(a) ?? "").localeCompare(getDailyPlanDate(b) ?? "")
+  );
+
   const plansById = new Map(plans.map((plan) => [plan.id, plan]));
   const mergedPlans = plans.filter((plan) => !isDailyPlan(plan));
   const generatedPlanIds = new Set(generatedDailyPlans.map((plan) => plan.id));
@@ -146,11 +215,6 @@ export function mergeDailyPlans(plans: Plan[]) {
       continue;
     }
 
-    const generatedTaskIds = new Set(generatedPlan.tasks.map((task) => task.id));
-    const preservedManualTasks = existingPlan.tasks.filter(
-      (task) => !isManagedDailyTask(task)
-    );
-
     const mergedPlan: Plan = {
       ...existingPlan,
       name: generatedPlan.name,
@@ -161,10 +225,7 @@ export function mergeDailyPlans(plans: Plan[]) {
           : generatedPlan.folderOrder,
       periodStart: generatedPlan.periodStart,
       periodEnd: generatedPlan.periodEnd,
-      tasks: [
-        ...preservedManualTasks.filter((task) => !generatedTaskIds.has(task.id)),
-        ...generatedPlan.tasks,
-      ],
+      tasks: generatedPlan.tasks,
     };
 
     const existingIndex = mergedPlans.findIndex((plan) => plan.id === generatedPlan.id);
@@ -190,6 +251,7 @@ export function synchronizeDailyPlanSources(plans: Plan[]) {
   }
 
   let synchronizedPlans = [...plans];
+  const originalPlansById = new Map(plans.map((plan) => [plan.id, plan]));
 
   for (const dailyPlan of dailyPlans) {
     const dailyPlanDate = getDailyPlanDate(dailyPlan);
@@ -219,7 +281,11 @@ export function synchronizeDailyPlanSources(plans: Plan[]) {
       }
 
       const tasks = plan.tasks.flatMap((task) => {
-        if (task.deadline !== dailyPlanDate) {
+        const originalTask = originalPlansById
+          .get(plan.id)
+          ?.tasks.find((item) => item.id === task.id);
+
+        if (originalTask?.deadline !== dailyPlanDate) {
           return [task];
         }
 

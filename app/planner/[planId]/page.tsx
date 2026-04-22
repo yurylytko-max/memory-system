@@ -239,7 +239,7 @@ export default function PlanPage() {
     const isDailyPlanRoute = isDailyPlanId(planId);
     const nextPlans = isDailyPlanRoute
       ? mergeDailyPlans(synchronizeDailyPlanSources(updated))
-      : updated;
+      : mergeDailyPlans(updated);
 
     await savePlans(nextPlans);
     setPlans(nextPlans);
