@@ -22,6 +22,7 @@ export async function seedEmptyState() {
   await resetTestData();
   await Promise.all([
     writeJson("plans-db.json", []),
+    writeJson("planner-completed-tasks-db.json", []),
     writeJson("cards-db.json", []),
     writeJson("texts-db.json", []),
     writeJson("vocabulary-db.json", []),
@@ -31,12 +32,18 @@ export async function seedEmptyState() {
 
 export async function seedPlannerBasic() {
   await ensureTestDataRoot();
-  await writeJson("plans-db.json", createPlannerBasicFixture());
+  await Promise.all([
+    writeJson("plans-db.json", createPlannerBasicFixture()),
+    writeJson("planner-completed-tasks-db.json", []),
+  ]);
 }
 
 export async function seedPlannerDaily() {
   await ensureTestDataRoot();
-  await writeJson("plans-db.json", createPlannerDailyFixture());
+  await Promise.all([
+    writeJson("plans-db.json", createPlannerDailyFixture()),
+    writeJson("planner-completed-tasks-db.json", []),
+  ]);
 }
 
 export async function seedCardsWorkspaces() {

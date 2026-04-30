@@ -19,6 +19,10 @@ import { CSS } from "@dnd-kit/utilities";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  buildCompletedPlannerTask,
+  createCompletedPlannerTask,
+} from "@/lib/planner-completed-tasks";
 import PlannerNotificationsButton from "@/components/planner-notifications-button";
 import {
   migrateLegacyPlansToServer,
@@ -124,6 +128,14 @@ function getTaskAtPath(tasks: PlanTask[], path: TaskPath): PlanTask | null {
   }
 
   return currentTask;
+}
+
+function getParentTaskTextAtPath(tasks: PlanTask[], path: TaskPath) {
+  if (path.length < 2) {
+    return undefined;
+  }
+
+  return getTaskAtPath(tasks, path.slice(0, -1))?.text;
 }
 
 function updateTaskAtPath(
@@ -302,9 +314,58 @@ export default function PlanPage() {
     setInput("");
   }
 
-  function toggleTask(path: TaskPath) {
-    updatePlanTasks((tasks) =>
-      updateTaskAtPath(tasks, path, (task) => ({ ...task, done: !task.done }))
+  async function toggleTask(path: TaskPath) {
+    if (!plan) {
+      return;
+    }
+
+    const currentTask = getTaskAtPath(plan.tasks, path);
+
+    if (!currentTask) {
+      return;
+    }
+
+    const isCompleting = !currentTask.done;
+    const updated = plans.map((item) => {
+      if (item.id !== planId) {
+        return item;
+      }
+
+      return {
+        ...item,
+        tasks: updateTaskAtPath(item.tasks, path, (task) => ({
+          ...task,
+          done: !task.done,
+        })),
+      };
+    });
+
+    await save(updated);
+
+    if (!isCompleting) {
+      return;
+    }
+
+    const rootTask = plan.tasks[path[0]];
+    const managedTaskReference = rootTask
+      ? parseManagedDailyTaskId(rootTask.id)
+      : null;
+    const sourcePlan = managedTaskReference
+      ? plans.find((item) => item.id === managedTaskReference.sourcePlanId)
+      : null;
+    const completionPlan = sourcePlan ?? plan;
+    const completionTask =
+      managedTaskReference && path.length === 1
+        ? { ...currentTask, id: managedTaskReference.sourceTaskId }
+        : currentTask;
+
+    await createCompletedPlannerTask(
+      buildCompletedPlannerTask({
+        task: completionTask,
+        plan: completionPlan,
+        path,
+        parentTaskText: getParentTaskTextAtPath(plan.tasks, path),
+      })
     );
   }
 
@@ -528,9 +589,18 @@ export default function PlanPage() {
 
   return (
     <main className="min-h-screen bg-gray-100 p-10" data-testid="planner-detail-loaded">
-      <Link href="/planner" className="text-sm text-gray-600">
-        ← Назад
-      </Link>
+      <div className="mb-6 flex flex-wrap items-center gap-3">
+        <Link href="/planner" className="text-sm text-gray-600">
+          ← Назад
+        </Link>
+
+        <Link
+          href="/planner/completed"
+          className="rounded border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 transition hover:bg-gray-50"
+        >
+          Выполненные задачи
+        </Link>
+      </div>
 
       <div className="mb-6 flex max-w-xl flex-col gap-3 sm:flex-row sm:items-center">
         <Input

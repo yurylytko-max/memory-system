@@ -322,8 +322,12 @@ export default function Planner() {
           Планировщик
         </h1>
 
-        <div className="mb-6">
+        <div className="mb-6 flex flex-wrap items-center gap-3">
           <PlannerNotificationsButton />
+
+          <Button asChild variant="outline">
+            <Link href="/planner/completed">Выполненные задачи</Link>
+          </Button>
         </div>
 
         <div className="mb-10 grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
