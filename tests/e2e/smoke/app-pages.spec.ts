@@ -40,4 +40,9 @@ test.describe("app smoke", () => {
     await page.goto("/editor");
     await expect(page.getByTestId("editor-home")).toBeVisible();
   });
+
+  test("telegram monitor tool page opens", async ({ page }) => {
+    await page.goto("/tools/telegram-monitor");
+    await expect(page.getByTestId("telegram-monitor-page")).toBeVisible();
+  });
 });

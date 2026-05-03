@@ -53,6 +53,11 @@ export default function Home() {
           title="Звук → цвет"
           href="/sound-color"
         />
+
+        <Card
+          title="Telegram Monitor"
+          href="/tools/telegram-monitor"
+        />
       </div>
     </main>
   );
