@@ -1,0 +1,95 @@
+name: Telegram Monitor Refresh
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+    inputs:
+      group:
+        description: "BY, RU, or ALL"
+        required: false
+        default: "ALL"
+      limit:
+        description: "Posts per source"
+        required: false
+        default: "80"
+      days:
+        description: "History window in days"
+        required: false
+        default: "7"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: telegram-monitor-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
+      TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
+      TELEGRAM_SESSION_BASE64: ${{ secrets.TELEGRAM_SESSION_BASE64 }}
+      TELEGRAM_MONITOR_GROUP: ${{ inputs.group || 'ALL' }}
+      TELEGRAM_MONITOR_LIMIT: ${{ inputs.limit || '80' }}
+      TELEGRAM_MONITOR_DAYS: ${{ inputs.days || '7' }}
+      TELEGRAM_MONITOR_SCHEDULE: "0 */6 * * *"
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN || vars.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: team_cQrpkN7uNFlOB8TvvzcDLAam
+      VERCEL_PROJECT_ID: prj_PYnqxqixdZThCpkHyuPJ83ONDjlW
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Python dependencies
+        run: pip install -r requirements-telegram-monitor.txt
+
+      - name: Refresh Telegram monitor snapshot
+        run: python scripts/telegram_monitor_refresh.py
+
+      - name: Check snapshot diff
+        id: diff
+        run: |
+          if git diff --quiet -- app/tools/telegram-monitor/snapshot-data.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit snapshot
+        if: steps.diff.outputs.changed == 'true'
+        run: |
+          git config user.name "telegram-monitor-bot"
+          git config user.email "telegram-monitor-bot@users.noreply.github.com"
+          git add app/tools/telegram-monitor/snapshot-data.json
+          git commit -m "Update telegram monitor snapshot"
+          git push
+
+      - name: Setup Node.js for Vercel deploy
+        if: steps.diff.outputs.changed == 'true' && env.VERCEL_TOKEN != ''
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install Node dependencies
+        if: steps.diff.outputs.changed == 'true' && env.VERCEL_TOKEN != ''
+        run: npm ci
+
+      - name: Deploy to Vercel
+        if: steps.diff.outputs.changed == 'true' && env.VERCEL_TOKEN != ''
+        run: |
+          npx vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+          npx vercel build --prod --token="$VERCEL_TOKEN"
+          npx vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"

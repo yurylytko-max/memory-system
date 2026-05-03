@@ -50,3 +50,26 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Telegram Monitor Scheduled Refresh
+
+The isolated Telegram Monitor lives at `/tools/telegram-monitor`.
+
+Automated refresh is handled by GitHub Actions:
+
+- workflow: `.github/workflows/telegram-monitor-refresh.yml`
+- schedule: every 6 hours (`0 */6 * * *`)
+- manual fallback: GitHub Actions → Telegram Monitor Refresh → Run workflow
+- output: `app/tools/telegram-monitor/snapshot-data.json`
+
+Required GitHub Secrets:
+
+```text
+TELEGRAM_API_ID
+TELEGRAM_API_HASH
+TELEGRAM_SESSION_BASE64
+```
+
+`TELEGRAM_SESSION_BASE64` is the base64-encoded contents of the local Telethon session file. Do not commit `.env` or `data/telegram.session`.
+
+The workflow collects data through Telethon, updates the snapshot, commits it, and deploys to Vercel when `VERCEL_TOKEN` is available. Public web collection is only a fallback; Telethon is the primary mode for subscribers and deeper history.
