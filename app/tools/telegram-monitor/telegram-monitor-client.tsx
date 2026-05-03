@@ -230,6 +230,8 @@ type NarrativeCluster = {
 
 type Snapshot = {
   generated_at: string;
+  snapshot_version?: string;
+  warnings?: string[];
   counts: {
     sources: number;
     posts: number;
@@ -248,17 +250,28 @@ type Snapshot = {
   source_snapshots?: SourceSnapshot[];
   runs?: RunRow[];
   errors?: Array<Record<string, string | number | null>>;
-  automation?: {
-    last_success_at?: string | null;
-    next_run_at?: string | null;
-    schedule?: string | null;
-    mode?: string | null;
-    workflow?: string | null;
-    manual_fallback?: string | null;
-  };
   narratives: Narrative[];
   narrative_clusters: NarrativeCluster[];
 };
+
+type SnapshotSource = {
+  kind: "builtin" | "override";
+  filename?: string;
+  generated_at?: string;
+  loaded_at?: string;
+  warnings?: string[];
+};
+
+type SnapshotUpload = {
+  filename: string;
+  snapshot: Snapshot;
+  warnings: string[];
+  size: number;
+};
+
+const SNAPSHOT_OVERRIDE_KEY = "telegram_monitor_snapshot_override";
+const SNAPSHOT_OVERRIDE_META_KEY = "telegram_monitor_snapshot_override_meta";
+const MAX_SNAPSHOT_BYTES = 25 * 1024 * 1024;
 
 const tabs: Array<{ id: Tab; label: string }> = [
   { id: "overview", label: "Обзор" },
@@ -511,6 +524,99 @@ function viewsForMode(cluster: Cluster, mode: CountMode) {
   return cluster.total_views ?? 0;
 }
 
+function asArray<T>(value: unknown): T[] {
+  return Array.isArray(value) ? (value as T[]) : [];
+}
+
+function countSourcesByGroup(sources: Source[]) {
+  const counts = new Map<string, number>();
+  for (const source of sources) {
+    const key = source.group_code ?? "UNKNOWN";
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  return [...counts.entries()].sort(([left], [right]) => left.localeCompare(right)).map(([group_code, count]) => ({ group_code, count }));
+}
+
+function normalizeSnapshot(raw: unknown): { snapshot: Snapshot; warnings: string[] } {
+  const data = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
+  const warnings: string[] = [];
+  const sources = asArray<Source>(data.sources);
+  const posts = asArray<Post>(data.posts);
+  const matches = asArray<Match>(data.matches);
+  const clusters = asArray<Cluster>(data.content_clusters ?? data.clusters);
+  const clusterPosts = asArray<ClusterPost>(data.content_cluster_posts ?? data.cluster_posts);
+  const narratives = asArray<Narrative>(data.narratives);
+  const narrativeClusters = asArray<NarrativeCluster>(data.narrative_clusters);
+
+  for (const key of ["sources", "posts", "matches"] as const) {
+    if (!Array.isArray(data[key])) {
+      warnings.push(`В snapshot нет массива ${key}; используется пустой список.`);
+    }
+  }
+  if (!Array.isArray(data.content_clusters) && !Array.isArray(data.clusters)) {
+    warnings.push("В snapshot нет content_clusters/clusters; используется пустой список.");
+  }
+  if (!data.generated_at) {
+    warnings.push("В snapshot нет generated_at.");
+  }
+  if (data.snapshot_version && data.snapshot_version !== "telegram-monitor-v1") {
+    warnings.push(`Неизвестная snapshot_version: ${String(data.snapshot_version)}.`);
+  }
+
+  const rawCounts = (data.counts ?? data.summary) as Partial<Snapshot["counts"]> | undefined;
+  const snapshot: Snapshot = {
+    generated_at: String(data.generated_at ?? ""),
+    snapshot_version: typeof data.snapshot_version === "string" ? data.snapshot_version : undefined,
+    warnings: asArray<string>(data.warnings),
+    counts: {
+      sources: Number(rawCounts?.sources ?? sources.length),
+      posts: Number(rawCounts?.posts ?? posts.length),
+      matches: Number(rawCounts?.matches ?? matches.length),
+      clusters: Number(rawCounts?.clusters ?? clusters.length),
+      narratives: Number(rawCounts?.narratives ?? narratives.length),
+    },
+    sources_by_group: Array.isArray(data.sources_by_group)
+      ? (data.sources_by_group as Array<{ group_code: string; count: number }>)
+      : countSourcesByGroup(sources),
+    sources,
+    posts,
+    matches,
+    clusters,
+    cluster_posts: clusterPosts,
+    channel_analytics: asArray<ChannelAnalytics>(data.channel_analytics),
+    source_daily_stats: asArray<SourceDailyStat>(data.source_daily_stats),
+    source_snapshots: asArray<SourceSnapshot>(data.source_snapshots),
+    runs: asArray<RunRow>(data.collection_runs ?? data.runs),
+    errors: asArray<Record<string, string | number | null>>(data.collection_errors ?? data.errors),
+    narratives,
+    narrative_clusters: narrativeClusters,
+  };
+
+  return { snapshot, warnings };
+}
+
+function snapshotMeta(snapshot: Snapshot, filename?: string, warnings: string[] = []) {
+  const ruPosts = snapshot.posts.filter((post) => post.group_code === "RU").length;
+  const byPosts = snapshot.posts.filter((post) => post.group_code === "BY").length;
+  const ruGroups = snapshot.clusters.filter((cluster) => cluster.group_mix === "RU_ONLY" || cluster.direction === "RU_ONLY").length;
+  const byGroups = snapshot.clusters.filter((cluster) => cluster.group_mix === "BY_ONLY" || cluster.direction === "BY_ONLY").length;
+  return {
+    filename,
+    generated_at: snapshot.generated_at,
+    snapshot_version: snapshot.snapshot_version ?? "unknown",
+    sources_count: snapshot.counts.sources,
+    posts_count: snapshot.counts.posts,
+    matches_count: snapshot.counts.matches,
+    content_clusters_count: snapshot.counts.clusters,
+    total_views: snapshot.clusters.reduce((sum, cluster) => sum + (cluster.total_views ?? 0), 0),
+    by_posts: byPosts,
+    ru_posts: ruPosts,
+    by_groups: byGroups,
+    ru_groups: ruGroups,
+    warnings,
+  };
+}
+
 function downloadRows(name: string, rows: Array<Record<string, unknown>>, format: "csv" | "json" | "markdown") {
   const headers = Array.from(new Set(rows.flatMap((row) => Object.keys(row))));
   let body = "";
@@ -538,18 +644,18 @@ function downloadRows(name: string, rows: Array<Record<string, unknown>>, format
 }
 
 export default function TelegramMonitorClient({
-  initialClusterId,
-  initialPostId,
   initialSourceId,
   initialTab = "overview",
 }: {
-  initialClusterId?: number;
-  initialPostId?: number;
   initialSourceId?: number;
   initialTab?: Tab;
 }) {
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
+  const [builtinSnapshot, setBuiltinSnapshot] = useState<Snapshot | null>(null);
+  const [dataSource, setDataSource] = useState<SnapshotSource>({ kind: "builtin" });
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [pendingUpload, setPendingUpload] = useState<SnapshotUpload | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>(initialTab);
   const [query, setQuery] = useState("");
   const [group, setGroup] = useState<GroupFilter>("all");
@@ -585,11 +691,37 @@ export default function TelegramMonitorClient({
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
         }
-        return response.json() as Promise<Snapshot>;
+        return response.json() as Promise<unknown>;
       })
-      .then((data) => {
+      .then((rawData) => {
         if (active) {
-          setSnapshot(data);
+          const { snapshot: builtIn, warnings } = normalizeSnapshot(rawData);
+          setBuiltinSnapshot(builtIn);
+
+          const overrideRaw = window.localStorage.getItem(SNAPSHOT_OVERRIDE_KEY);
+          const overrideMetaRaw = window.localStorage.getItem(SNAPSHOT_OVERRIDE_META_KEY);
+          if (overrideRaw) {
+            try {
+              const { snapshot: overrideSnapshot, warnings: overrideWarnings } = normalizeSnapshot(JSON.parse(overrideRaw));
+              const overrideMeta = overrideMetaRaw ? JSON.parse(overrideMetaRaw) as Partial<SnapshotSource> : {};
+              setSnapshot(overrideSnapshot);
+              setDataSource({
+                kind: "override",
+                filename: overrideMeta.filename,
+                generated_at: overrideSnapshot.generated_at,
+                loaded_at: overrideMeta.loaded_at,
+                warnings: overrideWarnings,
+              });
+              return;
+            } catch (error) {
+              window.localStorage.removeItem(SNAPSHOT_OVERRIDE_KEY);
+              window.localStorage.removeItem(SNAPSHOT_OVERRIDE_META_KEY);
+              setLoadError(`Загруженный snapshot повреждён и был сброшен: ${(error as Error).message}`);
+            }
+          }
+
+          setSnapshot(builtIn);
+          setDataSource({ kind: "builtin", generated_at: builtIn.generated_at, warnings });
         }
       })
       .catch((error: Error) => {
@@ -602,6 +734,64 @@ export default function TelegramMonitorClient({
       active = false;
     };
   }, []);
+
+  const handleSnapshotFile = (file: File | null) => {
+    setUploadError(null);
+    setPendingUpload(null);
+
+    if (!file) {
+      return;
+    }
+
+    if (file.size > MAX_SNAPSHOT_BYTES) {
+      setUploadError(`Файл слишком большой: ${formatInt(file.size)} байт. Лимит MVP: ${formatInt(MAX_SNAPSHOT_BYTES)} байт.`);
+      return;
+    }
+
+    file.text()
+      .then((text) => {
+        try {
+          const { snapshot: uploadedSnapshot, warnings } = normalizeSnapshot(JSON.parse(text));
+          setPendingUpload({ filename: file.name, snapshot: uploadedSnapshot, warnings, size: file.size });
+        } catch (error) {
+          setUploadError(`JSON не прочитан: ${(error as Error).message}`);
+        }
+      })
+      .catch((error: Error) => setUploadError(`Файл не удалось открыть: ${error.message}`));
+  };
+
+  const usePendingSnapshot = () => {
+    if (!pendingUpload) {
+      return;
+    }
+    const meta = {
+      ...snapshotMeta(pendingUpload.snapshot, pendingUpload.filename, pendingUpload.warnings),
+      kind: "override",
+      filename: pendingUpload.filename,
+      loaded_at: new Date().toISOString(),
+    };
+    window.localStorage.setItem(SNAPSHOT_OVERRIDE_KEY, JSON.stringify(pendingUpload.snapshot));
+    window.localStorage.setItem(SNAPSHOT_OVERRIDE_META_KEY, JSON.stringify(meta));
+    setSnapshot(pendingUpload.snapshot);
+    setDataSource({
+      kind: "override",
+      filename: pendingUpload.filename,
+      generated_at: pendingUpload.snapshot.generated_at,
+      loaded_at: meta.loaded_at,
+      warnings: pendingUpload.warnings,
+    });
+  };
+
+  const resetSnapshotOverride = () => {
+    window.localStorage.removeItem(SNAPSHOT_OVERRIDE_KEY);
+    window.localStorage.removeItem(SNAPSHOT_OVERRIDE_META_KEY);
+    if (builtinSnapshot) {
+      setSnapshot(builtinSnapshot);
+      setDataSource({ kind: "builtin", generated_at: builtinSnapshot.generated_at });
+    }
+    setPendingUpload(null);
+    setUploadError(null);
+  };
 
   const range = useMemo(() => periodRange(period, customFrom, customTo), [period, customFrom, customTo]);
 
@@ -705,6 +895,20 @@ export default function TelegramMonitorClient({
             <strong>{snapshot ? formatDate(snapshot.generated_at) : "загрузка"}</strong>
           </div>
         </div>
+        {snapshot ? (
+          <div className="tm-data-source">
+            <div>
+              <strong>Источник данных:</strong>{" "}
+              {dataSource.kind === "override"
+                ? `загруженный snapshot${dataSource.filename ? `: ${dataSource.filename}` : ""}`
+                : "встроенный snapshot"}
+              {dataSource.generated_at ? ` / ${formatDate(dataSource.generated_at)}` : ""}
+            </div>
+            {dataSource.kind === "override" ? (
+              <button onClick={resetSnapshotOverride} type="button">Сбросить snapshot</button>
+            ) : null}
+          </div>
+        ) : null}
 
         {!snapshot || loadError ? (
           <section className="tm-notice">
@@ -833,7 +1037,17 @@ export default function TelegramMonitorClient({
           <NarrativesTable clusters={snapshot.narrative_clusters} rows={snapshot.narratives} />
         ) : null}
 
-        {snapshot && activeTab === "update" ? <UpdatePanel automation={snapshot.automation} /> : null}
+        {snapshot && activeTab === "update" ? (
+          <UpdatePanel
+            dataSource={dataSource}
+            onFileChange={handleSnapshotFile}
+            onReset={resetSnapshotOverride}
+            onUseUploaded={usePendingSnapshot}
+            pendingUpload={pendingUpload}
+            snapshot={snapshot}
+            uploadError={uploadError}
+          />
+        ) : null}
 
         {snapshot && activeTab === "runs" ? <RunsTable errors={snapshot.errors ?? []} rows={snapshot.runs ?? []} /> : null}
 
@@ -849,20 +1063,6 @@ export default function TelegramMonitorClient({
           />
         ) : null}
 
-        {snapshot && initialPostId ? (
-          <PostDetail
-            clusterPosts={snapshot.cluster_posts}
-            clusters={snapshot.clusters}
-            post={snapshot.posts.find((row) => row.id === initialPostId)}
-          />
-        ) : null}
-
-        {snapshot && initialClusterId ? (
-          <ClusterDetail
-            cluster={snapshot.clusters.find((row) => row.id === initialClusterId)}
-            posts={snapshot.cluster_posts.filter((row) => row.cluster_id === initialClusterId)}
-          />
-        ) : null}
       </section>
     </main>
   );
@@ -1061,7 +1261,7 @@ function PostsTable({
               <td>{formatInt(post.views)}</td>
               <td>{formatAvailableInt(post.subscribers)}</td>
               <td>{post.post_url ? <ExternalLink href={post.post_url}>Telegram</ExternalLink> : null}</td>
-              <td className="tm-text"><a href={`/tools/telegram-monitor/posts/${post.id}`}>#{post.id}</a> {shortText(post.text_clean)}</td>
+              <td className="tm-text">#{post.id} {shortText(post.text_clean)}</td>
             </tr>
           ))}
         </tbody>
@@ -1124,7 +1324,7 @@ function MatchesTable({
               <td>{match.source_a} <Badge>{match.group_a}</Badge></td>
               <td>{match.source_b} <Badge>{match.group_b}</Badge></td>
               <td>#{match.post_a_id} / #{match.post_b_id}</td>
-              <td>{match.cluster_a_id || match.cluster_b_id ? <a href={`/tools/telegram-monitor/clusters/${match.cluster_a_id ?? match.cluster_b_id}`}>#{match.cluster_a_id ?? match.cluster_b_id}</a> : ""}</td>
+              <td>{match.cluster_a_id || match.cluster_b_id ? `#${match.cluster_a_id ?? match.cluster_b_id}` : ""}</td>
             </tr>
           ))}
         </tbody>
@@ -1201,7 +1401,7 @@ function ClusterRow({ cluster, posts }: { cluster: Cluster; posts: ClusterPost[]
     <>
       <tr>
         <td>#{cluster.id}</td>
-        <td className="tm-text"><a href={`/tools/telegram-monitor/clusters/${cluster.id}`}>#{cluster.id}</a> {shortText(cluster.title, 120)}</td>
+        <td className="tm-text">#{cluster.id} {shortText(cluster.title, 120)}</td>
         <td>{cluster.first_source}</td>
         <td><Badge>{cluster.first_group ?? cluster.first_source_group}</Badge></td>
         <td>{formatDate(cluster.first_seen_at)}</td>
@@ -1330,23 +1530,80 @@ function ChannelsTable({ rows }: { rows: ChannelAnalytics[] }) {
   );
 }
 
-function UpdatePanel({ automation }: { automation?: Snapshot["automation"] }) {
+function UpdatePanel({
+  dataSource,
+  onFileChange,
+  onReset,
+  onUseUploaded,
+  pendingUpload,
+  snapshot,
+  uploadError,
+}: {
+  dataSource: SnapshotSource;
+  onFileChange: (file: File | null) => void;
+  onReset: () => void;
+  onUseUploaded: () => void;
+  pendingUpload: SnapshotUpload | null;
+  snapshot: Snapshot;
+  uploadError: string | null;
+}) {
   const commands = [
-    ["Автоматический scheduled workflow", "GitHub Actions → Telegram Monitor Refresh", "Основной режим: запускается по расписанию, собирает данные через Telethon, обновляет snapshot, коммитит его и деплоит Vercel."],
-    ["Форсировать вручную", "GitHub Actions → Telegram Monitor Refresh → Run workflow", "Ручной запуск нужен только как fallback, если нужно обновить вне расписания."],
-    ["Секреты workflow", "TELEGRAM_API_ID, TELEGRAM_API_HASH, TELEGRAM_SESSION_BASE64", "Сессия не хранится в репозитории. TELEGRAM_SESSION_BASE64 — base64 от data/telegram.session."],
+    ["Рекомендуемый сценарий", "make update-and-snapshot", "Локально обновляет данные и создаёт exports/telegram-monitor-snapshot.json для загрузки сюда."],
+    ["Только snapshot", "make snapshot", "Пересобирает JSON из текущей локальной SQLite-базы без нового сбора."],
+    ["Полное обновление, Telethon", "python3 src/update_data.py --group ALL", "Основной локальный режим: публикации, просмотры, подписчики и группы материалов."],
+    ["Сбор подписчиков, Telethon", "python3 src/collect_subscribers.py --group ALL", "Обновляет subscriber snapshots. Public web подписчиков не гарантирует."],
+    ["Исторический сбор, Telethon", "python3 src/backfill_telegram.py --group ALL --days 365 --limit-per-source 1000", "Использовать локально для глубокого backfill. В Vercel не запускается."],
   ];
+  const currentMeta = snapshotMeta(snapshot, dataSource.filename, dataSource.warnings ?? []);
+  const pendingMeta = pendingUpload ? snapshotMeta(pendingUpload.snapshot, pendingUpload.filename, pendingUpload.warnings) : null;
   return (
     <Panel title="Обновление данных">
       <section className="tm-metrics">
-        <Metric label="Последний успешный запуск" value={automation?.last_success_at ? formatDate(automation.last_success_at) : "нет данных"} />
-        <Metric label="Следующий запуск" value={automation?.next_run_at ? formatDate(automation.next_run_at) : "по расписанию GitHub"} />
-        <Metric label="Режим" value={automation?.mode ?? "Telethon scheduled refresh"} />
-        <Metric label="Расписание" value={automation?.schedule ?? "0 */6 * * *"} />
+        <Metric label="Snapshot обновлён" value={formatDate(snapshot.generated_at)} />
+        <Metric label="Источники" value={formatInt(snapshot.counts.sources)} />
+        <Metric label="Посты" value={formatInt(snapshot.counts.posts)} />
+        <Metric label="Группы материалов" value={formatInt(snapshot.counts.clusters)} />
       </section>
       <div className="tm-notice">
-        Основной путь обновления теперь автоматический: GitHub Actions запускается по расписанию, обновляет snapshot и коммитит его. После коммита Vercel redeploy выполняется workflow-ом, если доступен <code>VERCEL_TOKEN</code>; также может сработать Git integration Vercel. Public web остаётся только fallback, Telethon — основной режим для подписчиков и истории.
+        Главный сценарий этого этапа: локально собрать данные, создать snapshot JSON,
+        загрузить его здесь и просматривать без Codex, GitHub Actions, сервера и ручного
+        деплоя. Файл хранится только в browser localStorage.
       </div>
+      <section className="tm-upload-box">
+        <h3>Загрузить snapshot</h3>
+        <input accept="application/json,.json" onChange={(event) => onFileChange(event.target.files?.[0] ?? null)} type="file" />
+        {uploadError ? <div className="tm-error">{uploadError}</div> : null}
+        {pendingMeta ? (
+          <div className="tm-mini-grid">
+            <div className="tm-card-row"><span>filename</span><strong>{pendingMeta.filename}</strong></div>
+            <div className="tm-card-row"><span>generated_at</span><strong>{formatDate(pendingMeta.generated_at)}</strong></div>
+            <div className="tm-card-row"><span>snapshot_version</span><strong>{pendingMeta.snapshot_version}</strong></div>
+            <div className="tm-card-row"><span>sources_count</span><strong>{formatInt(pendingMeta.sources_count)}</strong></div>
+            <div className="tm-card-row"><span>posts_count</span><strong>{formatInt(pendingMeta.posts_count)}</strong></div>
+            <div className="tm-card-row"><span>matches_count</span><strong>{formatInt(pendingMeta.matches_count)}</strong></div>
+            <div className="tm-card-row"><span>content_clusters_count</span><strong>{formatInt(pendingMeta.content_clusters_count)}</strong></div>
+            <div className="tm-card-row"><span>total_views</span><strong>{formatInt(pendingMeta.total_views)}</strong></div>
+            <div className="tm-card-row"><span>BY posts / RU posts</span><strong>{formatInt(pendingMeta.by_posts)} / {formatInt(pendingMeta.ru_posts)}</strong></div>
+            <div className="tm-card-row"><span>BY groups / RU groups</span><strong>{formatInt(pendingMeta.by_groups)} / {formatInt(pendingMeta.ru_groups)}</strong></div>
+          </div>
+        ) : null}
+        {pendingUpload?.warnings.length ? (
+          <div className="tm-warning">{pendingUpload.warnings.join(" ")}</div>
+        ) : null}
+        <div className="tm-export-row">
+          <button disabled={!pendingUpload} onClick={onUseUploaded} type="button">Использовать этот snapshot</button>
+          <button onClick={onReset} type="button">Сбросить к встроенному snapshot</button>
+        </div>
+      </section>
+      <section className="tm-upload-box">
+        <h3>Текущий источник данных</h3>
+        <div className="tm-mini-grid">
+          <div className="tm-card-row"><span>Источник</span><strong>{dataSource.kind === "override" ? "загруженный snapshot" : "встроенный snapshot"}</strong></div>
+          <div className="tm-card-row"><span>filename</span><strong>{dataSource.filename ?? "нет"}</strong></div>
+          <div className="tm-card-row"><span>generated_at</span><strong>{formatDate(currentMeta.generated_at)}</strong></div>
+          <div className="tm-card-row"><span>localStorage key</span><strong>{SNAPSHOT_OVERRIDE_KEY}</strong></div>
+        </div>
+      </section>
       <div className="tm-list">
         {commands.map(([title, command, description]) => (
           <div className="tm-list-item" key={command}>
@@ -1440,11 +1697,11 @@ function SourceDetail({ analytics, clusters, clusterPosts, dailyStats, posts, sn
       </Panel>
       <Panel title="Топ групп материалов с участием канала">
         <ExportButtons name={`source_${source.id}_clusters`} rows={topClusters.map(({ row, cluster }) => ({ ...row, cluster_title: cluster?.title, cluster_total_views: cluster?.total_views, direction: cluster?.direction, ru_import_type: cluster?.ru_import_type }))} />
-        <table><thead><tr><th>Группа</th><th>Заголовок</th><th>Роль</th><th>Время поста</th><th>Лаг</th><th>Просмотры поста</th><th>Просмотры группы</th><th>Без RU</th><th>Direction</th><th>RU import</th></tr></thead><tbody>{topClusters.map(({ row, cluster }) => <tr key={row.id}><td><a href={`/tools/telegram-monitor/clusters/${row.cluster_id}`}>#{row.cluster_id}</a></td><td className="tm-text">{shortText(cluster?.title)}</td><td>{row.role}</td><td>{formatDate(row.published_at)}</td><td>{formatLag(row.lag_seconds)}</td><td>{formatInt(row.views)}</td><td>{formatInt(cluster?.total_views)}</td><td>{formatInt(cluster?.total_views_without_ru)}</td><td>{directionLabels[cluster?.direction ?? ""] ?? cluster?.direction}</td><td>{ruImportLabels[cluster?.ru_import_type ?? ""] ?? cluster?.ru_import_type}</td></tr>)}</tbody></table>
+        <table><thead><tr><th>Группа</th><th>Заголовок</th><th>Роль</th><th>Время поста</th><th>Лаг</th><th>Просмотры поста</th><th>Просмотры группы</th><th>Без RU</th><th>Direction</th><th>RU import</th></tr></thead><tbody>{topClusters.map(({ row, cluster }) => <tr key={row.id}><td>#{row.cluster_id}</td><td className="tm-text">{shortText(cluster?.title)}</td><td>{row.role}</td><td>{formatDate(row.published_at)}</td><td>{formatLag(row.lag_seconds)}</td><td>{formatInt(row.views)}</td><td>{formatInt(cluster?.total_views)}</td><td>{formatInt(cluster?.total_views_without_ru)}</td><td>{directionLabels[cluster?.direction ?? ""] ?? cluster?.direction}</td><td>{ruImportLabels[cluster?.ru_import_type ?? ""] ?? cluster?.ru_import_type}</td></tr>)}</tbody></table>
       </Panel>
       <Panel title="Топ публикаций канала">
         <ExportButtons name={`source_${source.id}_posts`} rows={posts as unknown as Array<Record<string, unknown>>} />
-        <table><thead><tr><th>Пост</th><th>Время</th><th>Просмотры</th><th>Группа</th><th>Первый?</th><th>Telegram</th><th>Текст</th></tr></thead><tbody>{posts.slice(0, 50).map((post) => { const link = clusterPosts.find((row) => row.post_id === post.id); return <tr key={post.id}><td><a href={`/tools/telegram-monitor/posts/${post.id}`}>#{post.id}</a></td><td>{formatDate(post.published_at)}</td><td>{formatInt(post.views)}</td><td>{link ? <a href={`/tools/telegram-monitor/clusters/${link.cluster_id}`}>#{link.cluster_id}</a> : ""}</td><td>{link?.role === "first" ? "да" : "нет"}</td><td>{post.post_url ? <ExternalLink href={post.post_url}>Telegram</ExternalLink> : ""}</td><td className="tm-text">{shortText(post.text_clean)}</td></tr>; })}</tbody></table>
+        <table><thead><tr><th>Пост</th><th>Время</th><th>Просмотры</th><th>Группа</th><th>Первый?</th><th>Telegram</th><th>Текст</th></tr></thead><tbody>{posts.slice(0, 50).map((post) => { const link = clusterPosts.find((row) => row.post_id === post.id); return <tr key={post.id}><td>#{post.id}</td><td>{formatDate(post.published_at)}</td><td>{formatInt(post.views)}</td><td>{link ? `#${link.cluster_id}` : ""}</td><td>{link?.role === "first" ? "да" : "нет"}</td><td>{post.post_url ? <ExternalLink href={post.post_url}>Telegram</ExternalLink> : ""}</td><td className="tm-text">{shortText(post.text_clean)}</td></tr>; })}</tbody></table>
       </Panel>
       <Panel title="Снимки подписчиков">
         <table><thead><tr><th>Дата</th><th>Подписчики</th><th>Статус</th></tr></thead><tbody>{snapshots.map((row, index) => <tr key={index}><td>{formatDate(row.collected_at)}</td><td>{formatAvailableInt(row.subscribers)}</td><td>{row.status}</td></tr>)}</tbody></table>
@@ -1510,7 +1767,7 @@ function PostDetail({ clusterPosts, clusters, post }: { clusterPosts: ClusterPos
               <div className="tm-card-row"><span>подписчики только RU</span><strong>{formatAvailableInt(primary.total_subscribers_only_ru)}</strong></div>
               <div className="tm-card-row"><span>views/subs</span><strong>{formatRatio(primary.views_to_subscribers_ratio)}</strong></div>
             </div>
-            <a href={`/tools/telegram-monitor/clusters/${primary.id}`}>Открыть группу материалов</a>
+            <span>Группа материалов #{primary.id} раскрывается во вкладке “Группы материалов”.</span>
           </>
         ) : <div className="tm-empty">Связанные публикации пока не найдены.</div>}
       </Panel>
@@ -1541,7 +1798,7 @@ function ClusterDetail({ cluster, posts }: { cluster?: Cluster; posts: ClusterPo
           <div className="tm-card-row"><span>ru_import_type</span><strong>{ruImportLabels[cluster.ru_import_type ?? ""] ?? cluster.ru_import_type}</strong></div>
           <div className="tm-card-row"><span>BY/RU posts</span><strong>{formatInt(cluster.by_posts_count)} / {formatInt(cluster.ru_posts_count)}</strong></div>
           <div className="tm-card-row"><span>BY/RU sources</span><strong>{formatInt(cluster.by_sources_count)} / {formatInt(cluster.ru_sources_count)}</strong></div>
-          <div className="tm-card-row"><span>matched RU</span><strong>{cluster.matched_ru_cluster_id ? <a href={`/tools/telegram-monitor/clusters/${cluster.matched_ru_cluster_id}`}>#{cluster.matched_ru_cluster_id}</a> : "нет"}</strong></div>
+          <div className="tm-card-row"><span>matched RU</span><strong>{cluster.matched_ru_cluster_id ? `#${cluster.matched_ru_cluster_id}` : "нет"}</strong></div>
           <div className="tm-card-row"><span>RU lag/confidence</span><strong>{formatLag(cluster.ru_lag_seconds)} / {formatRatio(cluster.ru_match_confidence)}</strong></div>
           <div className="tm-card-row"><span>reason</span><strong>{cluster.ru_match_reason}</strong></div>
         </div>
@@ -1675,6 +1932,33 @@ const styles = `
   min-width: 210px;
   padding: 12px;
 }
+.tm-data-source {
+  align-items: center;
+  background: white;
+  border: 1px solid #dfe4ea;
+  border-radius: 8px;
+  color: #687385;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: space-between;
+  padding: 10px 12px;
+}
+.tm-data-source button,
+.tm-upload-box button {
+  background: #0f766e;
+  border: 0;
+  border-radius: 6px;
+  color: white;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+  padding: 8px 10px;
+}
+.tm-upload-box button:disabled {
+  background: #b7c1cc;
+  cursor: not-allowed;
+}
 .tm-stamp span,
 .tm-metric span,
 .tm-list-item span {
@@ -1791,6 +2075,38 @@ const styles = `
   color: #687385;
   line-height: 1.5;
   padding: 0 14px 12px;
+}
+.tm-upload-box {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+.tm-upload-box h3 {
+  font-size: 16px;
+  letter-spacing: 0;
+  margin: 0;
+}
+.tm-upload-box input[type="file"] {
+  background: white;
+  border: 1px solid #dfe4ea;
+  border-radius: 6px;
+  color: #17202a;
+  font: inherit;
+  padding: 8px;
+}
+.tm-error,
+.tm-warning {
+  border-radius: 6px;
+  line-height: 1.5;
+  padding: 10px;
+}
+.tm-error {
+  background: #fff1f2;
+  color: #be123c;
+}
+.tm-warning {
+  background: #fff7ed;
+  color: #9a3412;
 }
 code {
   background: #101820;

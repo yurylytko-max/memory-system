@@ -36,6 +36,51 @@ SITE_AUTH_SECRET=any-extra-secret
 
 After restart, all pages and API routes will require login at `/login`.
 
+## Telegram Monitor Snapshot Upload
+
+Telegram Monitor lives inside the memory system at `/tools/telegram-monitor`.
+It is a read-only review surface: monitoring data is not written to the memory
+database and is not collected from Vercel.
+
+Current update flow:
+
+1. Locally, in the Telegram Monitor project, run:
+
+```bash
+make update-and-snapshot
+```
+
+2. The local file appears at:
+
+```bash
+exports/telegram-monitor-snapshot.json
+```
+
+3. Open `/tools/telegram-monitor/update`, choose that JSON file, and click
+“Использовать этот snapshot”.
+
+4. The UI stores the uploaded JSON in browser `localStorage` under:
+
+```text
+telegram_monitor_snapshot_override
+telegram_monitor_snapshot_override_meta
+```
+
+5. The data-source indicator at the top of Telegram Monitor shows whether the
+page is using the built-in snapshot or the uploaded snapshot.
+
+6. “Сбросить snapshot” removes the override and returns the UI to the built-in
+snapshot shipped with the app.
+
+The uploaded file is not sent to a server, not written to Vercel filesystem, and
+not committed. It is browser-local state for the current reviewer.
+
+Local collection uses the separate Telegram Monitor project. Telethon reads
+local `.env` and `data/telegram.session`; these files must never be committed.
+Public web collection is only a fallback and may not provide subscribers or deep
+history. `total_views` is the sum of post views, not unique reach. LLM-based
+classification is not used in this stage.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
@@ -50,26 +95,3 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-
-## Telegram Monitor Scheduled Refresh
-
-The isolated Telegram Monitor lives at `/tools/telegram-monitor`.
-
-Automated refresh is handled by GitHub Actions:
-
-- workflow: `.github/workflows/telegram-monitor-refresh.yml`
-- schedule: every 6 hours (`0 */6 * * *`)
-- manual fallback: GitHub Actions → Telegram Monitor Refresh → Run workflow
-- output: `app/tools/telegram-monitor/snapshot-data.json`
-
-Required GitHub Secrets:
-
-```text
-TELEGRAM_API_ID
-TELEGRAM_API_HASH
-TELEGRAM_SESSION_BASE64
-```
-
-`TELEGRAM_SESSION_BASE64` is the base64-encoded contents of the local Telethon session file. Do not commit `.env` or `data/telegram.session`.
-
-The workflow collects data through Telethon, updates the snapshot, commits it, and deploys to Vercel when `VERCEL_TOKEN` is available. Public web collection is only a fallback; Telethon is the primary mode for subscribers and deeper history.
